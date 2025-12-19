@@ -1,0 +1,290 @@
+{
+  "ver": "1.0.6",
+  "importer": "sprite-atlas",
+  "imported": true,
+  "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2",
+  "files": [
+    ".plist",
+    ".json"
+  ],
+  "subMetas": {
+    "b246b": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@b246b",
+      "displayName": "",
+      "id": "b246b",
+      "name": "land_ground_1_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "7146e": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@7146e",
+      "displayName": "",
+      "id": "7146e",
+      "name": "land_ground_2_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 200,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "4fabd": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@4fabd",
+      "displayName": "",
+      "id": "4fabd",
+      "name": "land_ground_3_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 400,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "3c20b": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@3c20b",
+      "displayName": "",
+      "id": "3c20b",
+      "name": "land_ground_4_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 600,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "d91cf": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@d91cf",
+      "displayName": "",
+      "id": "d91cf",
+      "name": "land_ground_5_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 800,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f7faa": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@f7faa",
+      "displayName": "",
+      "id": "f7faa",
+      "name": "land_ground_6_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 1000,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "21da0": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@21da0",
+      "displayName": "",
+      "id": "21da0",
+      "name": "land_ground_7_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 1200,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "3c1bd": {
+      "importer": "sprite-frame",
+      "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2@3c1bd",
+      "displayName": "",
+      "id": "3c1bd",
+      "name": "land_ground_8_1",
+      "userData": {
+        "trimType": "auto",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 1400,
+        "trimY": 0,
+        "width": 200,
+        "height": 100,
+        "rawWidth": 200,
+        "rawHeight": 100,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a",
+        "atlasUuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2"
+      },
+      "ver": "1.0.9",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "atlasTextureName": "land.png",
+    "format": 3,
+    "uuid": "d0eaaae1-1a84-4ca7-8c42-a1df73c654e2",
+    "textureUuid": "76c5ffaf-8ea2-47a1-b27c-5a6efeb6c435@6c48a"
+  }
+}

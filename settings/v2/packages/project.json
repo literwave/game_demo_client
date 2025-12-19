@@ -1,0 +1,24 @@
+{
+  "layer": [
+    {
+      "name": "default",
+      "value": 1
+    },
+    {
+      "name": "ui",
+      "value": 2
+    },
+    {
+      "name": "map",
+      "value": 4
+    }
+  ],
+  "general": {
+    "designResolution": {
+      "width": 1280,
+      "height": 720,
+      "fitHeight": true,
+      "fitWidth": false
+    }
+  }
+}
