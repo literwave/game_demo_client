@@ -1,9 +1,6 @@
 # slg游戏客户端demo 使用CocosCreator3.4.0 开发
 ## 素材来源于网络，仅供学习使用，请勿用于商业用途
-## 服务端demo：https://github.com/llr104/slgserver
-**鄙视b站、抖音 up主码神之路，从这里拿demo讲课也不说出处，忽悠小白是自己写的**
-
-**代码交流群：1054084192**
+## 服务端demo：https://github.com/literwave/game_demo.git
 
 ## 连接服务端
 
