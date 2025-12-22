@@ -40,6 +40,7 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_user_login_ok, this.onEnterServer, this);
         EventMgr.on(ServerConfig.s2c_user_base_info, this.onGetUserBaseInfo, this);
         EventMgr.on(ServerConfig.s2c_req_user_res, this.onGetUserRes, this);
+        EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
 
 
         EventMgr.on(ServerConfig.account_reLogin, this.onAccountRelogin, this);
@@ -62,11 +63,26 @@ export default class LoginCommand {
     /**玩家基础信息*/
     private onGetUserBaseInfo(data: any): void {
         console.log("LoginProxy  getUserBaseInfo:", data);
+        let name = data.name;
+        if (name == "") {
+            EventMgr.emit(LogicEvent.createRole);
+        }
+        else {
+            EventMgr.emit(LogicEvent.enterMap);
+        }
     }
 
     /**玩家资源*/
     private onGetUserRes(data: any): void {
         console.log("LoginProxy  onGetUserRes:", data);
+        this._proxy.setRoleResData(data)
+    }
+
+    /**创建玩家*/
+    private onUserCreate(data: any): void {
+        console.log("LoginProxy  onUserCreate:", data);
+        this._proxy.saveEnterData(data);
+        EventMgr.emit(LogicEvent.enterMap);
     }
 
     /**登录回调*/
@@ -90,7 +106,7 @@ export default class LoginCommand {
         // MapCommand.getInstance()
         // EventMgr.emit(LogicEvent.enterMap);
 
-        var msgName = ServerConfig.c2s_req_user_res;
+        var msgName = ServerConfig.c2s_user_base_info;
 
         // 使用 ProtoManager 编码
         // 注意：这里需要根据你的 .proto 文件里的定义来写
@@ -110,27 +126,27 @@ export default class LoginCommand {
         NetManager.getInstance().send(sendData);
         // MapCommand.getInstance().enterMap();
 
-        // if (data.code == 9) {
-        //     EventMgr.emit(LogicEvent.createRole);
-        //     DateUtil.setServerTime(data.msg.time);
-        // } else {
-        //     if (data.code == 0) {
-        //         this._proxy.saveEnterData(data.msg);
+        if (data.code == 9) {
+            EventMgr.emit(LogicEvent.createRole);
+            DateUtil.setServerTime(data.msg.time);
+        } else {
+            if (data.code == 0) {
+                this._proxy.saveEnterData(data.msg);
 
-        //         // var roleData = this._proxy.getRoleData();
-        //         // this.chatLogin(roleData.rid, data.msg.token, roleData.nickName);
+                var roleData = this._proxy.getRoleData();
+                this.chatLogin(roleData.rid, data.msg.token, roleData.nickName);
 
-        //         //进入游戏
-        //         if (isLoadMap == true) {
-        //             console.log("enterServerComplete");
-        //             MapCommand.getInstance().enterMap();
-        //             EventMgr.emit(LogicEvent.enterServerComplete);
-        //         } else {
-        //             EventMgr.emit(NetEvent.ServerHandShake);
-        //         }
+                //进入游戏
+                if (isLoadMap == true) {
+                    console.log("enterServerComplete");
+                    MapCommand.getInstance().enterMap();
+                    EventMgr.emit(LogicEvent.enterServerComplete);
+                } else {
+                    EventMgr.emit(NetEvent.ServerHandShake);
+                }
 
-        //     }
-        // }
+            }
+        }
     }
 
     /**重连回调*/
@@ -224,16 +240,14 @@ export default class LoginCommand {
      * @param headId 
      */
     public role_create(uid: string, nickName: string, sex: number = 0, sid: number = 0, headId: number = 0) {
-        var api_name = ServerConfig.role_create;
+        var msgName = ServerConfig.c2s_user_create;
+        var protoData = ProtoManager.getInstance().encode(msgName, {
+            sex: sex,
+            name: nickName,
+        });
         var send_data = {
-            name: api_name,
-            msg: {
-                uid: uid,
-                nickName: nickName,
-                sex: sex,
-                sid: sid,
-                headId: headId
-            }
+            name: msgName,
+            msg: protoData, // 这里直接传 Uint8Array
         };
         NetManager.getInstance().send(send_data);
     }

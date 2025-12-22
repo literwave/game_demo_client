@@ -1,5 +1,5 @@
 import { _decorator, Component, ProgressBar } from 'cc';
-import { CoreEvent } from '../core/coreEvent';
+import { CoreEvent } from '../core/CoreEvent';
 import { EventMgr } from '../utils/EventMgr';
 
 const { ccclass, property } = _decorator;

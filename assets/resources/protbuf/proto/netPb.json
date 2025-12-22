@@ -22,20 +22,19 @@
             "s2c_user_login": 266,
             "c2s_verify_login": 267,
             "s2c_verify_login": 268,
-            "s2c_user_create": 269,
             "s2c_user_login_ok": 270
+        },
+        "User": {
+            "s2c_user_create": 269,
+            "c2s_user_base_info": 273,
+            "s2c_user_base_info": 274,
+            "c2s_user_create": 275,
+            "c2s_req_user_res": 276,
+            "s2c_req_user_res": 277
         },
         "Reward": {
             "s2c_show_reward": 271,
             "s2c_sync_user_diamond": 272
-        },
-        "User": {
-            "c2s_user_base_info": 273,
-            "s2c_user_base_info": 274,
-            "c2s_change_user_sex": 275,
-            "s2c_change_user_sex": 276,
-            "c2s_req_user_res": 277,
-            "s2c_req_user_res": 278
         }
     }
 }

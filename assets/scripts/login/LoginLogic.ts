@@ -49,8 +49,6 @@ export default class LoginLogic extends Component {
             EventMgr.emit(LogicEvent.showToast, "账号密码有误");
             return;
         }
-
-        LoginCommand.getInstance().register(this.editName.string, this.editPass.string);
     }
 
     protected onClickLogin(): void {

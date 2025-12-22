@@ -14,12 +14,14 @@ message s2c_user_base_info {
     int32 birthTime = 4;
 }
 
-message c2s_change_user_sex {
-    int32 sex = 1;
+message c2s_user_create {
+    string name = 1;
+    int32 sex = 2;
 }
 
-message s2c_change_user_sex {
-    int32 sex = 1;
+message s2c_user_create {
+    string name = 1;
+    int32 sex = 2;
 }
 
 message c2s_req_user_res {

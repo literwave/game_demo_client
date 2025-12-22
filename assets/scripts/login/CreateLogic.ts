@@ -16,40 +16,40 @@ export default class CreateLogic extends Component {
 
     @property(Toggle)
     manToggle: Toggle = null;
-    
 
-    protected onLoad():void{
+
+    protected onLoad(): void {
         EventMgr.on(ServerConfig.role_create, this.create, this);
         this.editName.string = this.getRandomName();
     }
 
     protected onClickCreate() {
         AudioManager.instance.playClick();
-        var sex = this.manToggle.isChecked?0:1;
+        var sex = this.manToggle.isChecked ? 1 : 2;
         var loginData: any = LoginCommand.getInstance().proxy.getLoginData();
-        LoginCommand.getInstance().role_create(loginData.uid, this.editName.string, sex,LoginCommand.getInstance().proxy.serverId, 0)
+        LoginCommand.getInstance().role_create(loginData.uid, this.editName.string, sex, LoginCommand.getInstance().proxy.serverId, 0)
     }
 
-    protected onClickToggle () {
+    protected onClickToggle() {
         AudioManager.instance.playClick();
     }
 
 
-    protected create(data):void{
+    protected create(data): void {
         console.log("create:", data);
-        if(data.code == 0){
+        if (data.code == 0) {
             this.node.active = false;
         }
     }
 
-    protected onRandomName():void{
+    protected onRandomName(): void {
         AudioManager.instance.playClick();
         this.editName.string = this.getRandomName();
     }
 
 
 
-   protected getRandomName():string{
+    protected getRandomName(): string {
         var sex = this.manToggle.isChecked ? "boy" : "girl";
         let name = createName(sex);
         return name
@@ -57,7 +57,7 @@ export default class CreateLogic extends Component {
 
 
 
-    protected onDestroy():void{
+    protected onDestroy(): void {
         EventMgr.targetOff(this);
     }
 }
