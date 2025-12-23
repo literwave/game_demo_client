@@ -15,7 +15,7 @@ import MapBuildTagLogic from "../map/MapBuildTagLogic";
 import MapSysCityLogic from "../map/MapSysCityLogic";
 import { EventMgr } from '../utils/EventMgr';
 import { LogicEvent } from '../common/LogicEvent';
-import { CoreEvent } from '../core/coreEvent';
+import { CoreEvent } from '../core/CoreEvent';
 
 @ccclass('MapScene')
 export default class MapScene extends Component {

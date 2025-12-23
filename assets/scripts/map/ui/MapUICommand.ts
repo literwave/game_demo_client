@@ -212,7 +212,6 @@ export default class MapUICommand {
      * @param 
      */
     public updateMyProperty(data: any): void {
-        LoginCommand.getInstance().proxy.saveEnterData(data.msg);
         EventMgr.emit(LogicEvent.upateMyRoleRes);
     }
 
