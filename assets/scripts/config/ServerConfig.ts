@@ -15,6 +15,9 @@ const ServerConfig = {
     c2s_user_create: "User.c2s_user_create",
     s2c_user_create: "User.s2c_user_create",
 
+    c2s_req_all_hero_base_info: "Hero.c2s_req_all_hero_base_info",
+    s2c_req_all_hero_base_info: "Hero.s2c_req_all_hero_base_info",
+
     c2s_req_user_res: "User.c2s_req_user_res",
     s2c_req_user_res: "User.s2c_req_user_res",
 

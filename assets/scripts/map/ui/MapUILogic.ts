@@ -32,7 +32,7 @@ import { LogicEvent } from '../../common/LogicEvent';
 export default class MapUILogic extends Component {
 
     @property(Node)
-    contentNode:Node = null;
+    contentNode: Node = null;
 
     @property(Prefab)
     facilityPrefab: Prefab = null;
@@ -76,7 +76,7 @@ export default class MapUILogic extends Component {
     @property(Prefab)
     drawResultrefab: Prefab = null;
     protected _drawResultNode: Node = null;
-    
+
     @property(Prefab)
     unionPrefab: Prefab = null;
     protected _unionNode: Node = null;
@@ -114,7 +114,7 @@ export default class MapUILogic extends Component {
     settingPrefab: Prefab = null;
     protected _settingNode: Node = null;
 
-    
+
     @property(Prefab)
     cloudAniPrefab: Prefab = null;
     protected _cloudAniNode: Node = null;
@@ -137,16 +137,13 @@ export default class MapUILogic extends Component {
 
     protected onLoad(): void {
 
-        this._resArray.push({key:"grain", name:"谷:"});
-        this._resArray.push({key:"wood", name:"木:"});
-        this._resArray.push({key:"iron", name:"铁:"});
-        this._resArray.push({key:"stone", name:"石:"});
-        this._resArray.push({key:"gold", name:"钱:"});
+        this._resArray.push({ key: 1, name: "谷:" });
+        this._resArray.push({ key: 2, name: "木:" });
+        this._resArray.push({ key: 3, name: "铁:" });
 
-        this._yieldArray.push({key:"wood_yield", name:"木+"});
-        this._yieldArray.push({key:"iron_yield", name:"铁+"});
-        this._yieldArray.push({key:"stone_yield", name:"石+"});
-        this._yieldArray.push({key:"grain_yield", name:"谷+"});
+        this._yieldArray.push({ key: 1, name: "木+" });
+        this._yieldArray.push({ key: 2, name: "铁+" });
+        this._yieldArray.push({ key: 3, name: "石+" });
 
 
         EventMgr.on(LogicEvent.openCityAbout, this.openCityAbout, this);
@@ -169,8 +166,8 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.openSkillInfo, this.onOpenSkillInfo, this);
         EventMgr.on(LogicEvent.beforeScrollToMap, this.beforeScrollToMap, this);
         EventMgr.on(LogicEvent.showTip, this.showTip, this);
-        
-        
+
+
 
         this.updateRoleRes();
         this.updateRole();
@@ -181,16 +178,16 @@ export default class MapUILogic extends Component {
     }
 
     protected robLoginUI(): void {
-        this.showTip("账号在其他地方登录",function () {
+        this.showTip("账号在其他地方登录", function () {
             EventMgr.emit(LogicEvent.enterLogin);
         });
     }
 
-    protected showTip(text:string, close:Function):void {
-        if (this._dialogNode == null){
+    protected showTip(text: string, close: Function): void {
+        if (this._dialogNode == null) {
             this._dialogNode = instantiate(this.dialog)
             this._dialogNode.parent = this.contentNode;
-        }else{
+        } else {
             this._dialogNode.active = true;
         }
         this._dialogNode.setSiblingIndex(this.topLayer());
@@ -228,8 +225,8 @@ export default class MapUILogic extends Component {
 
 
 
-    public topLayer():number {
-        return this.contentNode.children.length+1;
+    public topLayer(): number {
+        return this.contentNode.children.length + 1;
     }
     /**
      * 设施
@@ -258,12 +255,12 @@ export default class MapUILogic extends Component {
     /**
      * 武将
      */
-    
-    protected onClickGeneral(){
+
+    protected onClickGeneral() {
         AudioManager.instance.playClick();
         this.openGeneral([]);
-    } 
-    
+    }
+
     protected openGeneral(data: number[], type: number = 0, position: number = 0): void {
         if (this._generalNode == null) {
             this._generalNode = instantiate(this.generalPrefab);
@@ -317,7 +314,7 @@ export default class MapUILogic extends Component {
      * 城市
      */
     protected openCityAbout(data: any): void {
-   
+
         if (this._cityAboutNode == null) {
             this._cityAboutNode = instantiate(this.cityAboutPrefab);
             this._cityAboutNode.parent = this.contentNode;
@@ -334,7 +331,7 @@ export default class MapUILogic extends Component {
     protected closeCityAbout(): void {
         this.widgetNode.active = true;
     }
-    
+
     protected openFortressAbout(data: any): void {
         if (this._fortressAboutNode == null) {
             this._fortressAboutNode = instantiate(this.fortressAboutPrefab);
@@ -346,7 +343,7 @@ export default class MapUILogic extends Component {
         this._fortressAboutNode.getComponent(FortressAbout).setData(data);
     }
 
-    
+
 
     /**
      * 战报
@@ -370,29 +367,30 @@ export default class MapUILogic extends Component {
         var children = this.srollLayout.node.children;
         var roleRes = LoginCommand.getInstance().proxy.getRoleResData();
 
+        console.log(roleRes)
         var i = 0;
-        children[i].getChildByName("New Label").getComponent(Label).string = "令牌:" + Tools.numberToShow(roleRes["decree"]);
-        i+=1;
-        
+        children[i].getChildByName("New Label").getComponent(Label).string = "令牌:" + Tools.numberToShow(roleRes[1]);
+        i += 1;
+
 
         for (let index = 0; index < this._resArray.length; index++) {
             const obj = this._resArray[index];
             var label = children[i].getChildByName("New Label").getComponent(Label)
 
-            if(obj.key == "gold"){
+            if (obj.key == "gold") {
                 label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
-            }else{
-                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]) + "/" + Tools.numberToShow(roleRes["depot_capacity"]);
+            } else {
+                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]) + "/" + Tools.numberToShow(roleRes[2]);
             }
-            
-            i+=1;
+
+            i += 1;
         }
 
         for (let index = 0; index < this._yieldArray.length; index++) {
             const obj = this._yieldArray[index];
             var label = children[i].getChildByName("New Label").getComponent(Label)
             label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
-            i+=1;
+            i += 1;
         }
 
     }
@@ -476,7 +474,7 @@ export default class MapUILogic extends Component {
         if (this._generalConvertNode == null) {
             this._generalConvertNode = instantiate(this.generalConvertPrefab);
             this._generalConvertNode.parent = this.contentNode;
-            
+
         } else {
             this._generalConvertNode.active = true;
         }
@@ -497,13 +495,13 @@ export default class MapUILogic extends Component {
         this._generalRosterNode.setSiblingIndex(this.topLayer());
 
     }
-    
-    onClickSkillBtn(): void{
+
+    onClickSkillBtn(): void {
         AudioManager.instance.playClick();
         this.onOpenSkill(0);
     }
 
-    protected onOpenSkill(type:number=0, general:GeneralData = null, skillPos:number=-1): void {
+    protected onOpenSkill(type: number = 0, general: GeneralData = null, skillPos: number = -1): void {
         console.log("onOpenSkill", type, general, skillPos);
         if (this._skillNode == null) {
             this._skillNode = instantiate(this.skillPrefab);
@@ -515,14 +513,14 @@ export default class MapUILogic extends Component {
         this._skillNode.getComponent(SkillLogic).setData(type, general, skillPos);
     }
 
-    protected onCloseSkill(){
+    protected onCloseSkill() {
         AudioManager.instance.playClick();
         if (this._skillNode) {
-           this._skillNode.active = false;
-        } 
+            this._skillNode.active = false;
+        }
     }
-    
-    protected onOpenSkillInfo(cfg:Skill, type:number=0, general:GeneralData = null, skillPos:number=-1){
+
+    protected onOpenSkillInfo(cfg: Skill, type: number = 0, general: GeneralData = null, skillPos: number = -1) {
         console.log("onOpenSkillInfo", cfg, type, general, skillPos);
         AudioManager.instance.playClick();
         if (this._skillInfoNode == null) {
@@ -537,20 +535,20 @@ export default class MapUILogic extends Component {
 
 
     //征收
-    protected onCollection(msg:any):void{
-        this.showTip("成功征收到 "+msg.gold+" 金币", null);
+    protected onCollection(msg: any): void {
+        this.showTip("成功征收到 " + msg.gold + " 金币", null);
     }
 
     protected updateRole(): void {
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
-        this.nameLabel.string = "昵称: " + roleData.nickName;
-        this.ridLabel.string = "角色ID: " + roleData.rid + "";
+        this.nameLabel.string = "昵称: " + roleData.name;
+        this.ridLabel.string = "角色ID: " + roleData.userId + "";
     }
 
-    protected onClickCollection():void {
+    protected onClickCollection(): void {
         AudioManager.instance.playClick();
-      
-        if(this._collectNode == null){
+
+        if (this._collectNode == null) {
             this._collectNode = instantiate(this.collectPrefab);
             this._collectNode.parent = this.contentNode;
         }
@@ -559,9 +557,9 @@ export default class MapUILogic extends Component {
 
     }
 
-    protected onClickSetting():void {
+    protected onClickSetting(): void {
         AudioManager.instance.playClick();
-        if(this._settingNode == null){
+        if (this._settingNode == null) {
             this._settingNode = instantiate(this.settingPrefab);
             this._settingNode.parent = this.contentNode;
         }
@@ -570,17 +568,17 @@ export default class MapUILogic extends Component {
 
     }
 
-    protected beforeScrollToMap(x:number, y:number, oldx:number, oldy:number):void {
+    protected beforeScrollToMap(x: number, y: number, oldx: number, oldy: number): void {
         let newPoint = new Vec2(x, y);
         let oldPoint = new Vec2(oldx, oldy);
         let dis = Vec2.squaredDistance(newPoint, oldPoint);
         console.log("beforeScrollToMap:", x, y, oldx, oldy, dis);
 
-        if(dis < 360000){
+        if (dis < 360000) {
             return;
         }
 
-        if(this._cloudAniNode == null){
+        if (this._cloudAniNode == null) {
             this._cloudAniNode = instantiate(this.cloudAniPrefab);
             this._cloudAniNode.parent = this.contentNode;
         }
@@ -589,6 +587,6 @@ export default class MapUILogic extends Component {
 
     }
 
-    
+
 
 }

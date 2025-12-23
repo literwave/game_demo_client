@@ -29,27 +29,27 @@ export default class MapScene extends Component {
 
     protected onLoad(): void {
         this._cmd = MapCommand.getInstance();
-        
+
 
         //初始化地图
         let tiledMap: TiledMap = this.mapLayer.addComponent(TiledMap);
         tiledMap.tmxAsset = this._cmd.proxy.tiledMapAsset;
-        
+
         MapUtil.initMapConfig(tiledMap);
         this._cmd.initData();
         EventMgr.on(LogicEvent.mapShowAreaChange, this.onMapShowAreaChange, this);
         EventMgr.on(LogicEvent.scrollToMap, this.onScrollToMap, this);
-        
+
         this.scheduleOnce(() => {
             let myCity: MapCityData = this._cmd.cityProxy.getMyMainCity();
             this.node.getComponent(MapLogic).setTiledMap(tiledMap);
-            this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(myCity.x, myCity.y));
+            // this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(myCity.x, myCity.y));
             this.onTimer();//立即执行一次
         }, 0.1);
 
         this.schedule(this.onTimer, 0.2);
 
-        this.scheduleOnce(()=>{
+        this.scheduleOnce(() => {
             EventMgr.emit(CoreEvent.loadComplete);
         }, 0.6);
     }
@@ -61,7 +61,7 @@ export default class MapScene extends Component {
     }
 
     protected onTimer(): void {
-        
+
         if (this._cmd.proxy.qryAreaIds && this._cmd.proxy.qryAreaIds.length > 0) {
             let qryIndex: number = this._cmd.proxy.qryAreaIds.shift();
             let qryData: MapAreaData = this._cmd.proxy.getMapAreaData(qryIndex);
@@ -83,8 +83,8 @@ export default class MapScene extends Component {
     }
 
     protected onMapShowAreaChange(centerPoint: Vec2, centerAreaId: number, addIds: number[], removeIds: number[]): void {
-        
-    
+
+
         let resLogic: MapResLogic = this.node.getComponent(MapResLogic);
         let buildResLogic: MapResBuildLogic = this.node.getComponent(MapResBuildLogic);
         let buildFacilityLogic: MapFacilityBuildLogic = this.node.getComponent(MapFacilityBuildLogic);
@@ -121,13 +121,13 @@ export default class MapScene extends Component {
                     //建筑
                     if (this._cmd.buildProxy.getBuild(cellId) != null) {
                         var build = this._cmd.buildProxy.getBuild(cellId);
-                        if(build.type == MapResType.SYS_CITY){
+                        if (build.type == MapResType.SYS_CITY) {
                             //系统城池
                             sysCityLogic.addItem(addIds[i], build);
-                        }else if(build.type == MapResType.SYS_FORTRESS){
+                        } else if (build.type == MapResType.SYS_FORTRESS) {
                             console.log("MapResType.SYS_FORTRESS");
                             resLogic.addItem(addIds[i], build);
-                        } else{
+                        } else {
                             buildResLogic.addItem(addIds[i], build);
                         }
                     }
@@ -138,7 +138,7 @@ export default class MapScene extends Component {
 
                     //标记
                     if (this._cmd.proxy.getResData(cellId).type <= MapResType.FORTRESS) {
-            
+
                         tagLogic.addItem(addIds[i], this._cmd.proxy.getResData(cellId));
                     }
 
@@ -159,7 +159,7 @@ export default class MapScene extends Component {
     protected onScrollToMap(x: number, y: number): void {
         let old = this.node.getComponent(MapLogic).curCameraPoint();
         let cur = this.node.getComponent(MapLogic).toCameraPoint(new Vec2(x, y));
-        
+
         EventMgr.emit(LogicEvent.beforeScrollToMap, cur.x, cur.y, old.x, old.y);
         this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(x, y));
     }

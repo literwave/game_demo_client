@@ -32,6 +32,7 @@ export default class LoginCommand {
 
     //数据model
     protected _proxy: LoginProxy = new LoginProxy();
+    private isAllReady: boolean = false;
 
     constructor() {
         EventMgr.on(NetEvent.ServerCheckLogin, this.onServerConneted, this);
@@ -41,6 +42,8 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_user_base_info, this.onGetUserBaseInfo, this);
         EventMgr.on(ServerConfig.s2c_req_user_res, this.onGetUserRes, this);
         EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
+
+        EventMgr.on(ServerConfig.s2c_req_all_hero_base_info, this.onGetHeroData, this);
 
 
         EventMgr.on(ServerConfig.account_reLogin, this.onAccountRelogin, this);
@@ -70,19 +73,51 @@ export default class LoginCommand {
         else {
             EventMgr.emit(LogicEvent.enterMap);
         }
+        var msgName = ServerConfig.c2s_req_user_res;
+        var protoData = ProtoManager.getInstance().encode(msgName, {
+        });
+
+        if (!protoData) {
+            console.error("Failed to encode login request");
+            return;
+        }
+
+        var sendData = {
+            name: msgName,
+            msg: protoData, // 这里直接传 Uint8Array
+        };
+        NetManager.getInstance().send(sendData);
     }
 
     /**玩家资源*/
     private onGetUserRes(data: any): void {
         console.log("LoginProxy  onGetUserRes:", data);
         this._proxy.setRoleResData(data)
+        this.makeSureAllDataReady()
+    }
+
+    /**英雄数据 */
+    private makeSureAllDataReady(): void {
+        console.log("LoginProxy  makeSureAllDataReady:");
+        if (this._proxy.getRoleResData() && this._proxy.getRoleData()) {
+            this.isAllReady = true;
+        }
+        if (this.isAllReady) {
+            EventMgr.emit(LogicEvent.enterMap);
+        }
+    }
+
+    /**英雄数据 */
+    private onGetHeroData(data: any): void {
+        console.log("LoginProxy  onGetHeroData:", data);
+        this.makeSureAllDataReady()
     }
 
     /**创建玩家*/
     private onUserCreate(data: any): void {
         console.log("LoginProxy  onUserCreate:", data);
         this._proxy.saveEnterData(data);
-        EventMgr.emit(LogicEvent.enterMap);
+        this.makeSureAllDataReady()
     }
 
     /**登录回调*/
@@ -124,29 +159,6 @@ export default class LoginCommand {
             msg: protoData, // 这里直接传 Uint8Array
         };
         NetManager.getInstance().send(sendData);
-        // MapCommand.getInstance().enterMap();
-
-        if (data.code == 9) {
-            EventMgr.emit(LogicEvent.createRole);
-            DateUtil.setServerTime(data.msg.time);
-        } else {
-            if (data.code == 0) {
-                this._proxy.saveEnterData(data.msg);
-
-                var roleData = this._proxy.getRoleData();
-                this.chatLogin(roleData.rid, data.msg.token, roleData.nickName);
-
-                //进入游戏
-                if (isLoadMap == true) {
-                    console.log("enterServerComplete");
-                    MapCommand.getInstance().enterMap();
-                    EventMgr.emit(LogicEvent.enterServerComplete);
-                } else {
-                    EventMgr.emit(NetEvent.ServerHandShake);
-                }
-
-            }
-        }
     }
 
     /**重连回调*/

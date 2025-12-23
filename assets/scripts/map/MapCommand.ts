@@ -39,7 +39,7 @@ export default class MapCommand {
 
     constructor() {
 
-        
+
         EventMgr.on(ServerConfig.role_myProperty, this.onRoleMyProperty, this);
         EventMgr.on(ServerConfig.roleBuild_push, this.onRoleBuildStatePush, this);
         EventMgr.on(ServerConfig.nationMap_config, this.onNationMapConfig, this);
@@ -86,18 +86,16 @@ export default class MapCommand {
         if (data.code == 0) {
             this._isQryMyProperty = true;
             MapUICommand.getInstance().updateMyProperty(data);
-            GeneralCommand.getInstance().updateMyProperty(data.msg.generals);
-            ArmyCommand.getInstance().updateMyProperty(data.msg.armys);
             this._cityProxy.initMyCitys(data.msg.citys);
-            this._buildProxy.initMyBuilds(data.msg.mr_builds);
-            this._cityProxy.myId = this._cityProxy.getMyPlayerId();
-            this._buildProxy.myId = this._cityProxy.getMyPlayerId();
-            this._cityProxy.myUnionId = this._cityProxy.getMyMainCity().unionId;
-            this._cityProxy.myParentId = this._cityProxy.getMyMainCity().parentId;
-            this._buildProxy.myUnionId = this._cityProxy.getMyMainCity().unionId;
-            this._buildProxy.myParentId = this._cityProxy.getMyMainCity().parentId;
+            // this._buildProxy.initMyBuilds(data.msg.mr_builds);
+            // this._cityProxy.myId = this._cityProxy.getMyPlayerId();
+            // this._buildProxy.myId = this._cityProxy.getMyPlayerId();
+            // this._cityProxy.myUnionId = this._cityProxy.getMyMainCity().unionId;
+            // this._cityProxy.myParentId = this._cityProxy.getMyMainCity().parentId;
+            // this._buildProxy.myUnionId = this._cityProxy.getMyMainCity().unionId;
+            // this._buildProxy.myParentId = this._cityProxy.getMyMainCity().parentId;
             MapCommand.getInstance().posTagList();
-            
+
             this.enterMap();
         }
     }
@@ -139,45 +137,45 @@ export default class MapCommand {
 
     protected onPosTagList(data: any, otherData: any): void {
         console.log("onPosTagList", data, otherData);
-        if(data.code == 0){
+        if (data.code == 0) {
             this._proxy.updateMapPosTags(data.msg.pos_tags);
         }
     }
 
     protected onOpPosTag(data: any, otherData: any): void {
         console.log("onOpPosTag", data, otherData);
-        if(data.code == 0){
-            if(data.msg.type == 0){
+        if (data.code == 0) {
+            if (data.msg.type == 0) {
                 this._proxy.removeMapPosTag(data.msg.x, data.msg.y);
                 EventMgr.emit(LogicEvent.updateTag);
-            }else if(data.msg.type == 1){
+            } else if (data.msg.type == 1) {
                 this._proxy.addMapPosTag(data.msg.x, data.msg.y, data.msg.name);
                 EventMgr.emit(LogicEvent.updateTag);
             }
         }
     }
-    
+
 
     protected onRoleCityPush(data: any): void {
         console.log("onRoleCityPush:", data)
         this._buildProxy.updateSub(data.msg.rid, data.msg.union_id, data.msg.parent_id);
         this._cityProxy.updateCity(data.msg);
         EventMgr.emit(LogicEvent.unionChange, data.msg.rid, data.msg.union_id, data.msg.parent_id);
-       
+
     }
 
     public isBuildSub(id: number): boolean {
         let buiildData: MapBuildData = this.buildProxy.getBuild(id);
         if (buiildData) {
-            if (buiildData.rid == this.buildProxy.myId){
+            if (buiildData.rid == this.buildProxy.myId) {
                 return true;
             }
 
-            if (buiildData.unionId > 0 && buiildData.unionId == this.buildProxy.myUnionId){
+            if (buiildData.unionId > 0 && buiildData.unionId == this.buildProxy.myUnionId) {
                 return true
             }
 
-            if (buiildData.parentId > 0 && buiildData.parentId == this.buildProxy.myUnionId){
+            if (buiildData.parentId > 0 && buiildData.parentId == this.buildProxy.myUnionId) {
                 return true
             }
         }
@@ -186,26 +184,26 @@ export default class MapCommand {
 
     public isBuildWarFree(id: number): boolean {
         let buiildData: MapBuildData = this.buildProxy.getBuild(id);
-        if(buiildData){
+        if (buiildData) {
             return buiildData.isWarFree();
-        }else{
+        } else {
             return false;
         }
     }
 
-    
+
     public isCitySub(id: number): boolean {
         let cityData: MapCityData = this.cityProxy.getCity(id);
         if (cityData) {
-            if (cityData.rid == this.cityProxy.myId){
+            if (cityData.rid == this.cityProxy.myId) {
                 return true
             }
 
-            if (cityData.unionId > 0 && cityData.unionId == this.cityProxy.myUnionId){
+            if (cityData.unionId > 0 && cityData.unionId == this.cityProxy.myUnionId) {
                 return true
             }
 
-            if (cityData.parentId > 0 && cityData.parentId == this.cityProxy.myUnionId){
+            if (cityData.parentId > 0 && cityData.parentId == this.cityProxy.myUnionId) {
                 return true
             }
         }
@@ -216,7 +214,7 @@ export default class MapCommand {
         let cityData: MapCityData = this.cityProxy.getCity(id);
         if (cityData && cityData.parentId > 0) {
             var diff = DateUtil.getServerTime() - cityData.occupyTime;
-            if(diff < MapCommand.getInstance().proxy.getWarFree()){
+            if (diff < MapCommand.getInstance().proxy.getWarFree()) {
                 return true;
             }
         }
@@ -227,11 +225,11 @@ export default class MapCommand {
     /**是否是可行军的位置*/
     public isCanMoveCell(x: number, y: number): boolean {
         let id: number = MapUtil.getIdByCellPoint(x, y);
-        if (this.isBuildSub(id)){
+        if (this.isBuildSub(id)) {
             return true
         }
 
-        if (this.isCitySub(id)){
+        if (this.isCitySub(id)) {
             return true
         }
 
@@ -243,7 +241,7 @@ export default class MapCommand {
         let id: number = MapUtil.getIdByCellPoint(x, y);
         let cityData: MapCityData = this.cityProxy.getCity(id);
         if (cityData) {
-            if(this.isCityWarFree(id)){
+            if (this.isCityWarFree(id)) {
                 return false;
             }
             radius = cityData.getCellRadius();
@@ -251,7 +249,7 @@ export default class MapCommand {
 
         let buildData: MapBuildData = this.buildProxy.getBuild(id);
         if (buildData) {
-            if(this.isBuildWarFree(id)){
+            if (this.isBuildWarFree(id)) {
                 return false;
             }
 
@@ -260,30 +258,30 @@ export default class MapCommand {
         }
 
         //查找半径10
-        for (let tx = x-10; tx <= x+10; tx++) {
-            for (let ty = y-10; ty <= y+10; ty++) {
+        for (let tx = x - 10; tx <= x + 10; tx++) {
+            for (let ty = y - 10; ty <= y + 10; ty++) {
 
                 let id: number = MapUtil.getIdByCellPoint(tx, ty);
                 let cityData: MapCityData = this.cityProxy.getCity(id);
                 if (cityData) {
-                    var absX = Math.abs(x-tx);
-                    var absY = Math.abs(y-ty);
-                    if (absX <= radius+cityData.getCellRadius()+1 && absY <= radius+cityData.getCellRadius()+1){
+                    var absX = Math.abs(x - tx);
+                    var absY = Math.abs(y - ty);
+                    if (absX <= radius + cityData.getCellRadius() + 1 && absY <= radius + cityData.getCellRadius() + 1) {
                         var ok = this.isCitySub(id)
-                        if(ok){
+                        if (ok) {
                             return true;
                         }
                     }
                 }
-        
+
                 let buildData: MapBuildData = this.buildProxy.getBuild(id);
                 if (buildData) {
-                    var absX = Math.abs(x-tx);
-                    var absY = Math.abs(y-ty);
+                    var absX = Math.abs(x - tx);
+                    var absY = Math.abs(y - ty);
                     // console.log("MapBuildData:", absX, absY, radius+buildData.getCellRadius()+1, buildData);
-                    if (absX <= radius+buildData.getCellRadius()+1 && absY <= radius+buildData.getCellRadius()+1){
+                    if (absX <= radius + buildData.getCellRadius() + 1 && absY <= radius + buildData.getCellRadius() + 1) {
                         var ok = this.isBuildSub(id)
-                        if(ok){
+                        if (ok) {
                             return true;
                         }
                     }
@@ -390,7 +388,7 @@ export default class MapCommand {
         NetManager.getInstance().send(sendData);
     }
 
-    
+
     public upPosition(x: number, y: number): void {
         let sendData: any = {
             name: ServerConfig.role_upPosition,
@@ -412,14 +410,14 @@ export default class MapCommand {
     }
 
     //1添加、0移除
-    public opPosTag(type:number, x: number, y: number, name = ""): void {
+    public opPosTag(type: number, x: number, y: number, name = ""): void {
         let sendData: any = {
             name: ServerConfig.role_opPosTag,
             msg: {
-                type:type,
-                x:x,
-                y:y,
-                name:name,
+                type: type,
+                x: x,
+                y: y,
+                name: name,
             }
         };
         NetManager.getInstance().send(sendData);

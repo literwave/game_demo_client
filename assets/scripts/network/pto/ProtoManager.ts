@@ -34,14 +34,14 @@ export class ProtoManager {
 
         // 定义需要加载的 proto 文件列表 (相对于 assets/resources 的路径，不含扩展名)
         const protoFiles = [
-            "protbuf/proto/pto/common",
-            "protbuf/proto/pto/login",
-            "protbuf/proto/pto/chat",
-            "protbuf/proto/pto/hero",
-            "protbuf/proto/pto/build",
-            "protbuf/proto/pto/heartbeat",
-            "protbuf/proto/pto/reward",
-            "protbuf/proto/pto/user",
+            "protbuf/pto/common",
+            "protbuf/pto/login",
+            "protbuf/pto/chat",
+            "protbuf/pto/hero",
+            "protbuf/pto/build",
+            "protbuf/pto/heartbeat",
+            "protbuf/pto/reward",
+            "protbuf/pto/user",
         ];
 
         try {
@@ -67,7 +67,7 @@ export class ProtoManager {
 
     private loadPbJson(): Promise<void> {
         return new Promise((resolve, reject) => {
-            resources.load("protbuf/proto/netPb", JsonAsset, (err, asset: JsonAsset) => {
+            resources.load("protbuf/netPb", JsonAsset, (err, asset: JsonAsset) => {
                 if (err) {
                     console.error("Failed to load netPb.json", err);
                     reject(err);

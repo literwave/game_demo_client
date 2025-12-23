@@ -149,11 +149,11 @@ export default class Main extends Component {
                 var d = (datas[5] as JsonAsset).json
                 MapCommand.getInstance().proxy.setWarFree(d["build"].war_free);
 
-                let cityId: number = MapCommand.getInstance().cityProxy.getMyMainCity().cityId;
-                GeneralCommand.getInstance().qryMyGenerals();
-                ArmyCommand.getInstance().qryArmyList(cityId);
-                MapUICommand.getInstance().qryWarReport();
-                SkillCommand.getInstance().qrySkillList();
+                // let cityId: number = MapCommand.getInstance().cityProxy.getMyMainCity().cityId;
+                // GeneralCommand.getInstance().qryMyGenerals();
+                // ArmyCommand.getInstance().qryArmyList(cityId);
+                // MapUICommand.getInstance().qryWarReport();
+                // SkillCommand.getInstance().qrySkillList();
 
                 this.clearAllScene();
 

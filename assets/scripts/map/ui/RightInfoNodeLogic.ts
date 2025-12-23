@@ -42,9 +42,9 @@ export default class RightInfoNodeLogic extends Component {
         this.armyScrollView.node.active = true;
         this.cityScrollView.node.active = false;
         this.tagsScrollView.node.active = false;
-        this.initArmys();
-        this.initCitys();
-        this.initTags();
+        // this.initArmys();
+        // this.initCitys();
+        // this.initTags();
     }
 
     protected onDestroy(): void {
@@ -70,7 +70,7 @@ export default class RightInfoNodeLogic extends Component {
         }
     }
 
-    protected initCitys():void {
+    protected initCitys(): void {
         let citys: MapCityData[] = MapCommand.getInstance().cityProxy.getMyCitys();
         this.cityScrollView.content.removeAllChildren();
         if (citys && citys.length > 0) {
@@ -88,7 +88,7 @@ export default class RightInfoNodeLogic extends Component {
         for (let i: number = 0; i < tags.length; i++) {
             var tag = tags[i];
 
-            
+
             let item: Node = instantiate(this.tagItemPrefabs);
             item.parent = this.tagsScrollView.content;
             item.getComponent(RightTagItemLogic).setData(tag);
@@ -105,7 +105,7 @@ export default class RightInfoNodeLogic extends Component {
         }
     }
 
-    protected onUpdateTag():void {
+    protected onUpdateTag(): void {
         this.initTags();
     }
 
@@ -116,11 +116,11 @@ export default class RightInfoNodeLogic extends Component {
             this.armyScrollView.node.active = false;
             this.cityScrollView.node.active = true;
             this.tagsScrollView.node.active = false;
-        } else if(index == 0){
+        } else if (index == 0) {
             this.armyScrollView.node.active = true;
             this.cityScrollView.node.active = false;
             this.tagsScrollView.node.active = false;
-        }else{
+        } else {
             this.armyScrollView.node.active = false;
             this.cityScrollView.node.active = false;
             this.tagsScrollView.node.active = true;
