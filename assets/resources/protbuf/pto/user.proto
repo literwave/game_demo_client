@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package User;
+
+import "common.proto";
+
+message c2s_user_base_info {
+}
+
+message s2c_user_base_info {
+	string name = 1;
+    int32 headIcon = 2;
+    int32 sex = 3;
+    int32 birthTime = 4;
+}
+
+message c2s_user_create {
+    string name = 1;
+    int32 sex = 2;
+}
+
+message s2c_user_create {
+    string name = 1;
+    int32 sex = 2;
+}
+
+message c2s_req_user_res {
+}
+
+message s2c_req_user_res {
+    repeated Common.p_common_info resList = 1;
+}
