@@ -10,8 +10,6 @@ import MapCommand from "./map/MapCommand";
 import MapUICommand from "./map/ui/MapUICommand";
 import { HttpManager } from "./network/http/HttpManager";
 import { NetEvent } from "./network/socket/NetInterface";
-import { NetManager } from "./network/socket/NetManager";
-import { NetNodeType } from "./network/socket/NetNode";
 import SkillCommand from "./skill/SkillCommand";
 import Toast from "./utils/Toast";
 import { Tools } from "./utils/Tools";
@@ -81,11 +79,6 @@ export default class Main extends Component {
             console.log("Protobuf initialized");
             //初始化业务模块
             LoginCommand.getInstance();
-            // MapCommand.getInstance();
-            // MapUICommand.getInstance();
-            // GeneralCommand.getInstance();
-            // ArmyCommand.getInstance();
-
             this.enterLogin();
         });
 
@@ -129,14 +122,12 @@ export default class Main extends Component {
         dataList.push(new LoadData("./config/json/skill/", LoadDataType.DIR, JsonAsset));
 
         this.addLoadingNode();
-        console.log("onEnterMap");
         LoaderManager.getInstance().startLoadList(dataList, null,
             (error: Error, paths: string[], datas: any[]) => {
                 if (error != null) {
                     console.log("加载配置文件失败");
                     return;
                 }
-                console.log("loadComplete", paths, datas);
                 MapCommand.getInstance().proxy.tiledMapAsset = datas[0] as TiledMapAsset;
                 MapCommand.getInstance().proxy.initMapResConfig((datas[1] as JsonAsset).json);
 
