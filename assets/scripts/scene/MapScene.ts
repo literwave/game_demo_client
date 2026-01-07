@@ -70,7 +70,7 @@ export default class MapScene extends Component {
             let qryIndex: number = this._cmd.proxy.qryAreaIds.shift();
             let qryData: MapAreaData = this._cmd.proxy.getMapAreaData(qryIndex);
             if (qryData.checkAndUpdateQryTime()) {
-                this._cmd.qryNationMapScanBlock(qryData);
+                // this._cmd.qryNationMapScanBlock(qryData);
             }
         }
         let nowTime: number = Date.now();

@@ -397,7 +397,7 @@ export default class MapCommand {
                 y: y
             }
         };
-        NetManager.getInstance().send(sendData);
+        // NetManager.getInstance().send(sendData);
     }
 
     public posTagList(): void {

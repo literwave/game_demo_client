@@ -25,7 +25,7 @@ export class MapResType {
     static STONE: number = 54;
     static GRAIN: number = 55;
     static FORTRESS: number = 56; //要塞
-    
+
 }
 
 /**地图资源数据*/
@@ -87,7 +87,7 @@ export class MapAreaData {
 }
 
 export default class MapProxy {
-    public warFree:number = 0; //免战时间
+    public warFree: number = 0; //免战时间
     public tiledMapAsset: TiledMapAsset = null;
     //当前地图中心点
     protected _curCenterPoint: Vec2 = null;
@@ -137,8 +137,8 @@ export default class MapProxy {
         this.warFree = time;
     }
 
-    public getWarFree(): number{
-        return this.warFree*1000
+    public getWarFree(): number {
+        return this.warFree * 1000
     }
 
     public initMapResConfig(jsonData: any): void {
@@ -155,28 +155,28 @@ export default class MapProxy {
             data.y = Math.floor(i / w);
             this._mapResDatas.push(data);
 
-            if(data.type == MapResType.SYS_CITY){
+            if (data.type == MapResType.SYS_CITY) {
                 this._mapSysCityResDatas.push(data)
             }
         }
     }
 
 
-    public getSysCityResData(x, y): MapResData{
+    public getSysCityResData(x, y): MapResData {
         for (let index = 0; index < this._mapSysCityResDatas.length; index++) {
-            
+
             var resData = this._mapSysCityResDatas[index];
             var level = resData.level;
             var dis = 0;
-            if(level >= 8){
+            if (level >= 8) {
                 dis = 3;
-            }else if(level >= 5){
+            } else if (level >= 5) {
                 dis = 2;
-            }else {
+            } else {
                 dis = 1;
             }
 
-            if( dis >= Math.abs(x-resData.x) && dis >= Math.abs(y-resData.y)){
+            if (dis >= Math.abs(x - resData.x) && dis >= Math.abs(y - resData.y)) {
                 return resData;
             }
         }
@@ -269,7 +269,7 @@ export default class MapProxy {
         return false;
     }
 
-    public getCurCenterPoint():Vec2 {
+    public getCurCenterPoint(): Vec2 {
         return this._curCenterPoint;
     }
 
@@ -300,18 +300,30 @@ export default class MapProxy {
     /*获取产量描述**/
     public getResYieldDesList(cfg: MapResConfig): string[] {
         let list: string[] = [];
-        if (cfg.grain > 0) {
-            list.push("粮食 +" + cfg.grain + "/小时");
-        }
-        if (cfg.wood > 0) {
-            list.push("木材 +" + cfg.wood + "/小时");
-        }
-        if (cfg.iron > 0) {
-            list.push("铁矿 +" + cfg.iron + "/小时");
-        }
-        if (cfg.stone > 0) {
-            list.push("石料 +" + cfg.stone + "/小时");
-        }
+        // if (cfg &&cfg.grain > 0) {
+        //     list.push("粮食 +" + cfg.grain + "/小时");
+        // }
+        // if (cfg.wood > 0) {
+        //     list.push("木材 +" + cfg.wood + "/小时");
+        // }
+        // if (cfg.iron > 0) {
+        //     list.push("铁矿 +" + cfg.iron + "/小时");
+        // }
+        // if (cfg.stone > 0) {
+        //     list.push("石料 +" + cfg.stone + "/小时");
+        // }
+
+        list.push("粮食 +" + 500 + "/小时");
+
+
+        list.push("木材 +" + 600 + "/小时");
+
+
+        list.push("铁矿 +" + 700 + "/小时");
+
+
+        list.push("石料 +" + 800 + "/小时");
+
         return list;
     }
 
@@ -348,10 +360,10 @@ export default class MapProxy {
         });
     }
 
-    public removeMapPosTag(x: number, y:number) {
+    public removeMapPosTag(x: number, y: number) {
         var tags: MapTagPos[] = [];
         this._mapPosTags.forEach(tag => {
-            if(tag.x != x || y != tag.y){
+            if (tag.x != x || y != tag.y) {
                 tags.push(tag);
             }
         });
@@ -359,7 +371,7 @@ export default class MapProxy {
         this._mapPosTags = tags;
     }
 
-    public addMapPosTag(x: number, y:number, name:string) {
+    public addMapPosTag(x: number, y: number, name: string) {
         var tag = new MapTagPos();
         tag.x = x;
         tag.y = y;
@@ -367,31 +379,31 @@ export default class MapProxy {
 
         var ok = true;
         this._mapPosTags.forEach(tag => {
-            if (tag.x == x && tag.y == y){
+            if (tag.x == x && tag.y == y) {
                 ok = false;
             }
         });
 
-        if (ok){
+        if (ok) {
             this._mapPosTags.push(tag);
         }
-       
+
     }
 
-    public isPosTag(x: number, y:number):boolean {
+    public isPosTag(x: number, y: number): boolean {
         var ret = false;
         for (let index = 0; index < this._mapPosTags.length; index++) {
             const tag = this._mapPosTags[index];
-            if (tag.x == x && tag.y == y){
+            if (tag.x == x && tag.y == y) {
                 ret = true;
                 break;
             }
         }
-       
+
         return ret;
     }
 
-    public getPosTags() :MapTagPos[]{
+    public getPosTags(): MapTagPos[] {
         return this._mapPosTags;
     }
 }

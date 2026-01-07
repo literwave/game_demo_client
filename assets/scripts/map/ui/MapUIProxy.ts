@@ -507,7 +507,8 @@ export default class MapUIProxy {
     }
 
     public getDefenseSoldiers(level: number): number {
-        return this._basic.npc.levels[level - 1].soilders
+        return 1
+        // return this._basic.npc.levels[level - 1].soilders
     }
 
     public getBasicGeneral(): General {
