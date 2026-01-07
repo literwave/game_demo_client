@@ -155,7 +155,10 @@ export default class GeneralDesLogic extends Component {
     }
 
     private getAttrStr(key: string): string {
-        var str = 100
+        let hero_type = this._currData.hero_type;
+        let cfg = GeneralCommand.getInstance().proxy.getGeneralCfg(hero_type);
+        if (!cfg) return this._nameObj[key] + ": 0.00";
+        var str = GeneralData.getPrStr(cfg[key], this._addPrObj[key], this._currData.level, cfg[key + "_grow"]);
         return this._nameObj[key] + ":" + str;
     }
 

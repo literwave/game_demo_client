@@ -92,7 +92,7 @@ export class GeneralData {
         data.state = serverData.state;
 
         data.config = generalCfg || (typeof GeneralCommand !== 'undefined' && GeneralCommand.getInstance() ? GeneralCommand.getInstance().proxy.getGeneralCfg(data.hero_type) : null) || new GeneralConfig();
-        data.skills = serverData.skillList;
+        data.skills = serverData.skillList || [];
 
         data.force_added = serverData.force_added || 0;
         data.strategy_added = serverData.strategy_added || 0;
@@ -103,6 +103,11 @@ export class GeneralData {
         data.physical_power = serverData.physical_power || 0;
 
         return data;
+    }
+
+    public static getPrStr(base: number, added: number, level: number, grow: number): string {
+        let val = (base + added + (level - 1) * grow) / 100;
+        return val.toFixed(2);
     }
 }
 
@@ -157,19 +162,6 @@ export default class GeneralProxy {
         this.initHeroConfig(cfgs, bCost);
     }
 
-    public initLevelConfig(levelJson: any): void {
-        this._levelConfigs = [];
-        if (levelJson && levelJson.levels) {
-            for (let i = 0; i < levelJson.levels.length; i++) {
-                let cfg = new GenaralLevelConfig();
-                cfg.level = levelJson.levels[i].level;
-                cfg.exp = levelJson.levels[i].exp;
-                cfg.soldiers = levelJson.levels[i].soldiers;
-                this._levelConfigs.push(cfg);
-            }
-        }
-    }
-
     public initGeneralTex(texs: SpriteFrame[]): void {
         this._heroTexs.clear();
         const nameMap: Map<string, SpriteFrame> = new Map();
@@ -220,7 +212,7 @@ export default class GeneralProxy {
     }
 
     public getMaxLevel(): number {
-        return this._levelConfigs.length;
+        return this._levelConfigs.length || 50; // 默认最大50级
     }
 
     public getGeneralAllCfg(): Map<string, GeneralConfig> {

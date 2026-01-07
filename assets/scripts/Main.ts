@@ -109,17 +109,9 @@ export default class Main extends Component {
     protected onEnterMap(): void {
         let dataList: LoadData[] = [];
         // INDEX 0: 地图数据
-        dataList.push(new LoadData("./world/map", LoadDataType.FILE, TiledMapAsset));
-        // INDEX 1: 地图资源配置
-        dataList.push(new LoadData("./config/mapRes_0", LoadDataType.FILE, JsonAsset));
-        // INDEX 2: 设施配置
-        dataList.push(new LoadData("./config/json/facility/", LoadDataType.DIR, JsonAsset));
-        // INDEX 3: 基础配置
-        dataList.push(new LoadData("./config/basic", LoadDataType.FILE, JsonAsset));
-        // INDEX 4: 测试目录 (包含 Hero.json)
-        dataList.push(new LoadData("./config/json/test/", LoadDataType.DIR, JsonAsset));
-        // INDEX 5: 将领基础配置
-        dataList.push(new LoadData("./config/json/general/general_basic", LoadDataType.FILE, JsonAsset));
+        dataList.push(new LoadData("world/map", LoadDataType.FILE, TiledMapAsset));
+        // INDEX 1: 配置目录 (包含 Hero.json, mapRes_0.json 等)
+        dataList.push(new LoadData("config", LoadDataType.DIR, JsonAsset));
 
         this.addLoadingNode();
 
@@ -134,40 +126,27 @@ export default class Main extends Component {
                 }
 
                 const tiledMap = datas[0] as TiledMapAsset;
-                const mapResCfg = (datas[1] as JsonAsset).json;
-                const facilityCfgs = datas[2];
-                const basicCfg = (datas[3] as JsonAsset).json;
-                const testCfgs = datas[4] as any[];
-                const levelCfg = (datas[5] as JsonAsset).json;
+                const configAssets = datas[1] as JsonAsset[];
 
-                // 1. 初始化地图
+                // 1. 初始化 ConfigManager
+                ConfigManager.getInstance().loadConfigs(configAssets);
+
+                // 2. 从 ConfigManager 获取特定配置
+                const mapResCfg = ConfigManager.getInstance().getConfig("mapRes_0");
+                const heroJson = ConfigManager.getInstance().getConfig("Hero");
+                const basicCfg = ConfigManager.getInstance().getConfig("Global");
+
+                // 3. 初始化地图
                 MapCommand.getInstance().proxy.tiledMapAsset = tiledMap;
                 MapCommand.getInstance().proxy.initMapResConfig(mapResCfg);
 
-                // 2. 初始化核心配置
-                MapUICommand.getInstance().proxy.setAllFacilityCfg(facilityCfgs);
-                MapUICommand.getInstance().proxy.setBasic(datas[3] as JsonAsset);
-
-                // 从 test 目录中查找 Hero.json 并初始化
-                let heroJson = null;
-                testCfgs.forEach(asset => {
-                    const aName = (asset.name || asset._name || "").toLowerCase();
-                    if (aName === "hero" || aName.endsWith("/hero")) {
-                        heroJson = asset.json;
-                    }
-                });
+                // // 4. 初始化核心配置 Proxy
+                // MapUICommand.getInstance().proxy.setAllFacilityCfg(configAssets);
+                MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
 
                 if (heroJson) {
                     GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
-                } else {
-                    console.warn("未能在 test 目录中找到 Hero.json，请检查文件名！");
                 }
-
-                if (levelCfg) {
-                    GeneralCommand.getInstance().proxy.initLevelConfig(levelCfg);
-                }
-
-                ConfigManager.getInstance().loadConfigs(testCfgs);
 
                 // 3. 全局设置
                 const globalWarFree = ConfigManager.getInstance().getConfigItem("Global", "3");
@@ -292,7 +271,7 @@ export default class Main extends Component {
 
         if (msg.code == -1 || msg.code == -2 || msg.code == -3 || msg.code == -4) {
             if (this._retryTimes < 3) {
-                LoginCommand.getInstance().role_enterServer(LoginCommand.getInstance().proxy.getSession(), false);
+                LoginCommand.getInstance().role_enterServer(LoginCommand.getInstance().proxy.getSession());
                 this._retryTimes += 1;
                 return
             }

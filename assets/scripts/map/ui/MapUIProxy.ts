@@ -187,7 +187,7 @@ export default class MapUIProxy {
     protected _facilityAdditionCfg: Map<number, FacilityAdditionCfg> = new Map<number, FacilityAdditionCfg>();//升级加成配置
     protected _warReport: Map<number, WarReport> = new Map<number, WarReport>();
     protected _additions: Map<number, CityAddition> = new Map<number, CityAddition>();
-    protected _basic: Basic
+    protected _basic: Basic = new Basic();
 
     public clearData(): void {
         this._warReport.clear();
@@ -387,9 +387,10 @@ export default class MapUIProxy {
         let otherJsons: any[] = [];//具体升级配置
 
         for (let i: number = 0; i < jsonAssets.length; i++) {
-            if (jsonAssets[i]._name == "facility") {
+            let assetName = jsonAssets[i].name || jsonAssets[i]._name;
+            if (assetName == "facility" || assetName == "BuildingDetail") {
                 mainJson = jsonAssets[i].json;
-            } else if (jsonAssets[i]._name == "facility_addition") {
+            } else if (assetName == "facility_addition" || assetName == "BuildingLv") {
                 additionJson = jsonAssets[i].json;
             } else {
                 otherJsons.push(jsonAssets[i].json);
@@ -497,7 +498,7 @@ export default class MapUIProxy {
     }
 
     public setBasic(data: any): void {
-        this._basic = data.json;
+        this._basic = (data && data.json) ? data.json : new Basic();
     }
 
 
@@ -728,11 +729,11 @@ export default class MapUIProxy {
         var data = this._warReport.get(id);
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
         if (data) {
-            if (data.defense_rid == roleData.rid) {
+            if (data.defense_rid == roleData.userId) {
                 return data.defense_is_read;
             }
 
-            if (data.attack_rid == roleData.rid) {
+            if (data.attack_rid == roleData.userId) {
                 return data.attack_is_read;
             }
 
@@ -743,11 +744,11 @@ export default class MapUIProxy {
 
     public isReadObj(obj: any): boolean {
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
-        if (obj.defense_rid == roleData.rid) {
+        if (obj.defense_rid == roleData.userId) {
             return obj.defense_is_read;
         }
 
-        if (obj.attack_rid == roleData.rid) {
+        if (obj.attack_rid == roleData.userId) {
             return obj.attack_is_read;
         }
 

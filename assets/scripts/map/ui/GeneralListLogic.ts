@@ -51,11 +51,9 @@ export default class GeneralListLogic extends Component {
     }
 
     protected initGeneralCfg(): void {
-        console.log("initGeneralCfg", MapUICommand.getInstance().proxy.getBasicGeneral());
-        var basic = MapUICommand.getInstance().proxy.getBasicGeneral();
+        var limit = 100;
         var cnt = GeneralCommand.getInstance().proxy.getMyActiveGeneralCnt();
-        console.log("asd", cnt, basic.limit);
-        this.cntLab.string = "(" + cnt + "/" + basic.limit + ")";
+        this.cntLab.string = "(" + cnt + "/" + limit + ")";
 
         let list: any[] = GeneralCommand.getInstance().proxy.getUseGenerals();
         let listTemp = list.concat();

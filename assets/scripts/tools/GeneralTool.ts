@@ -18,8 +18,8 @@ export default class GeneralTool extends Component {
 
     @property(Node)
     generalParentNode: Node = null;
-    
-    
+
+
     @property(Node)
     opNode: Node = null;
 
@@ -82,24 +82,39 @@ export default class GeneralTool extends Component {
     protected _curIndex = 0;
 
     protected onLoad(): void {
-        
+
         this.tipsLab.string = "加载中...";
         this.opNode.active = false;
 
         let dataList: LoadData[] = [];
-        dataList.push(new LoadData("./config/json/general/", LoadDataType.DIR, JsonAsset));
-        dataList.push(new LoadData("./generalpic", LoadDataType.DIR, SpriteFrame));
-        dataList.push(new LoadData("./config/basic", LoadDataType.FILE, JsonAsset));
-    
+        // 加载整个 config 目录（包含 Hero.json）
+        dataList.push(new LoadData("config", LoadDataType.DIR, JsonAsset));
+        dataList.push(new LoadData("generalpic", LoadDataType.DIR, SpriteFrame));
+
         LoaderManager.getInstance().startLoadList(dataList, null,
             (error: Error, paths: string[], datas: any[]) => {
                 if (error != null) {
-                    console.log("加载配置文件失败");
+                    console.log("加载配置文件失败", error);
                     return;
                 }
                 console.log("loadComplete", paths, datas);
- 
-                GeneralCommand.getInstance().proxy.initGeneralConfig(datas[0],(datas[2] as JsonAsset).json);
+
+                const configAssets = datas[0] as JsonAsset[];
+                // 从配置资产中找到 Hero.json
+                let heroJson = null;
+                configAssets.forEach(asset => {
+                    if (asset.name === "Hero") {
+                        heroJson = asset.json;
+                    }
+                });
+
+                if (!heroJson) {
+                    console.error("未找到 Hero.json 配置文件");
+                    return;
+                }
+
+                // basic 配置已删除，传递空对象
+                GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, {});
                 GeneralCommand.getInstance().proxy.initGeneralTex(datas[1]);
 
                 this.loadFinish();
@@ -107,10 +122,10 @@ export default class GeneralTool extends Component {
             this
         );
 
-        
+
     }
 
-    protected loadFinish(): void{
+    protected loadFinish(): void {
         this.opNode.active = true;
         this.tipsLab.string = "";
         this._isLoading = false;
@@ -119,38 +134,38 @@ export default class GeneralTool extends Component {
         this._cfgs = Array.from(cfgs.values());
         this._cfgs.sort(this.sortStar);
 
-        
+
         var probability: number = 100;
         for (let index = 0; index < this._cfgs.length; index++) {
             var e = this._cfgs[index];
-            if (e.star == 5){
+            if (e.star == 5) {
                 probability = Math.floor(Math.random() * 20) + 5;
-            }else if(e.star == 4){
+            } else if (e.star == 4) {
                 probability = Math.floor(Math.random() * 30) + 20;
-            }else if(e.star == 3){
+            } else if (e.star == 3) {
                 probability = Math.floor(Math.random() * 200) + 300;
-            }else if(e.star == 2){
+            } else if (e.star == 2) {
                 probability = Math.floor(Math.random() * 200) + 400;
-            }else if(e.star == 1){
+            } else if (e.star == 1) {
                 probability = Math.floor(Math.random() * 200) + 500;
             }
             e.probability = probability;
         }
-        
+
 
         this.show(this._curIndex);
     }
 
-    protected show(idx:number):void {
-       
-        if(this._cfgs.length > 0){
-            if(idx < 0){
-                idx = this._cfgs.length-1
-            }else if(idx >= this._cfgs.length){
+    protected show(idx: number): void {
+
+        if (this._cfgs.length > 0) {
+            if (idx < 0) {
+                idx = this._cfgs.length - 1
+            } else if (idx >= this._cfgs.length) {
                 idx = 0
             }
 
-            if(this._generalNode == null){
+            if (this._generalNode == null) {
                 var g = instantiate(this.generalRoster);
                 g.parent = this.generalParentNode;
                 this._generalNode = g;
@@ -175,17 +190,17 @@ export default class GeneralTool extends Component {
             this.gcAddEditBox.string = (cfg.defense_grow / 100) + "";
 
             this.costEditBox.string = cfg.cost + "";
-            this.toggleCampGroup.toggleItems[cfg.camp-1].isChecked = true;
+            this.toggleCampGroup.toggleItems[cfg.camp - 1].isChecked = true;
 
             console.log("cfg.arms:", cfg);
-            if(cfg.arms[0] == 1){
+            if (cfg.arms[0] == 1) {
                 this.toggleArmGroup.toggleItems[0].isChecked = true;
-            }else if(cfg.arms[0] == 2){
+            } else if (cfg.arms[0] == 2) {
                 this.toggleArmGroup.toggleItems[1].isChecked = true;
-            }else {
+            } else {
                 this.toggleArmGroup.toggleItems[2].isChecked = true;
             }
-            
+
         }
     }
 
@@ -196,56 +211,56 @@ export default class GeneralTool extends Component {
         this._cfgs[this._curIndex].name = this.nameEditBox.string;
 
         var xj = parseInt(this.xjEditBox.string);
-        if(0 < xj && xj <= 5){
+        if (0 < xj && xj <= 5) {
             this._cfgs[this._curIndex].star = xj;
-        } 
+        }
 
-        this._cfgs[this._curIndex].force = parseInt(this.wlEditBox.string)*100;
-        this._cfgs[this._curIndex].strategy = parseInt(this.mlEditBox.string)*100;
-        this._cfgs[this._curIndex].defense = parseInt(this.fyEditBox.string)*100;
-        this._cfgs[this._curIndex].speed = parseInt(this.sdEditBox.string)*100;
-        this._cfgs[this._curIndex].destroy = parseInt(this.gcEditBox.string)*100;
+        this._cfgs[this._curIndex].force = parseInt(this.wlEditBox.string) * 100;
+        this._cfgs[this._curIndex].strategy = parseInt(this.mlEditBox.string) * 100;
+        this._cfgs[this._curIndex].defense = parseInt(this.fyEditBox.string) * 100;
+        this._cfgs[this._curIndex].speed = parseInt(this.sdEditBox.string) * 100;
+        this._cfgs[this._curIndex].destroy = parseInt(this.gcEditBox.string) * 100;
 
-        this._cfgs[this._curIndex].force_grow = Number(this.wlAddEditBox.string)*100;
-        this._cfgs[this._curIndex].strategy_grow = Number(this.mlAddEditBox.string)*100;
-        this._cfgs[this._curIndex].defense_grow = Number(this.fyAddEditBox.string)*100;
-        this._cfgs[this._curIndex].speed_grow = Number(this.sdAddEditBox.string)*100;
-        this._cfgs[this._curIndex].destroy_grow = Number(this.gcAddEditBox.string)*100;
+        this._cfgs[this._curIndex].force_grow = Number(this.wlAddEditBox.string) * 100;
+        this._cfgs[this._curIndex].strategy_grow = Number(this.mlAddEditBox.string) * 100;
+        this._cfgs[this._curIndex].defense_grow = Number(this.fyAddEditBox.string) * 100;
+        this._cfgs[this._curIndex].speed_grow = Number(this.sdAddEditBox.string) * 100;
+        this._cfgs[this._curIndex].destroy_grow = Number(this.gcAddEditBox.string) * 100;
 
         this._cfgs[this._curIndex].cost = parseInt(this.costEditBox.string);
 
         var items = this.toggleCampGroup.toggleItems;
         for (let index = 0; index < items.length; index++) {
             let item = items[index];
-            if(item.isChecked){
-                this._cfgs[this._curIndex].camp = index+1;
+            if (item.isChecked) {
+                this._cfgs[this._curIndex].camp = index + 1;
             }
         }
 
         var items2 = this.toggleArmGroup.toggleItems;
         for (let index = 0; index < items2.length; index++) {
             let item = items2[index];
-            if(item.isChecked){
-                if(index == 0){
-                    this._cfgs[this._curIndex].arms = [1,4,7];
-                }else if(index == 1){
-                    this._cfgs[this._curIndex].arms = [2,5,8];
-                }else{
-                    this._cfgs[this._curIndex].arms = [3,6,9];
+            if (item.isChecked) {
+                if (index == 0) {
+                    this._cfgs[this._curIndex].arms = [1, 4, 7];
+                } else if (index == 1) {
+                    this._cfgs[this._curIndex].arms = [2, 5, 8];
+                } else {
+                    this._cfgs[this._curIndex].arms = [3, 6, 9];
                 }
             }
         }
     }
-    
+
     protected onClickMake(): void {
-        
-        if(this._isLoading){
+
+        if (this._isLoading) {
             return
         }
 
         this.refresh();
 
-        if (this.outDirEditBox.string == ""){
+        if (this.outDirEditBox.string == "") {
             this.tipsLab.string = "请输入生成输出目录";
             return
         }
@@ -256,7 +271,7 @@ export default class GeneralTool extends Component {
         }
 
         var path = this.outDirEditBox.string;
-        if(jsb.fileUtils.isDirectoryExist(path) == false){
+        if (jsb.fileUtils.isDirectoryExist(path) == false) {
             this.tipsLab.string = "目录不存在";
             return
         }
@@ -264,43 +279,43 @@ export default class GeneralTool extends Component {
         var obj = Object();
         obj.title = "武将配置";
         obj.list = this._cfgs
-       
+
         var str = JSON.stringify(obj, null, "\t");
         jsb.fileUtils.writeStringToFile(str, path + "/general.json");
-        
+
         this.tipsLab.string = "保存成功";
     }
 
-    
+
     protected onClickPre(): void {
-        if(this._isLoading){
+        if (this._isLoading) {
             return
         }
 
         this.refresh();
 
-        this._curIndex-=1;
+        this._curIndex -= 1;
         this.show(this._curIndex);
     }
 
     protected onClickNext(): void {
-        if(this._isLoading){
+        if (this._isLoading) {
             return
         }
 
         this.refresh();
-        this._curIndex+=1;
+        this._curIndex += 1;
         this.show(this._curIndex);
     }
 
 
     protected sortStar(a: GeneralConfig, b: GeneralConfig): number {
 
-        if(a.star < b.star){
+        if (a.star < b.star) {
             return 1;
-        }else if(a.star == b.star){
-            return a.cfgId - b.cfgId;
-        }else{
+        } else if (a.star == b.star) {
+            return 1
+        } else {
             return -1;
         }
     }
