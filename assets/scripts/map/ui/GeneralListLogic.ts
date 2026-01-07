@@ -13,23 +13,23 @@ import { LogicEvent } from '../../common/LogicEvent';
 export default class GeneralListLogic extends Component {
 
     @property(ScrollView)
-    scrollView:ScrollView = null;
+    scrollView: ScrollView = null;
 
     @property(Label)
-    cntLab:Label = null;
+    cntLab: Label = null;
 
-    private _cunGeneral:number[] = [];
-    private _type:number = 0;
-    private _position:number = 0;
+    private _cunGeneral: number[] = [];
+    private _type: number = 0;
+    private _position: number = 0;
 
-    protected onEnable():void{
+    protected onEnable(): void {
         EventMgr.on(LogicEvent.updateMyGenerals, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.generalConvert, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.chosedGeneral, this.onClickClose, this);
     }
 
 
-    protected onDisable():void{
+    protected onDisable(): void {
         EventMgr.targetOff(this);
     }
 
@@ -50,13 +50,14 @@ export default class GeneralListLogic extends Component {
         this.node.active = false;
     }
 
-    protected initGeneralCfg():void{
-
+    protected initGeneralCfg(): void {
+        console.log("initGeneralCfg", MapUICommand.getInstance().proxy.getBasicGeneral());
         var basic = MapUICommand.getInstance().proxy.getBasicGeneral();
         var cnt = GeneralCommand.getInstance().proxy.getMyActiveGeneralCnt();
+        console.log("asd", cnt, basic.limit);
         this.cntLab.string = "(" + cnt + "/" + basic.limit + ")";
 
-        let list:any[] = GeneralCommand.getInstance().proxy.getUseGenerals();
+        let list: any[] = GeneralCommand.getInstance().proxy.getUseGenerals();
         let listTemp = list.concat();
 
 
@@ -66,9 +67,9 @@ export default class GeneralListLogic extends Component {
         })
 
 
-        for(var i = 0; i < listTemp.length ;i++){
-            if(this._cunGeneral.indexOf(listTemp[i].id) >= 0 ){
-                listTemp.splice(i,1);
+        for (var i = 0; i < listTemp.length; i++) {
+            if (this._cunGeneral.indexOf(listTemp[i].id) >= 0) {
+                listTemp.splice(i, 1);
                 i--;
             }
         }
@@ -79,12 +80,12 @@ export default class GeneralListLogic extends Component {
 
 
 
-    public setData(data:number[],type:number = 0,position:number = 0):void{
+    public setData(data: number[], type: number = 0, position: number = 0): void {
         this._cunGeneral = [];
-        if(data && data.length > 0){
+        if (data && data.length > 0) {
             this._cunGeneral = data;
         }
-        
+
         this._type = type;
         this._position = position;
 

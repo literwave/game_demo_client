@@ -1,5 +1,5 @@
 import { _decorator } from 'cc';
-import { Basic, Conscript, General } from "../../config/Basci";
+import { Basic, Build, Conscript, General } from "../../config/Basci";
 import LoginCommand from "../../login/LoginCommand";
 import DateUtil from "../../utils/DateUtil";
 import MapUICommand from "./MapUICommand";
@@ -14,8 +14,8 @@ export class CityAddition {
     wei: number = 0;//魏阵营加成
     shu: number = 0;//蜀阵营加成
     wu: number = 0;//吴阵营加成
-    taxRate:number = 0;//交换的税率
-    durable:number = 0;//耐久
+    taxRate: number = 0;//交换的税率
+    durable: number = 0;//耐久
 
 
     public clear(): void {
@@ -65,22 +65,22 @@ export class CityAdditionType {
 export class Facility {
     level: number = 0;
     type: number = 0;
-    upTime:number = 0;  //升级的时间，0为该等级已经升级成功
+    upTime: number = 0;  //升级的时间，0为该等级已经升级成功
 
-    public isUping(): boolean{
+    public isUping(): boolean {
         return this.upLastTime() > 0
     }
 
-    public isNeedUpdateLevel(): boolean{
+    public isNeedUpdateLevel(): boolean {
         return this.upLastTime() < 0
     }
 
-    public upLastTime(): number{
-        if(this.upTime > 0){
-            let cfg:FacilityConfig = MapUICommand.getInstance().proxy.getFacilityCfgByType(this.type);
+    public upLastTime(): number {
+        if (this.upTime > 0) {
+            let cfg: FacilityConfig = MapUICommand.getInstance().proxy.getFacilityCfgByType(this.type);
             var costTime = cfg.upLevels[this.level].time;
-            return DateUtil.leftTime((this.upTime+costTime)*1000);
-        }else{
+            return DateUtil.leftTime((this.upTime + costTime) * 1000);
+        } else {
             return 0;
         }
     }
@@ -118,7 +118,7 @@ export class FacilityUpLevel {
     stone: number = 0;
     grain: number = 0;
     decree: number = 0;
-    time:number = 0;
+    time: number = 0;
 }
 
 export class BasicGeneral {
@@ -156,14 +156,14 @@ export class WarReport {
 }
 
 export class WarReportSkill {
-    fromId:number
-    toId:number[]
-    cfgId:number
-    lv:number
-    includeEffect:number[]
-    effectValue:number[]//效果值
-	effectRound:number[]//效果持续回合数
-    kill:number[] //技能死数量
+    fromId: number
+    toId: number[]
+    cfgId: number
+    lv: number
+    includeEffect: number[]
+    effectValue: number[]//效果值
+    effectRound: number[]//效果持续回合数
+    kill: number[] //技能死数量
 }
 
 export class WarReportRound {
@@ -175,9 +175,9 @@ export class WarReportRound {
     defenseLoss: number = 0;
     round: number = 0;
     turn: number = 0;
-    attackBefore:WarReportSkill[] = [];
-    attackAfter:WarReportSkill[] = [];
-    defenseAfter:WarReportSkill[] = [];
+    attackBefore: WarReportSkill[] = [];
+    attackAfter: WarReportSkill[] = [];
+    defenseAfter: WarReportSkill[] = [];
 }
 
 
@@ -200,7 +200,6 @@ export default class MapUIProxy {
      * @param data 
      */
     public updateMyFacilityList(cityId: number, datas: any[]): void {
-        console.log("updateMyFacilityList:", datas);
         let list: Map<number, Facility> = new Map<number, Facility>();
         this._myFacility.set(cityId, list);
         for (var i = 0; i < datas.length; i++) {
@@ -211,11 +210,10 @@ export default class MapUIProxy {
             list.set(obj.type, obj);
         }
 
-        console.log("list:", list);
+
     }
 
     public updateMyFacility(cityId: number, data: any): Facility {
-        console.log("updateMyFacility:", data);
         if (this._myFacility.has(cityId)) {
             let list: Map<number, Facility> = this._myFacility.get(cityId);
             let facilityData: Facility = list.get(data.type);
@@ -321,7 +319,7 @@ export default class MapUIProxy {
                     }
                 }
             });
-            console.log("updateMyCityAdditions", cityId, addition);
+
             return addition;
         }
         return null;
@@ -362,20 +360,18 @@ export default class MapUIProxy {
         return addition;
     }
 
-    public getMyCityCost(cityId: number):number{
+    public getMyCityCost(cityId: number): number {
         let addition = this.getMyCityAddition(cityId);
-        console.log("getMyCityCost:", cityId, addition, this._basic.city.cost);
         return addition.cost + this._basic.city.cost;
     }
 
     //最大耐久
-    public getMyCityMaxDurable(cityId: number):number{
+    public getMyCityMaxDurable(cityId: number): number {
         let addition = this.getMyCityAddition(cityId);
-        console.log("getMyCityMaxDurable:", cityId, addition, this._basic.city.durable);
         return addition.durable + this._basic.city.durable;
     }
 
-    public getTransformRate():number {
+    public getTransformRate(): number {
         return this._basic.city.transform_rate
     }
 
@@ -399,7 +395,7 @@ export default class MapUIProxy {
                 otherJsons.push(jsonAssets[i].json);
             }
         }
-        console.log("mainJson", mainJson, additionJson);
+
         if (mainJson != null && additionJson != null) {
             //主配置存在才处理配置文件
             this._facilityCfg.clear();
@@ -423,7 +419,7 @@ export default class MapUIProxy {
             for (let i: number = 0; i < otherJsons.length; i++) {
                 this.getFacilityUpLevelJsonList(otherJsons[i], jsonList);
             }
-            console.log("jsonList", jsonList, otherJsons);
+
 
             for (let i: number = 0; i < jsonList.length; i++) {
                 let type: number = jsonList[i].type;
@@ -458,9 +454,9 @@ export default class MapUIProxy {
                 }
             }
         }
-        this._facilityCfg.forEach((value: FacilityConfig, key: number) => {
-            console.log("this._facilityCfg", key, value);
-        });
+        //        this._facilityCfg.forEach((value: FacilityConfig, key: number) => {
+        //            console.log("this._facilityCfg", key, value);
+        //        });
     }
 
     protected getFacilityUpLevelJsonList(data: any, list: any[]): void {
@@ -502,7 +498,6 @@ export default class MapUIProxy {
 
     public setBasic(data: any): void {
         this._basic = data.json;
-        console.log("setBasic:", this._basic);
     }
 
 
@@ -510,13 +505,16 @@ export default class MapUIProxy {
         return this._basic.conscript;
     }
 
-    public getDefenseSoldiers(level:number): number {
-        console.log("getDefenseSoldiers:", level);
-        return this._basic.npc.levels[level-1].soilders
+    public getDefenseSoldiers(level: number): number {
+        return this._basic.npc.levels[level - 1].soilders
     }
 
     public getBasicGeneral(): General {
         return this._basic.general;
+    }
+
+    public getBasicBuild(): Build {
+        return this._basic.build;
     }
 
 
@@ -535,7 +533,7 @@ export default class MapUIProxy {
 
 
     protected createWarReprot(data: any): WarReport {
-       
+
         var obj = new WarReport();
         obj.id = data.id;
         obj.attack_rid = data.a_rid;
@@ -545,7 +543,7 @@ export default class MapUIProxy {
         obj.end_attack_general = this.arrayToObject(JSON.parse(data.e_a_general));
         obj.end_attack_army = JSON.parse(data.e_a_army);
         obj.beg_attack_army = JSON.parse(data.b_a_army);
-      
+
         try {
             obj.beg_defense_army = JSON.parse(data.b_d_army);
             obj.end_defense_army = JSON.parse(data.e_d_army);
@@ -554,8 +552,8 @@ export default class MapUIProxy {
             obj.rounds = this.createRoundsData(data.rounds, obj.beg_attack_general, obj.beg_defense_general)
         } catch (error) {
             console.log("createWarReprot:", error);
-        } 
-        
+        }
+
 
         obj.result = data.result;
         obj.defense_is_read = data.d_is_read;
@@ -579,8 +577,8 @@ export default class MapUIProxy {
         var rounds: any[] = JSON.parse(data);
         for (var i = 0; i < rounds.length; i++) {
             var round: any[] = rounds[i].b;
-            
-            if(!round){
+
+            if (!round) {
                 continue;
             }
 
@@ -596,7 +594,7 @@ export default class MapUIProxy {
                 obj.isAttack = this.getMatchGeneral(attack_generals, attack_id) != null;
                 obj.defenseLoss = defense_loss;
 
-                if(turn.a_bs){
+                if (turn.a_bs) {
                     var a_bs = turn.a_bs;
                     for (let index = 0; index < a_bs.length; index++) {
                         let s = a_bs[index];
@@ -611,10 +609,10 @@ export default class MapUIProxy {
                         wrs.kill = s.kill;
                         obj.attackBefore.push(wrs);
                     }
-                   
+
                 }
 
-                if(turn.a_as){
+                if (turn.a_as) {
                     var a_as = turn.a_as;
                     for (let index = 0; index < a_as.length; index++) {
                         let s = a_as[index];
@@ -631,7 +629,7 @@ export default class MapUIProxy {
                     }
                 }
 
-                if(turn.d_as){
+                if (turn.d_as) {
                     var d_as = turn.d_as;
                     for (let index = 0; index < d_as.length; index++) {
                         let s = d_as[index];
@@ -655,7 +653,7 @@ export default class MapUIProxy {
 
         }
 
-  
+
         return _list;
     }
 
@@ -704,12 +702,12 @@ export default class MapUIProxy {
         var data = this._warReport.get(id);
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
         if (data) {
-            if (data.defense_rid == roleData.rid) {
+            if (data.defense_rid == roleData.userId) {
                 data.defense_is_read = isRead;
                 data.is_read = isRead;
             }
 
-            if (data.attack_rid == roleData.rid) {
+            if (data.attack_rid == roleData.userId) {
                 data.attack_is_read = isRead;
                 data.is_read = isRead;
             }

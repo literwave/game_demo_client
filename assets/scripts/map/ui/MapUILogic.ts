@@ -541,6 +541,7 @@ export default class MapUILogic extends Component {
 
     protected updateRole(): void {
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
+        console.log("updateRole", roleData);
         this.nameLabel.string = "昵称: " + roleData.name;
         this.ridLabel.string = "角色ID: " + roleData.userId + "";
     }

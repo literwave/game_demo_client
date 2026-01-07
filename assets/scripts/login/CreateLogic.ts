@@ -35,11 +35,8 @@ export default class CreateLogic extends Component {
     }
 
 
-    protected create(data): void {
-        console.log("create:", data);
-        if (data.code == 0) {
-            this.node.active = false;
-        }
+    protected create(): void {
+        this.node.active = false;
     }
 
     protected onRandomName(): void {

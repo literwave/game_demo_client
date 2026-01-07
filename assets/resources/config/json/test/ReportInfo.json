@@ -1,0 +1,8 @@
+{
+    "100": {
+        "LoginDomain": "chaoxi-dev2.rastargame.com",
+        "StateDomain": "chaoxi-dev2.rastargame.com",
+        "HttpPort": 8527,
+        "HttpsPort": 8528
+    }
+}

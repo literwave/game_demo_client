@@ -43,9 +43,6 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_req_user_res, this.onGetUserRes, this);
         EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
 
-        EventMgr.on(ServerConfig.s2c_req_all_hero_base_info, this.onGetHeroData, this);
-
-
         EventMgr.on(ServerConfig.account_reLogin, this.onAccountRelogin, this);
         EventMgr.on(ServerConfig.account_logout, this.onAccountLogout, this);
         EventMgr.on(ServerConfig.account_robLogin, this.onAccountRobLogin, this)
@@ -71,6 +68,9 @@ export default class LoginCommand {
             EventMgr.emit(LogicEvent.createRole);
         }
         else {
+            data.userId = this._proxy.getLoginData().userId;
+            console.log("LoginProxy  getUserBaseInfo userId:", data, this._proxy.getLoginData());
+            this._proxy.saveEnterData(data);
             EventMgr.emit(LogicEvent.enterMap);
         }
         var msgName = ServerConfig.c2s_req_user_res;
@@ -96,7 +96,7 @@ export default class LoginCommand {
         this.makeSureAllDataReady()
     }
 
-    /**英雄数据 */
+    /**拿到玩家资源数据和玩家数据才加载界面 */
     private makeSureAllDataReady(): void {
         console.log("LoginProxy  makeSureAllDataReady:");
         if (this._proxy.getRoleResData() && this._proxy.getRoleData()) {
@@ -105,12 +105,6 @@ export default class LoginCommand {
         if (this.isAllReady) {
             EventMgr.emit(LogicEvent.enterMap);
         }
-    }
-
-    /**英雄数据 */
-    private onGetHeroData(data: any): void {
-        console.log("LoginProxy  onGetHeroData:", data);
-        this.makeSureAllDataReady()
     }
 
     /**创建玩家*/
@@ -140,6 +134,7 @@ export default class LoginCommand {
         console.log("LoginProxy  enter:", data);
         // MapCommand.getInstance()
         // EventMgr.emit(LogicEvent.enterMap);
+        this._proxy.setLoginDataUserAndServerId(data);
 
         var msgName = ServerConfig.c2s_user_base_info;
 
@@ -188,10 +183,9 @@ export default class LoginCommand {
     /**登出回调*/
     private onAccountLogout(data: any): void {
         //重换成功再次调用
-        if (data.code == 0) {
-            this._proxy.clear();
-            EventMgr.emit(LogicEvent.enterLogin);
-        }
+        this._proxy.clear();
+        EventMgr.emit(LogicEvent.enterLogin);
+
     }
 
 

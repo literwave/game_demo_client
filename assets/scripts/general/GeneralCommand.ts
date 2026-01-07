@@ -3,6 +3,7 @@ import { NetManager } from "../network/socket/NetManager";
 import GeneralProxy from "./GeneralProxy";
 import { EventMgr } from "../utils/EventMgr";
 import { LogicEvent } from "../common/LogicEvent";
+import { ProtoManager } from "../network/pto/ProtoManager";
 
 export default class GeneralCommand {
     //单例
@@ -27,16 +28,16 @@ export default class GeneralCommand {
     protected _proxy: GeneralProxy = new GeneralProxy();
 
     constructor() {
-        EventMgr.on(ServerConfig.general_myGenerals, this.onMyGenerals, this);
+        EventMgr.on(ServerConfig.s2c_req_all_hero_base_info, this.onMyGenerals, this);
         EventMgr.on(ServerConfig.general_push, this.onGeneralPush, this);
         EventMgr.on(ServerConfig.general_drawGeneral, this.onDrawGenerals, this);
         EventMgr.on(ServerConfig.general_composeGeneral, this.onComposeGeneral, this);
         EventMgr.on(ServerConfig.general_addPrGeneral, this.onAddPrGeneral, this);
-        EventMgr.on(ServerConfig.general_convert, this.onGeneralConvert , this);
+        EventMgr.on(ServerConfig.general_convert, this.onGeneralConvert, this);
         EventMgr.on(ServerConfig.general_upSkill, this.onUpSkill, this);
         EventMgr.on(ServerConfig.general_downSkill, this.onDownSkill, this);
         EventMgr.on(ServerConfig.general_lvSkill, this.onLvSkill, this);
-        
+
 
     }
 
@@ -53,24 +54,20 @@ export default class GeneralCommand {
     }
 
     /**我的将领列表*/
-    protected onMyGenerals(data: any): void {
-        console.log("onMyGeneralsonMyGenerals ", data);
-        if (data.code == 0) {
-            this._proxy.updateMyGenerals(data.msg.generals);
-            EventMgr.emit(LogicEvent.updateMyGenerals);
-        }
+    protected onMyGenerals(data: any): void {   
+        this._proxy.updateMyGenerals(data.heroInfoList);
+        EventMgr.emit(LogicEvent.updateMyGenerals);
+
     }
 
     protected onGeneralPush(data: any): void {
-        console.log("onGeneralPush ", data);
-        if (data.code == 0) {
-            this._proxy.updateGeneral(data.msg);
-            EventMgr.emit(LogicEvent.updateGeneral);
-        }
+
+        this._proxy.updateGeneral(data.msg);
+        EventMgr.emit(LogicEvent.updateGeneral);
+        
     }
 
     protected onDrawGenerals(data: any): void {
-        console.log("onDrawGenerals", data);
         if (data.code == 0) {
             this._proxy.updateMyGenerals(data.msg.generals);
             EventMgr.emit(LogicEvent.updateMyGenerals);
@@ -79,7 +76,7 @@ export default class GeneralCommand {
         EventMgr.emit(LogicEvent.hideWaiting);
     }
 
-    protected onComposeGeneral(data:any):void{
+    protected onComposeGeneral(data: any): void {
         console.log("onComposeGeneral ", data);
         if (data.code == 0) {
             this._proxy.updateMyGenerals(data.msg.generals);
@@ -90,15 +87,15 @@ export default class GeneralCommand {
 
 
 
-    protected onAddPrGeneral(data:any):void{
+    protected onAddPrGeneral(data: any): void {
         console.log("onAddPrGeneral ", data);
         if (data.code == 0) {
             this._proxy.updateGeneral(data.msg.general);
-            EventMgr.emit(LogicEvent.updateOneGenerals,data.msg.general);
+            EventMgr.emit(LogicEvent.updateOneGenerals, data.msg.general);
         }
     }
 
-    protected onGeneralConvert(data:any):void{
+    protected onGeneralConvert(data: any): void {
         console.log("onGeneralConvert ", data);
         if (data.code == 0) {
             this._proxy.removeMyGenerals(data.msg.gIds);
@@ -106,21 +103,21 @@ export default class GeneralCommand {
         }
     }
 
-    protected onUpSkill(data:any):void{
+    protected onUpSkill(data: any): void {
         console.log("onUpSkill ", data);
-        
+
     }
 
-    
-    protected onDownSkill(data:any):void{
+
+    protected onDownSkill(data: any): void {
         console.log("onDownSkill ", data);
-       
+
     }
 
-    protected onLvSkill(data:any):void{
+    protected onLvSkill(data: any): void {
         console.log("onLvSkill ", data);
     }
-    
+
 
     /**我的角色属性*/
     public updateMyProperty(datas: any[]): void {
@@ -129,10 +126,18 @@ export default class GeneralCommand {
     }
 
     public qryMyGenerals(): void {
-        let sendData: any = {
-            name: ServerConfig.general_myGenerals,
-            msg: {
-            }
+        var msgName = ServerConfig.c2s_req_all_hero_base_info;
+        var protoData = ProtoManager.getInstance().encode(msgName, {
+        });
+
+        if (!protoData) {
+            console.error("Failed to encode login request");
+            return;
+        }
+
+        var sendData = {
+            name: msgName,
+            msg: protoData, // 这里直接传 Uint8Array
         };
         NetManager.getInstance().send(sendData);
     }
@@ -142,11 +147,11 @@ export default class GeneralCommand {
      * 抽卡
      * @param drawTimes 
      */
-    public drawGenerals(drawTimes:number = 1): void {
+    public drawGenerals(drawTimes: number = 1): void {
         let sendData: any = {
             name: ServerConfig.general_drawGeneral,
             msg: {
-                drawTimes:drawTimes
+                drawTimes: drawTimes
             }
         };
         NetManager.getInstance().send(sendData);
@@ -159,50 +164,50 @@ export default class GeneralCommand {
      * @param compId 
      * @param gIds 
      */
-    public composeGeneral(compId:number = 1,gIds:number[] = []): void {
+    public composeGeneral(compId: number = 1, gIds: number[] = []): void {
         let sendData: any = {
             name: ServerConfig.general_composeGeneral,
             msg: {
-                compId:compId,
-                gIds:gIds
+                compId: compId,
+                gIds: gIds
             }
         };
         NetManager.getInstance().send(sendData);
     }
 
 
-    public addPrGeneral(compId:number = 1,force_add:number,strategy_add:number,defense_add:number,speed_add:number,destroy_add:number): void {
+    public addPrGeneral(compId: number = 1, force_add: number, strategy_add: number, defense_add: number, speed_add: number, destroy_add: number): void {
         let sendData: any = {
             name: ServerConfig.general_addPrGeneral,
             msg: {
-                compId:compId,
-                forceAdd:force_add,
-                strategyAdd:strategy_add,
-                defenseAdd:defense_add,
-                speedAdd:speed_add,
-                destroyAdd:destroy_add
+                compId: compId,
+                forceAdd: force_add,
+                strategyAdd: strategy_add,
+                defenseAdd: defense_add,
+                speedAdd: speed_add,
+                destroyAdd: destroy_add
             }
         };
         NetManager.getInstance().send(sendData);
     }
 
-    public convert(gIds:number[]): void {
+    public convert(gIds: number[]): void {
         let sendData: any = {
             name: ServerConfig.general_convert,
             msg: {
-                gIds:gIds
+                gIds: gIds
             }
         };
         NetManager.getInstance().send(sendData);
     }
 
-    public upSkill(gId:number, cfgId:number, pos:number): void {
+    public upSkill(gId: number, cfgId: number, pos: number): void {
         let sendData: any = {
             name: ServerConfig.general_upSkill,
             msg: {
-                gId:gId,
-                cfgId:cfgId,
-                pos:Number(pos)
+                gId: gId,
+                cfgId: cfgId,
+                pos: Number(pos)
             }
         };
 
@@ -210,25 +215,25 @@ export default class GeneralCommand {
         NetManager.getInstance().send(sendData);
     }
 
-    public downSkill(gId:number, cfgId:number, pos:number): void {
+    public downSkill(gId: number, cfgId: number, pos: number): void {
         let sendData: any = {
             name: ServerConfig.general_downSkill,
             msg: {
-                gId:gId,
-                cfgId:cfgId,
-                pos:Number(pos)
+                gId: gId,
+                cfgId: cfgId,
+                pos: Number(pos)
             }
         };
         NetManager.getInstance().send(sendData);
     }
 
- 
-    public lvSkill(gId:number, pos:number) {
+
+    public lvSkill(gId: number, pos: number) {
         let sendData: any = {
             name: ServerConfig.general_lvSkill,
             msg: {
-                gId:gId,
-                pos:Number(pos)
+                gId: gId,
+                pos: Number(pos)
             }
         };
         NetManager.getInstance().send(sendData);

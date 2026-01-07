@@ -2,7 +2,7 @@ import { _decorator, Component, Label, Layout, Prefab, Node, EventTouch, instant
 const { ccclass, property } = _decorator;
 
 import GeneralCommand from "../../general/GeneralCommand";
-import {GeneralData } from "../../general/GeneralProxy";
+import { GeneralData } from "../../general/GeneralProxy";
 import SkillCommand from "../../skill/SkillCommand";
 import GeneralItemLogic, { GeneralItemType } from "./GeneralItemLogic";
 import SkillIconLogic from "./SkillIconLogic";
@@ -12,16 +12,16 @@ import { LogicEvent } from '../../common/LogicEvent';
 
 @ccclass('GeneralDesLogic')
 export default class GeneralDesLogic extends Component {
-  
+
     @property(Label)
     nameLab: Label = null;
 
     @property(Layout)
-    srollLayout:Layout = null;
+    srollLayout: Layout = null;
 
     @property(Label)
     lvLabel: Label = null;
-    
+
     @property(Label)
     foreLabel: Label = null;
 
@@ -59,94 +59,94 @@ export default class GeneralDesLogic extends Component {
     @property([Label])
     skillNameLab: Label[] = [];
 
-    private _currData:GeneralData = null;
-    private _cfgData:any = null;
+    private _currData: GeneralData = null;
+    private _cfgData: any = null;
 
 
-    private _nameObj:any = {};
-    private _addPrObj:any = {};
-    private _generalNode:Node = null;
+    private _nameObj: any = {};
+    private _addPrObj: any = {};
+    private _generalNode: Node = null;
 
-    protected onEnable(){
+    protected onEnable() {
         EventMgr.on(LogicEvent.updateGeneral, this.updateGeneral, this)
     }
 
-    protected onDisable(){
+    protected onDisable() {
         EventMgr.targetOff(this);
     }
 
-    protected onLoad():void{
+    protected onLoad(): void {
 
         this._nameObj = {
-            force:"武力",
-            strategy:"战略",
-            defense:"防御",
-            speed:"速度",
-            destroy:"破坏",
+            force: "武力",
+            strategy: "战略",
+            defense: "防御",
+            speed: "速度",
+            destroy: "破坏",
         };
-       
+
         this._generalNode = instantiate(this.generalItemPrefab);
         this._generalNode.parent = this.generalItemParent;
     }
 
-    protected updateGeneral(){
+    protected updateGeneral() {
         var data = GeneralCommand.getInstance().proxy.getMyGeneral(this._currData.id);
-        if(data){
+        if (data) {
             this.setData(this._cfgData, data);
         }
     }
 
-    public setData(cfgData:any, curData:GeneralData):void{
+    public setData(cfgData: any, curData: GeneralData): void {
         this._currData = curData;
         this._cfgData = cfgData;
-    
+
         var nextCfg = GeneralCommand.getInstance().proxy.getGeneralLevelCfg(this._currData.level + 1);
-        var levelExp = nextCfg?nextCfg.exp:"MAX";
+        var levelExp = nextCfg ? nextCfg.exp : "MAX";
         var maxLevel: number = GeneralCommand.getInstance().proxy.getMaxLevel();
         this.lvLabel.string = '等级:' + this._currData.level + "/" + maxLevel;
-        this.expLabel.string = "经验:" + curData.exp +"/" + levelExp;
-        
+        this.expLabel.string = "经验:" + curData.exp + "/" + levelExp;
+
         this.nameLab.string = this._cfgData.name;
 
         this._addPrObj = {
-            force:this._currData.force_added,
-            strategy:this._currData.strategy_added,
-            defense:this._currData.defense_added,
-            speed:this._currData.speed_added,
-            destroy:this._currData.destroy_added,
+            force: this._currData.force_added,
+            strategy: this._currData.strategy_added,
+            defense: this._currData.defense_added,
+            speed: this._currData.speed_added,
+            destroy: this._currData.destroy_added,
         };
 
-       
+
         this.foreLabel.string = this.getAttrStr("force");
         this.strategyLabel.string = this.getAttrStr("strategy");
         this.defenseLabel.string = this.getAttrStr("defense");
         this.speedLabel.string = this.getAttrStr("speed");
         this.destroyLabel.string = this.getAttrStr("destroy");
-     
+
         var com = this._generalNode.getComponent(GeneralItemLogic);
-        if(com){
+        if (com) {
             com.updateItem(this._currData);
         }
 
         this.powerLabel.string = "体力:" + curData.physical_power + "/" + cfgData.physical_power_limit;
-        this.costLabel.string = "cost:"+cfgData.cost;
+        this.costLabel.string = "cost:" + cfgData.cost;
 
         for (let index = 0; index < curData.skills.length; index++) {
             let gSkill = curData.skills[index];
             let icon = this.skillIcons[index];
             let iconNameLab = this.skillNameLab[index];
 
-            if(gSkill == null){
+            if (gSkill == null) {
                 icon.getComponent(SkillIconLogic).setData(null, null);
                 iconNameLab.string = "";
-            }else{
-                
+            } else {
+
                 let skillConf = SkillCommand.getInstance().proxy.getSkillCfg(gSkill.cfgId);
                 let skill = SkillCommand.getInstance().proxy.getSkill(gSkill.cfgId);
-                if(skillConf && skill){
+                if (skillConf && skill) {
                     icon.getComponent(SkillIconLogic).setData(skill, gSkill);
                     iconNameLab.string = skillConf.name;
-                }else{
+                } else {
                     icon.getComponent(SkillIconLogic).setData(null, null);
                     iconNameLab.string = "";
                 }
@@ -154,19 +154,19 @@ export default class GeneralDesLogic extends Component {
         }
     }
 
-    private getAttrStr(key: string) :string{
-        var str = GeneralData.getPrStr(this._cfgData[key], this._addPrObj[key], this._currData.level, this._cfgData[key + "_grow"])
+    private getAttrStr(key: string): string {
+        var str = 100
         return this._nameObj[key] + ":" + str;
     }
 
-    protected onClickSkill(event: EventTouch, pos){
+    protected onClickSkill(event: EventTouch, pos) {
         AudioManager.instance.playClick();
         console.log("event", event, pos);
         var node: Node = event.target;
         var isEmpty = node.getComponent(SkillIconLogic).isEmpty();
-        if(isEmpty){
+        if (isEmpty) {
             EventMgr.emit(LogicEvent.openSkill, 1, this._currData, pos);
-        }else{
+        } else {
             let skill = node.getComponent(SkillIconLogic).getSkill();
             EventMgr.emit(LogicEvent.openSkillInfo, skill, 2, this._currData, pos);
         }

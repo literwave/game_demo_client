@@ -3,6 +3,7 @@ const { ccclass, property } = _decorator;
 
 import { GameConfig } from "./config/GameConfig";
 import LoaderManager, { LoadData, LoadDataType } from "./core/LoaderManager";
+import ConfigManager from "./core/ConfigManager";
 import ArmyCommand from "./general/ArmyCommand";
 import GeneralCommand from "./general/GeneralCommand";
 import LoginCommand from "./login/LoginCommand";
@@ -107,60 +108,84 @@ export default class Main extends Component {
 
     protected onEnterMap(): void {
         let dataList: LoadData[] = [];
+        // INDEX 0: 地图数据
         dataList.push(new LoadData("./world/map", LoadDataType.FILE, TiledMapAsset));
+        // INDEX 1: 地图资源配置
         dataList.push(new LoadData("./config/mapRes_0", LoadDataType.FILE, JsonAsset));
+        // INDEX 2: 设施配置
         dataList.push(new LoadData("./config/json/facility/", LoadDataType.DIR, JsonAsset));
-        dataList.push(new LoadData("./config/json/general/", LoadDataType.DIR, JsonAsset));
-
-        if (sys.isBrowser) {
-            dataList.push(new LoadData("./generalpic1", LoadDataType.DIR, SpriteFrame));
-        } else {
-            dataList.push(new LoadData("./generalpic", LoadDataType.DIR, SpriteFrame));
-        }
-
+        // INDEX 3: 基础配置
         dataList.push(new LoadData("./config/basic", LoadDataType.FILE, JsonAsset));
-        dataList.push(new LoadData("./config/json/skill/", LoadDataType.DIR, JsonAsset));
+        // INDEX 4: 测试目录 (包含 Hero.json)
+        dataList.push(new LoadData("./config/json/test/", LoadDataType.DIR, JsonAsset));
+        // INDEX 5: 将领基础配置
+        dataList.push(new LoadData("./config/json/general/general_basic", LoadDataType.FILE, JsonAsset));
 
         this.addLoadingNode();
-        LoaderManager.getInstance().startLoadList(dataList, null,
+
+        LoaderManager.getInstance().startLoadList(dataList,
+            (percent) => {
+                // 进度更新
+            },
             (error: Error, paths: string[], datas: any[]) => {
                 if (error != null) {
-                    console.log("加载配置文件失败");
+                    console.error("启动资源加载失败:", error);
                     return;
                 }
-                MapCommand.getInstance().proxy.tiledMapAsset = datas[0] as TiledMapAsset;
-                MapCommand.getInstance().proxy.initMapResConfig((datas[1] as JsonAsset).json);
 
-                MapUICommand.getInstance().proxy.setAllFacilityCfg(datas[2]);
-                GeneralCommand.getInstance().proxy.initGeneralConfig(datas[3], (datas[5] as JsonAsset).json);
-                GeneralCommand.getInstance().proxy.initGeneralTex(datas[4]);
-                MapUICommand.getInstance().proxy.setBasic(datas[5]);
-                SkillCommand.getInstance().proxy.initSkillConfig(datas[6]);
+                const tiledMap = datas[0] as TiledMapAsset;
+                const mapResCfg = (datas[1] as JsonAsset).json;
+                const facilityCfgs = datas[2];
+                const basicCfg = (datas[3] as JsonAsset).json;
+                const testCfgs = datas[4] as any[];
+                const levelCfg = (datas[5] as JsonAsset).json;
 
-                var d = (datas[5] as JsonAsset).json
-                MapCommand.getInstance().proxy.setWarFree(d["build"].war_free);
+                // 1. 初始化地图
+                MapCommand.getInstance().proxy.tiledMapAsset = tiledMap;
+                MapCommand.getInstance().proxy.initMapResConfig(mapResCfg);
 
-                // let cityId: number = MapCommand.getInstance().cityProxy.getMyMainCity().cityId;
-                // GeneralCommand.getInstance().qryMyGenerals();
-                // ArmyCommand.getInstance().qryArmyList(cityId);
-                // MapUICommand.getInstance().qryWarReport();
-                // SkillCommand.getInstance().qrySkillList();
+                // 2. 初始化核心配置
+                MapUICommand.getInstance().proxy.setAllFacilityCfg(facilityCfgs);
+                MapUICommand.getInstance().proxy.setBasic(datas[3] as JsonAsset);
 
+                // 从 test 目录中查找 Hero.json 并初始化
+                let heroJson = null;
+                testCfgs.forEach(asset => {
+                    const aName = (asset.name || asset._name || "").toLowerCase();
+                    if (aName === "hero" || aName.endsWith("/hero")) {
+                        heroJson = asset.json;
+                    }
+                });
+
+                if (heroJson) {
+                    GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
+                } else {
+                    console.warn("未能在 test 目录中找到 Hero.json，请检查文件名！");
+                }
+
+                if (levelCfg) {
+                    GeneralCommand.getInstance().proxy.initLevelConfig(levelCfg);
+                }
+
+                ConfigManager.getInstance().loadConfigs(testCfgs);
+
+                // 3. 全局设置
+                const globalWarFree = ConfigManager.getInstance().getConfigItem("Global", "3");
+                if (globalWarFree) {
+                    MapCommand.getInstance().proxy.setWarFree(globalWarFree.value1);
+                }
+
+                // 4. 进入场景
+                GeneralCommand.getInstance().qryMyGenerals();
                 this.clearAllScene();
-
-
                 this._mapScene = instantiate(this.mapScenePrefab);
                 this._mapScene.parent = this.node;
 
                 this._mapUIScene = instantiate(this.mapUIScenePrefab);
                 this._mapUIScene.parent = this.node;
-
-                this.addLoadingNode();
-
             },
             this
         );
-
     }
 
     private h5LoadGeneralTex() {

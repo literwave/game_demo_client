@@ -25,6 +25,7 @@ export default class LoginProxy {
     private _token: string = null;
 
     public clear() {
+        console.log("clear");
         this._loginData = null;
         this._roleData = null;
         this._roleResData = null;
@@ -78,5 +79,10 @@ export default class LoginProxy {
 
     public getSession(): string {
         return this._loginData.session;
+    }
+
+    public setLoginDataUserAndServerId(data): void {
+        this._loginData.userId = data.userId;
+        this._loginData.serverId = data.serverId;
     }
 }

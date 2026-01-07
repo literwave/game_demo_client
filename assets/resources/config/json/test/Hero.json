@@ -1,0 +1,128 @@
+{
+    "1001": {
+        "HeroId": 1001,
+        "Resources": "card_1001.png",
+        "Sort": 1,
+        "name": "吕布"
+    },
+    "1002": {
+        "HeroId": 1002,
+        "Resources": "card_1002.png",
+        "Sort": 2,
+        "name": "刘协"
+    },
+    "1003": {
+        "HeroId": 1003,
+        "Resources": "card_1003.png",
+        "Sort": 3,
+        "name": "张让"
+    },
+    "1004": {
+        "HeroId": 1004,
+        "Resources": "card_1004.png",
+        "Sort": 4,
+        "name": "貂蝉"
+    },
+    "1005": {
+        "HeroId": 1005,
+        "Resources": "card_1005.png",
+        "Sort": 5,
+        "name": "何太后"
+    },
+    "1006": {
+        "HeroId": 1006,
+        "Resources": "card_1006.png",
+        "Sort": 6,
+        "name": "黄盖"
+    },
+    "1007": {
+        "HeroId": 1007,
+        "Resources": "card_1007.png",
+        "Sort": 7,
+        "name": "董卓"
+    },
+    "1008": {
+        "HeroId": 1008,
+        "Resources": "card_1008.png",
+        "Sort": 8,
+        "name": "张角"
+    },
+    "1009": {
+        "HeroId": 1009,
+        "Resources": "card_1009.png",
+        "Sort": 9,
+        "name": "董卓sp"
+    },
+    "1010": {
+        "HeroId": 1010,
+        "Resources": "card_1010.png",
+        "Sort": 10,
+        "name": "吕布sp"
+    },
+    "1011": {
+        "HeroId": 1011,
+        "Resources": "card_1011.png",
+        "Sort": 11,
+        "name": "贾诩"
+    },
+    "1012": {
+        "HeroId": 1012,
+        "Resources": "card_1012.png",
+        "Sort": 12,
+        "name": "步练师"
+    },
+    "1013": {
+        "HeroId": 1013,
+        "Resources": "card_1013.png",
+        "Sort": 13,
+        "name": "赵云"
+    },
+    "1014": {
+        "HeroId": 1014,
+        "Resources": "card_1014.png",
+        "Sort": 14,
+        "name": "吕蒙"
+    },
+    "1015": {
+        "HeroId": 1015,
+        "Resources": "card_1015.png",
+        "Sort": 15,
+        "name": "甄姬"
+    },
+    "1016": {
+        "HeroId": 1016,
+        "Resources": "card_1016.png",
+        "Sort": 16,
+        "name": "刘备sp"
+    },
+    "1017": {
+        "HeroId": 1017,
+        "Resources": "card_1017.png",
+        "Sort": 17,
+        "name": "诸葛亮"
+    },
+    "1018": {
+        "HeroId": 1018,
+        "Resources": "card_1018.png",
+        "Sort": 18,
+        "name": "陆逊"
+    },
+    "1019": {
+        "HeroId": 1019,
+        "Resources": "card_1019.png",
+        "Sort": 19,
+        "name": "马云禄"
+    },
+    "1020": {
+        "HeroId": 1020,
+        "Resources": "card_1020.png",
+        "Sort": 20,
+        "name": "黄月英"
+    },
+    "1021": {
+        "HeroId": 1021,
+        "Resources": "card_1021.png",
+        "Sort": 21,
+        "name": "马超"
+    }
+}

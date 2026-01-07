@@ -43,7 +43,11 @@ export default class MapScene extends Component {
         this.scheduleOnce(() => {
             let myCity: MapCityData = this._cmd.cityProxy.getMyMainCity();
             this.node.getComponent(MapLogic).setTiledMap(tiledMap);
-            // this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(myCity.x, myCity.y));
+            if (myCity) {
+                this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(myCity.x, myCity.y));
+            } else {
+                this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(1, 1));
+            }
             this.onTimer();//立即执行一次
         }, 0.1);
 
