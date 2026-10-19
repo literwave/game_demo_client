@@ -49,13 +49,38 @@ export default class MapScene extends Component {
                 this.node.getComponent(MapLogic).scrollToMapPoint(new Vec2(16, 24));
             }
             this.onTimer();//立即执行一次
+
+            // 进图首帧 TiledMap 的裁剪区尚未稳定，先在加载页背后多渲染几帧再揭开
+            this.warmUpMap(tiledMap, 3, () => {
+                this.scheduleOnce(() => {
+                    EventMgr.emit(CoreEvent.mapReady);
+                }, 0.12);
+            });
         }, 0.1);
 
         this.schedule(this.onTimer, 0.2);
 
-        this.scheduleOnce(() => {
-            EventMgr.emit(CoreEvent.loadComplete);
-        }, 0.6);
+    }
+
+    /** 进图时强制重算各图层裁剪区，避免加载页淡出后出现缺块的黑色条带 */
+    protected warmUpMap(tiledMap: TiledMap, frames: number, done: () => void): void {
+        const step = () => {
+            if (!tiledMap || !tiledMap.isValid) {
+                done();
+                return;
+            }
+            const layers = tiledMap.getLayers();
+            for (let i = 0; i < layers.length; i++) {
+                layers[i].updateCulling();
+            }
+            frames--;
+            if (frames > 0) {
+                this.scheduleOnce(step, 0);
+            } else {
+                done();
+            }
+        };
+        this.scheduleOnce(step, 0);
     }
 
     protected onDestroy(): void {

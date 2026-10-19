@@ -13,6 +13,7 @@ native
 # Local editor extensions
 #//////////////////////////
 extensions/cocos-ai-copilot/
+.agents/
 
 #//////////////////////////
 # NPM

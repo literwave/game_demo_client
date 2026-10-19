@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "9318c645-35ea-4422-8ba2-63dc50d87f38",
+  "uuid": "f37861ae-3da5-43e9-9d7f-fcfd881fa19d",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "create"
+    "syncNodeName": "CreatePanel"
   }
 }

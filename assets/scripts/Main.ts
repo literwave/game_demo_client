@@ -18,6 +18,8 @@ import { EventMgr } from './utils/EventMgr';
 import { AudioManager } from './common/AudioManager';
 import { LogicEvent } from './common/LogicEvent';
 import { ProtoManager } from './network/pto/ProtoManager';
+import { CoreEvent } from './core/CoreEvent';
+import LoadingLogic from './common/LoadingLogic';
 
 @ccclass('Main')
 export default class Main extends Component {
@@ -62,6 +64,7 @@ export default class Main extends Component {
         AudioManager.instance.init(this._audioSource);
 
         EventMgr.on(LogicEvent.enterMap, this.onEnterMap, this);
+        EventMgr.on(CoreEvent.mapReady, this.onMapReady, this);
         EventMgr.on(LogicEvent.enterLogin, this.enterLogin, this);
         EventMgr.on(LogicEvent.showToast, this.onShowToast, this);
         EventMgr.on(LogicEvent.showWaiting, this.showWaitNode, this);
@@ -98,6 +101,7 @@ export default class Main extends Component {
     }
 
     private enterLogin(): void {
+        this.disposeLoadingNow();
         this.clearAllScene();
         this.clearData();
         this._loginScene = instantiate(this.loginScenePrefab);
@@ -107,6 +111,9 @@ export default class Main extends Component {
     }
 
     protected onEnterMap(): void {
+        if (this._loadingNode || this._mapScene) {
+            return;
+        }
         let dataList: LoadData[] = [];
         // INDEX 0: 地图数据
         dataList.push(new LoadData("world/map", LoadDataType.FILE, TiledMapAsset));
@@ -122,6 +129,8 @@ export default class Main extends Component {
             (error: Error, paths: string[], datas: any[]) => {
                 if (error != null) {
                     console.error("启动资源加载失败:", error);
+                    this.disposeLoadingNow();
+                    EventMgr.emit(LogicEvent.showToast, "战场资源加载失败，请重试");
                     return;
                 }
 
@@ -162,9 +171,43 @@ export default class Main extends Component {
 
                 this._mapUIScene = instantiate(this.mapUIScenePrefab);
                 this._mapUIScene.parent = this.node;
+
+                // 保持加载页在最上层，等地图首帧真正渲染后再淡出
+                if (this._loadingNode) {
+                    this._loadingNode.setSiblingIndex(this.topLayer() + 1);
+                }
+                // 正常由 mapReady 收起；这里兜底，避免极端情况下加载页卡住
+                this.scheduleOnce(this.finishLoading, 3);
             },
             this
         );
+    }
+
+    private onMapReady(): void {
+        this.unschedule(this.finishLoading);
+        this.finishLoading();
+    }
+
+    private finishLoading(): void {
+        if (!this._loadingNode) {
+            return;
+        }
+        const logic = this._loadingNode.getComponent(LoadingLogic);
+        if (logic) {
+            logic.finish();
+        } else if (this._loadingNode.isValid) {
+            this._loadingNode.destroy();
+        }
+        this._loadingNode = null;
+    }
+
+    private disposeLoadingNow(): void {
+        if (this._loadingNode) {
+            if (this._loadingNode.isValid) {
+                this._loadingNode.destroy();
+            }
+            this._loadingNode = null;
+        }
     }
 
     private h5LoadGeneralTex() {

@@ -26,6 +26,13 @@ export default class MapLogic extends Component {
     protected _touchAniNode: Node = null;
     protected _centerPoint: Vec2 = null;
 
+    // 拖动输入按帧合并，避免一帧内多次刷新 TiledMap 裁剪
+    protected _pendingCameraX: number = 0;
+    protected _pendingCameraY: number = 0;
+    protected _moveDirty: boolean = false;
+    protected _tempCameraPos: Vec3 = new Vec3();
+    protected _lastCenterSyncTime: number = 0;
+
     
     protected onLoad(): void {
         console.log("MapLogic onLoad");
@@ -63,21 +70,54 @@ export default class MapLogic extends Component {
 
     protected openCityAbout(data: any): void {
         this._mapCamera.orthoHeight = this._orthoHeight * this._maxZoomRatio;
+        this.updateCulling();
     }
 
     protected closeCityAbout(): void {
         this._mapCamera.orthoHeight = this._orthoHeight * this._minZoomRatio;
+        this.updateCulling();
     }
 
     protected onMouseWheel(event: EventMouse): void {
-        console.log("onMouseWheel");
-
         let scrollY: number = event.getScrollY();
         let changeRatio: number = Number((scrollY / this._changeZoomRadix).toFixed(1));
         let newZoomRatio: number = Math.min(this._minZoomRatio, Math.max(this._maxZoomRatio, this._mapCamera.orthoHeight/this._orthoHeight + changeRatio));
 
-        console.log("onMouseWheel:", newZoomRatio);
         this._mapCamera.orthoHeight = this._orthoHeight * newZoomRatio;
+        this.updateCulling();
+    }
+
+    protected update(): void {
+        if (!this._moveDirty || !this._mapCamera) {
+            return;
+        }
+        this.applyPendingCameraMove();
+
+        const now = Date.now();
+        if (now - this._lastCenterSyncTime >= 80) {
+            this._lastCenterSyncTime = now;
+            this.syncCenterMapCellPoint();
+        }
+    }
+
+    private applyPendingCameraMove(): void {
+        this._moveDirty = false;
+        this._tempCameraPos.set(this._pendingCameraX, this._pendingCameraY, this._mapCamera.node.position.z);
+        this._mapCamera.node.setPosition(this._tempCameraPos);
+    }
+
+    private syncCenterMapCellPoint(): void {
+        const pixelPoint = new Vec2(this._pendingCameraX, this._pendingCameraY);
+        this.setCenterMapCellPoint(MapUtil.mapPixelToCellPoint(pixelPoint), pixelPoint);
+    }
+
+    private flushPendingCameraMove(): void {
+        if (!this._moveDirty || !this._mapCamera) {
+            return;
+        }
+        this.applyPendingCameraMove();
+        this._lastCenterSyncTime = Date.now();
+        this.syncCenterMapCellPoint();
     }
 
     protected onTouchMove(event: EventTouch): void {
@@ -85,14 +125,9 @@ export default class MapLogic extends Component {
             let delta: Vec2 = event.getDelta();
             if (delta.x != 0 || delta.y != 0) {
                 this._isMove = true;
-                let pixelPoint: Vec2 = new Vec2(0, 0);
-                pixelPoint.x = this._mapCamera.node.position.x - delta.x;
-                pixelPoint.y = this._mapCamera.node.position.y - delta.y;
-                pixelPoint.x = Math.min(this._maxMapX, Math.max(-this._maxMapX, pixelPoint.x));
-                pixelPoint.y = Math.min(this._maxMapY, Math.max(-this._maxMapY, pixelPoint.y));
-                this._mapCamera.node.setPosition(new Vec3(pixelPoint.x, pixelPoint.y, this._mapCamera.node.position.z));
-                this.setCenterMapCellPoint(MapUtil.mapPixelToCellPoint(pixelPoint), pixelPoint);
-                this.updateCulling();
+                this._pendingCameraX = Math.min(this._maxMapX, Math.max(-this._maxMapX, this._pendingCameraX - delta.x));
+                this._pendingCameraY = Math.min(this._maxMapY, Math.max(-this._maxMapY, this._pendingCameraY - delta.y));
+                this._moveDirty = true;
             }
         }
     }
@@ -100,10 +135,15 @@ export default class MapLogic extends Component {
     protected onTouchBegan(event: EventTouch): void {
         this._isTouch = true;
         this._isMove = false;
+        this._moveDirty = false;
+        let pos = this._mapCamera.node.position;
+        this._pendingCameraX = pos.x;
+        this._pendingCameraY = pos.y;
     }
 
     protected onTouchEnd(event: EventTouch): void {
         this._isTouch = false;
+        this.flushPendingCameraMove();
         if (this._isMove == false) {
             let touchLocation: Vec2 = event.touch.getUILocation();
             let touchLocation1 = this.viewPointToWorldPoint(touchLocation);
@@ -121,6 +161,7 @@ export default class MapLogic extends Component {
 
     protected onTouchCancel(event: EventTouch): void {
         this._isTouch = false;
+        this.flushPendingCameraMove();
         this._isMove = false;
     }
 
@@ -151,15 +192,17 @@ export default class MapLogic extends Component {
 
     public scrollToMapPoint(point: Vec2): void {
         let temp = this.toCameraPoint(point);
-        let pos = this._mapCamera.node.position.clone();
-        let pixelPoint: Vec2 = MapUtil.mapCellToPixelPoint(point);
-
-        pos.x = temp.x;
-        pos.y = temp.y;
-        this._mapCamera.node.position = pos;
-        this.setCenterMapCellPoint(point, pixelPoint);
+        this._mapCamera.node.setPosition(temp.x, temp.y, this._mapCamera.node.position.z);
+        // 相机监听尚未绑定时（进图首帧）也要立刻重算一次裁剪区
         this.updateCulling();
 
+        this._pendingCameraX = temp.x;
+        this._pendingCameraY = temp.y;
+        this._moveDirty = false;
+        this._lastCenterSyncTime = Date.now();
+
+        let pixelPoint: Vec2 = MapUtil.mapCellToPixelPoint(point);
+        this.setCenterMapCellPoint(point, pixelPoint);
     }
 
     protected setCenterMapCellPoint(point: Vec2, pixelPoint: Vec2): void {
@@ -167,28 +210,11 @@ export default class MapLogic extends Component {
     }
 
     private updateCulling() {
-        if(this._tiledMap){
-            // let layers = this._tiledMap.getLayers();
-            // for (let index = 0; index < layers.length; index++) {
-            //     const l = layers[index];
-            //     l.updateCulling();
-            // }
-
-            // this.scheduleOnce(()=>{
-            //     for (let index = 0; index < layers.length; index++) {
-            //         const l = layers[index];
-            //         l.updateCulling();
-            //     }
-            // })
-
+        if (this._tiledMap) {
+            // 只派发一次，让 TiledLayer 绑定当前相机并完成一次裁剪。
             this._tiledMap.node.emit(Node.EventType.TRANSFORM_CHANGED);
-            this.scheduleOnce(()=>{
-                this._tiledMap.node.emit(Node.EventType.TRANSFORM_CHANGED);
-            })
-    
         }
-
-     }
+    }
 
  
     public curCameraPoint():Vec2 {

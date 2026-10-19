@@ -266,7 +266,7 @@
         "__id__": 13
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 31
@@ -809,7 +809,7 @@
       "__expectedType__": "cc.Prefab"
     },
     "createPrefab": {
-      "__uuid__": "9318c645-35ea-4422-8ba2-63dc50d87f38",
+      "__uuid__": "f37861ae-3da5-43e9-9d7f-fcfd881fa19d",
       "__expectedType__": "cc.Prefab"
     },
     "serverListPrefab": null,

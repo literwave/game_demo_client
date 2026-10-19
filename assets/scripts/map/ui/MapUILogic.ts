@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, instantiate, UITransform, Vec2 } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -9,6 +9,7 @@ import MapUICommand from "./MapUICommand";
 import Dialog, { DialogType } from "./Dialog";
 import UnionCommand from "../../union/UnionCommand";
 import MapCommand from "../MapCommand";
+import MapUtil from "../MapUtil";
 import FortressAbout from "./FortressAbout";
 import CityAboutLogic from "./CityAboutLogic";
 import GeneralListLogic from "./GeneralListLogic";
@@ -132,14 +133,35 @@ export default class MapUILogic extends Component {
     @property(Label)
     ridLabel: Label = null;
 
+    @property(Node)
+    gmPanel: Node = null;
+
+    @property(EditBox)
+    gmCommandBox: EditBox = null;
+
+    @property(EditBox)
+    gmEditBoxX: EditBox = null;
+
+    @property(EditBox)
+    gmEditBoxY: EditBox = null;
+
+    @property(Label)
+    gmCoordLabel: Label = null;
+
+    @property(Label)
+    gmTipLabel: Label = null;
+
+    protected _gmCtrlDown: boolean = false;
+    protected _gmBDown: boolean = false;
+
     protected _resArray: any = [];
     protected _yieldArray: any = [];
 
     protected onLoad(): void {
 
-        this._resArray.push({ key: 1, name: "谷:" });
-        this._resArray.push({ key: 2, name: "木:" });
-        this._resArray.push({ key: 3, name: "铁:" });
+        this._resArray.push({ key: 1, name: "谷 " });
+        this._resArray.push({ key: 2, name: "木 " });
+        this._resArray.push({ key: 3, name: "铁 " });
 
         this._yieldArray.push({ key: 1, name: "木+" });
         this._yieldArray.push({ key: 2, name: "铁+" });
@@ -166,6 +188,9 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.openSkillInfo, this.onOpenSkillInfo, this);
         EventMgr.on(LogicEvent.beforeScrollToMap, this.beforeScrollToMap, this);
         EventMgr.on(LogicEvent.showTip, this.showTip, this);
+        EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
+        input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+        input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
 
 
 
@@ -200,6 +225,8 @@ export default class MapUILogic extends Component {
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
         EventMgr.targetOff(this);
+        input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+        input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
 
         console.log("MapUILogic onDestroy")
     }
@@ -369,7 +396,7 @@ export default class MapUILogic extends Component {
 
         console.log(roleRes)
         var i = 0;
-        children[i].getChildByName("New Label").getComponent(Label).string = "令牌:" + Tools.numberToShow(roleRes[1]);
+        children[i].getChildByName("New Label").getComponent(Label).string = "令牌 " + Tools.numberToShow(roleRes[1]);
         i += 1;
 
 
@@ -380,7 +407,7 @@ export default class MapUILogic extends Component {
             if (obj.key == "gold") {
                 label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
             } else {
-                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]) + "/" + Tools.numberToShow(roleRes[2]);
+                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
             }
 
             i += 1;
@@ -542,8 +569,8 @@ export default class MapUILogic extends Component {
     protected updateRole(): void {
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
         console.log("updateRole", roleData);
-        this.nameLabel.string = "昵称: " + roleData.name;
-        this.ridLabel.string = "角色ID: " + roleData.userId + "";
+        this.nameLabel.string = roleData.name;
+        this.ridLabel.string = "ID " + roleData.userId + "";
     }
 
     protected onClickCollection(): void {
@@ -567,6 +594,172 @@ export default class MapUILogic extends Component {
         this._settingNode.active = true;
         this._settingNode.setSiblingIndex(this.topLayer());
 
+    }
+
+    protected onKeyDown(event: EventKeyboard): void {
+        if (event.keyCode === KeyCode.CTRL_LEFT || event.keyCode === KeyCode.CTRL_RIGHT) {
+            this._gmCtrlDown = true;
+            return;
+        }
+
+        if (event.keyCode === KeyCode.KEY_B) {
+            if (this._gmBDown) {
+                return;
+            }
+            this._gmBDown = true;
+        }
+
+        let raw = event.rawEvent as KeyboardEvent;
+        let ctrl = this._gmCtrlDown || !!(raw && raw.ctrlKey);
+        if (ctrl && event.keyCode === KeyCode.KEY_B) {
+            if (raw && raw.preventDefault) {
+                raw.preventDefault();
+            }
+            this.toggleGMPanel();
+        }
+    }
+
+    protected onKeyUp(event: EventKeyboard): void {
+        if (event.keyCode === KeyCode.CTRL_LEFT || event.keyCode === KeyCode.CTRL_RIGHT) {
+            this._gmCtrlDown = false;
+        }
+        if (event.keyCode === KeyCode.KEY_B) {
+            this._gmBDown = false;
+        }
+    }
+
+    protected onMapCenterChange(): void {
+        if (this.gmPanel && this.gmPanel.active) {
+            this.refreshGMCoord();
+        }
+    }
+
+    public toggleGMPanel(): void {
+        if (this.gmPanel == null) {
+            return;
+        }
+        let show = !this.gmPanel.active;
+        this.gmPanel.active = show;
+        AudioManager.instance.playClick();
+        if (show) {
+            this.refreshGMCoord();
+            if (this.gmCommandBox) {
+                this.gmCommandBox.string = "";
+            }
+            this.setGMTip("输入 goto x y 跳转，或直接填写坐标");
+        }
+    }
+
+    protected refreshGMCoord(): void {
+        let center: Vec2 = MapCommand.getInstance().proxy.getCurCenterPoint();
+        if (center == null) {
+            return;
+        }
+        if (this.gmCoordLabel) {
+            this.gmCoordLabel.string = "当前坐标  " + center.x + " , " + center.y;
+        }
+        if (this.gmEditBoxX) {
+            this.gmEditBoxX.string = center.x + "";
+        }
+        if (this.gmEditBoxY) {
+            this.gmEditBoxY.string = center.y + "";
+        }
+    }
+
+    protected setGMTip(text: string): void {
+        if (this.gmTipLabel) {
+            this.gmTipLabel.string = text;
+        }
+    }
+
+    public onClickGMClose(): void {
+        AudioManager.instance.playClick();
+        if (this.gmPanel) {
+            this.gmPanel.active = false;
+        }
+    }
+
+    public onClickGMJump(): void {
+        AudioManager.instance.playClick();
+        if (this.gmEditBoxX == null || this.gmEditBoxY == null) {
+            return;
+        }
+        this.jumpToCell(this.parseCoord(this.gmEditBoxX.string), this.parseCoord(this.gmEditBoxY.string));
+    }
+
+    public onClickGMExecute(): void {
+        AudioManager.instance.playClick();
+        if (this.gmCommandBox == null) {
+            return;
+        }
+        this.executeGMCommand(this.gmCommandBox.string);
+    }
+
+    protected parseCoord(value: string): number {
+        if (value == null || value.trim().length == 0) {
+            return NaN;
+        }
+        return Number(value);
+    }
+
+    protected executeGMCommand(command: string): void {
+        let text = (command || "").trim();
+        if (text.length == 0) {
+            this.setGMTip("请输入命令");
+            return;
+        }
+
+        let args = text.split(/\s+/);
+        let cmd = args[0].toLowerCase();
+        if (cmd == "goto" || cmd == "jump" || cmd == "tp") {
+            if (args.length < 3) {
+                this.setGMTip("用法：goto x y");
+                return;
+            }
+            this.jumpToCell(this.parseCoord(args[1]), this.parseCoord(args[2]));
+            return;
+        }
+        if (cmd == "pos" || cmd == "where" || cmd == "coord") {
+            this.refreshGMCoord();
+            let center = MapCommand.getInstance().proxy.getCurCenterPoint();
+            this.setGMTip(center ? ("当前坐标 " + center.x + " , " + center.y) : "坐标不可用");
+            return;
+        }
+        if (cmd == "help") {
+            this.setGMTip("支持：goto x y / pos / clear");
+            return;
+        }
+        if (cmd == "clear") {
+            if (this.gmCommandBox) {
+                this.gmCommandBox.string = "";
+            }
+            this.setGMTip("");
+            return;
+        }
+        if (args.length == 2) {
+            this.jumpToCell(this.parseCoord(args[0]), this.parseCoord(args[1]));
+            return;
+        }
+        this.setGMTip("未知命令：" + args[0]);
+    }
+
+    protected jumpToCell(x: number, y: number): void {
+        let mapSize = MapUtil.mapSize;
+        if (mapSize == null || isNaN(x) || isNaN(y)
+            || x < 0 || y < 0
+            || x >= mapSize.width
+            || y >= mapSize.height) {
+            this.setGMTip("坐标无效，范围 0 - " + (mapSize ? (mapSize.width - 1) : 0));
+            return;
+        }
+        EventMgr.emit(LogicEvent.scrollToMap, x, y);
+        if (this.gmEditBoxX) {
+            this.gmEditBoxX.string = x + "";
+        }
+        if (this.gmEditBoxY) {
+            this.gmEditBoxY.string = y + "";
+        }
+        this.setGMTip("已跳转到 (" + x + ", " + y + ")");
     }
 
     protected beforeScrollToMap(x: number, y: number, oldx: number, oldy: number): void {

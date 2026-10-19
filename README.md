@@ -121,12 +121,12 @@ export { GameConfig };
 5. 用 Cocos Creator 3.8.8 重新打开项目，从顶部菜单 **AI Copilot** 打开面板。
 6. 在 **设置 → Runtime** 中确认 Codex 已连接，再到 **设置 → Cocos MCP** 确认版本为 `0.1.5`。
 
-官方包每次运行终端命令都会弹出确认。重新解压后把下面这段交给 AI，让它直接改本地插件，不要改游戏代码：
+官方包每次跑终端命令或编辑器 MCP 都会弹出确认。重新解压后把下面这段交给 AI，让它直接改本地插件，不要改游戏代码：
 
-在 `extensions/cocos-ai-copilot` 里加一个默认勾选的「默认直接运行命令」。只自动放行 `item/commandExecution/requestApproval`，修改文件、删除节点或资源仍要询问。勾选状态记在 `localStorage` 的 `cocos-ai-copilot.autoApproveCommands`。
+在 `extensions/cocos-ai-copilot` 里加一个默认勾选的「默认直接运行命令」。自动放行终端命令 `item/commandExecution/requestApproval`，以及编辑器 MCP 审批 `mcpServer/elicitation/request`（改节点、跑 Preview 等）。修改文件、删除节点或资源仍要询问：`item/fileChange/requestApproval`，以及 MCP 工具 `write_file`、`replace_in_file`、`delete_node`、`delete_asset`。勾选状态记在 `localStorage` 的 `cocos-ai-copilot.autoApproveCommands`。
 
-- `panel/activity-controller.js`：在 `pendingApprovalsForSession` 前增加开关和自动放行；`renderApprovalTray` 里对待审批命令直接放行，并在命令卡片上放勾选框。
-- `panel/index.js`：在 `renderPermissionMenu` 顶部放同一个勾选框。
+- `panel/activity-controller.js`：在 `pendingApprovalsForSession` 前增加开关和 `maybeAutoApproveActivity`；收到审批或渲染托盘时直接放行，并在命令卡片上放勾选框。
+- `panel/index.js`：在 `renderPermissionMenu` 顶部放同一个勾选框；`approval-request` 到达时立刻尝试自动放行。
 - `panel/chat-view.js`：给勾选框加样式，并把 `.permission-menu` 的最大高度调大，避免被裁切。
 
 改完后关掉 AI Copilot 面板再打开一次。

@@ -1,4 +1,4 @@
-import { _decorator, Animation, Component, instantiate, Label, Node, Prefab, ProgressBar, UITransform } from 'cc';
+import { _decorator, Animation, Component, instantiate, Label, Node, Prefab, ProgressBar, UITransform, UIOpacity, tween } from 'cc';
 import { CoreEvent } from '../core/CoreEvent';
 import { EventMgr } from '../utils/EventMgr';
 
@@ -24,6 +24,8 @@ export default class LoadingLogic extends Component {
     private runnerHalfWidth = 18;
     private runnerBaseX = 0;
     private runnerBaseY = -35;
+    private stageLabel: Label | null = null;
+    private finishing = false;
 
     protected onLoad(): void {
         if (this.bar) {
@@ -57,6 +59,9 @@ export default class LoadingLogic extends Component {
 
         this.updateRunnerPosition();
         this.updatePercent();
+        const stageNode = this.node.getChildByName('StageLabel');
+        this.stageLabel = stageNode ? stageNode.getComponent(Label) : null;
+
         EventMgr.on(CoreEvent.loadProgress, this.onProgress, this);
         EventMgr.on(CoreEvent.loadComplete, this.onComplete, this);
     }
@@ -76,6 +81,9 @@ export default class LoadingLogic extends Component {
     }
 
     protected onProgress(percent: number): void {
+        if (this.finishing) {
+            return;
+        }
         this.targetProgress = Math.min(1, Math.max(0, percent));
         if (this.bar) {
             this.bar.progress = this.targetProgress;
@@ -83,6 +91,9 @@ export default class LoadingLogic extends Component {
     }
 
     protected update(dt: number): void {
+        if (this.finishing) {
+            return;
+        }
         if (Math.abs(this.targetProgress - this.visualProgress) < 0.001) {
             this.visualProgress = this.targetProgress;
         } else {
@@ -109,6 +120,36 @@ export default class LoadingLogic extends Component {
     }
 
     protected onComplete(): void {
-        this.node.parent = null;
+        if (this.finishing) {
+            return;
+        }
+        this.targetProgress = 1;
+        if (this.stageLabel) {
+            this.stageLabel.string = '战场已就绪，正在展开山河…';
+        }
+    }
+
+    /** 地图首帧已经在加载页后完成渲染，淡出并销毁加载页 */
+    public finish(): void {
+        if (this.finishing) {
+            return;
+        }
+        this.finishing = true;
+        this.targetProgress = 1;
+        this.visualProgress = 1;
+        if (this.bar) {
+            this.bar.progress = 1;
+        }
+        this.updateRunnerPosition();
+        this.updatePercent();
+        if (this.stageLabel) {
+            this.stageLabel.string = '山河已就绪';
+        }
+        const opacity = this.node.getComponent(UIOpacity) || this.node.addComponent(UIOpacity);
+        tween(opacity).to(0.35, { opacity: 0 }, { easing: 'quadOut' }).call(() => {
+            if (this.node && this.node.isValid) {
+                this.node.destroy();
+            }
+        }).start();
     }
 }
