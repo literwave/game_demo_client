@@ -1,4 +1,4 @@
-import { _decorator, Component, EditBox, Label, Node, Prefab, ToggleContainer, instantiate, JsonAsset, SpriteFrame } from 'cc';
+import { _decorator, Component, EditBox, Label, Node, Prefab, ToggleContainer, instantiate, JsonAsset, SpriteFrame, native } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoaderManager, { LoadData, LoadDataType } from "../core/LoaderManager";
@@ -271,7 +271,7 @@ export default class GeneralTool extends Component {
         }
 
         var path = this.outDirEditBox.string;
-        if (jsb.fileUtils.isDirectoryExist(path) == false) {
+        if (native.fileUtils.isDirectoryExist(path) == false) {
             this.tipsLab.string = "目录不存在";
             return
         }
@@ -281,7 +281,7 @@ export default class GeneralTool extends Component {
         obj.list = this._cfgs
 
         var str = JSON.stringify(obj, null, "\t");
-        jsb.fileUtils.writeStringToFile(str, path + "/general.json");
+        native.fileUtils.writeStringToFile(str, path + "/general.json");
 
         this.tipsLab.string = "保存成功";
     }

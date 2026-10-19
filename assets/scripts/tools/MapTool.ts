@@ -1,4 +1,4 @@
-import { _decorator, Component, TiledMap, EditBox, Label, Size } from 'cc';
+import { _decorator, Component, TiledMap, EditBox, Label, Size, native } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { MapResType } from "../map/MapProxy";
@@ -53,8 +53,8 @@ export default class MapTool extends Component {
 
     protected onClickMake(): void {
         this._mapSize = this.tiledMap.getMapSize();
-        this._mapGroundIds = this.tiledMap.getLayer("obstruct").getTiles();
-        var city_positionIds = this.tiledMap.getLayer("city_position").getTiles();
+        this._mapGroundIds = this.tiledMap.getLayer("obstruct").tiles as number[];
+        var city_positionIds = this.tiledMap.getLayer("city_position").tiles as number[];
 
 
         let data: { w: number, h: number, list: any[] } = { w: 0, h: 0, list: null };
@@ -82,7 +82,7 @@ export default class MapTool extends Component {
         }
 
         var path = this.editBox.string;
-        if(jsb.fileUtils.isDirectoryExist(path) == false){
+        if(native.fileUtils.isDirectoryExist(path) == false){
             this.tipsLab.string = "目录不存在";
             return
         }
@@ -91,7 +91,7 @@ export default class MapTool extends Component {
         data.w = this._mapSize.width;
         data.h = this._mapSize.height;
         data.list = this._resList;
-        jsb.fileUtils.writeStringToFile(JSON.stringify(data), path + "/mapRes_0.json");
+        native.fileUtils.writeStringToFile(JSON.stringify(data), path + "/mapRes_0.json");
        
 
         this.tipsLab.string = "生成成功";

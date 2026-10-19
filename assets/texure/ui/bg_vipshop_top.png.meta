@@ -1,11 +1,11 @@
 {
-  "ver": "1.0.22",
+  "ver": "1.0.27",
   "importer": "image",
   "imported": true,
   "uuid": "d0741e0a-e2b2-43ee-852c-7c86613877f5",
   "files": [
-    ".png",
-    ".json"
+    ".json",
+    ".png"
   ],
   "subMetas": {
     "6c48a": {
@@ -22,9 +22,10 @@
         "mipfilter": "none",
         "imageUuidOrDatabaseUri": "d0741e0a-e2b2-43ee-852c-7c86613877f5",
         "anisotropy": 0,
-        "isUuid": true
+        "isUuid": true,
+        "visible": false
       },
-      "ver": "1.0.21",
+      "ver": "1.0.22",
       "imported": true,
       "files": [
         ".json"
@@ -56,9 +57,67 @@
         "imageUuidOrDatabaseUri": "d0741e0a-e2b2-43ee-852c-7c86613877f5@6c48a",
         "packable": true,
         "isUuid": true,
-        "atlasUuid": ""
+        "atlasUuid": "",
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": {
+          "rawPosition": [
+            -85,
+            -43,
+            0,
+            85,
+            -43,
+            0,
+            -85,
+            43,
+            0,
+            85,
+            43,
+            0
+          ],
+          "indexes": [
+            0,
+            1,
+            2,
+            2,
+            1,
+            3
+          ],
+          "uv": [
+            0,
+            86,
+            170,
+            86,
+            0,
+            0,
+            170,
+            0
+          ],
+          "nuv": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          "minPos": [
+            -85,
+            -43,
+            0
+          ],
+          "maxPos": [
+            85,
+            43,
+            0
+          ]
+        }
       },
-      "ver": "1.0.9",
+      "ver": "1.0.12",
       "imported": true,
       "files": [
         ".json"
@@ -69,6 +128,7 @@
   "userData": {
     "type": "sprite-frame",
     "hasAlpha": true,
-    "redirect": "d0741e0a-e2b2-43ee-852c-7c86613877f5@f9941"
+    "redirect": "d0741e0a-e2b2-43ee-852c-7c86613877f5@6c48a",
+    "fixAlphaTransparencyArtifacts": false
   }
 }

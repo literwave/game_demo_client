@@ -56,7 +56,7 @@ export default class Main extends Component {
         console.log("main load");
 
         const audioSource = this.getComponent(AudioSource)!;
-        assert(audioSource);
+        assert(!!audioSource);
         this._audioSource = audioSource;
 
         AudioManager.instance.init(this._audioSource);

@@ -49,7 +49,7 @@ export class AudioManager {
     playMusic (loop: boolean) {
         
         const audioSource = AudioManager._audioSource!;
-        assert(audioSource, 'AudioManager not inited!');
+        assert(!!audioSource, 'AudioManager not inited!');
 
         audioSource.loop = loop;
         if (!audioSource.playing) {
@@ -63,7 +63,7 @@ export class AudioManager {
      */
     playSound (name:string) {
         const audioSource = AudioManager._audioSource!;
-        assert(audioSource, 'AudioManager not inited!');
+        assert(!!audioSource, 'AudioManager not inited!');
         let path = '/audio/sound/';
         resources.load(path + name, AudioClip, (err, clip)=> {
             if (err) {
@@ -83,7 +83,7 @@ export class AudioManager {
     setMusicVolume (flag: number) {
         console.log("setMusicVolume:", flag);
         const audioSource = AudioManager._audioSource!;
-        assert(audioSource, 'AudioManager not inited!');
+        assert(!!audioSource, 'AudioManager not inited!');
 
         flag = clamp01(flag);
         audioSource.volume = flag;

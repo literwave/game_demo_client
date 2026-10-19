@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Label, ProgressBar, Button, Vec2, tween, UIOpacity, Tween, UITransform, UIRenderable } from 'cc';
+import { _decorator, Component, Node, Label, ProgressBar, Button, Vec2, tween, UIOpacity, Tween, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyCmd } from "../general/ArmyProxy";
