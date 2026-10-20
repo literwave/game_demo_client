@@ -1,7 +1,8 @@
-{
-    "1001": {
-        "HeroId": 1001,
-        "Resources": "assets/res/ui/hero/normal/1001.png",
-        "Sort": 1
-    }
-}
+[
+  {
+    "Id": 1001,
+    "HeroId": 1001,
+    "Resources": "assets/res/ui/hero/normal/1001.png",
+    "Sort": 1
+  }
+]

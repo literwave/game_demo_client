@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package Mail;
+// 邮件相关
+
+import "common.proto";
+
+message c2s_req_mail_list {
+	int32 mailKind = 1;
+}
+
+message s2c_req_mail_list {
+	int32 mailKind = 1;
+	Common.p_mail_info mailInfo = 2;
+}
+
+message c2s_req_mail_detail {
+	int32 mailKind = 1;
+	string mailId = 2;
+}
+
+message s2c_req_mail_detail {
+	string mailId = 1;
+	repeated string detailList = 2;
+	repeated Common.p_reward_info rewardList = 3;
+}
+
+message c2s_del_mail_list {
+	int32 mailKind = 1;
+	repeated string mailIdList = 2;
+}
+
+message s2c_del_mail_list {
+	int32 mailKind = 1;
+	repeated string mailIdList = 2;
+}
+
+message c2s_set_mail_lock {
+	int32 mailKind = 1;
+	string mailId = 2;
+	bool isLock = 3;
+}
+
+message s2c_set_mail_lock {
+	int32 mailKind = 1;
+	string mailId = 2;
+	bool isLock = 3;
+}
+
+message c2s_get_mail_reward {
+	repeated Common.p_common_info_int_str mailKindIdList = 1;
+}
+
+message s2c_get_mail_reward {
+	repeated Common.p_common_info_int_str mailKindIdList = 1;
+}

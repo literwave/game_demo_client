@@ -13,6 +13,11 @@ message p_common_info {
 	int32 v = 2;
 }
 
+message p_common_info_int_str {
+	int32 k = 1;
+	string v = 2;
+}
+
 message p_hero_base_info {
 	int32 heroType = 1;
 	int32 exp = 2;
@@ -21,4 +26,16 @@ message p_hero_base_info {
 	bool newTag = 5;
 	int32 state = 6;
 	repeated p_common_info skillList =7; 
+}
+
+message p_mail_info {
+	int32 mailType = 1;
+	string mailId = 2;
+	string title = 3;
+	string content = 4;
+	bool isRead = 5;
+	bool isLock = 6;
+	bool isGotReward = 7;
+	int32 startTime = 8;
+	int32 endTime = 9;
 }

@@ -6,6 +6,8 @@ message s2c_req_all_build_end {
 }
 
 message s2c_sync_build {
+	int32 bid = 1;
+	int32 level = 2;
 }
 
 message c2s_create_build {

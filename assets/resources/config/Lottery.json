@@ -1,0 +1,25 @@
+[
+  {
+    "Id": 1,
+    "CostList": [
+      {
+        "cost_type": 1,
+        "count": 10
+      }
+    ],
+    "CommonPools": [
+      {
+        "reward_type": 1
+      }
+    ]
+  },
+  {
+    "Id": 10,
+    "CostList": [
+      {
+        "cost_type": 1,
+        "count": 1000
+      }
+    ]
+  }
+]

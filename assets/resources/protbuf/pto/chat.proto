@@ -1,13 +1,12 @@
-syntax="proto3";
+syntax = "proto3";
 
 package Chat;
 // 聊天相关
 
-message c2sChat {
-    string content = 1;    // 聊天内容
+message c2s_chat {
+	string content = 1;  // 聊天内容
 }
 
-message s2cChat {
-    string content = 1;    // 聊天内容
+message s2c_chat {
+	string content = 1;  // 聊天内容
 }
-

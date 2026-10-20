@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -151,21 +151,20 @@ export default class MapUILogic extends Component {
     @property(Label)
     gmTipLabel: Label = null;
 
+    protected _morePanel: Node = null;
+    protected _moreMask: Node = null;
+    protected _moreIndicator: Node = null;
+
     protected _gmCtrlDown: boolean = false;
     protected _gmBDown: boolean = false;
 
     protected _resArray: any = [];
-    protected _yieldArray: any = [];
 
     protected onLoad(): void {
 
-        this._resArray.push({ key: 1, name: "谷 " });
-        this._resArray.push({ key: 2, name: "木 " });
-        this._resArray.push({ key: 3, name: "铁 " });
-
-        this._yieldArray.push({ key: 1, name: "木+" });
-        this._yieldArray.push({ key: 2, name: "铁+" });
-        this._yieldArray.push({ key: 3, name: "石+" });
+        this._resArray.push({ key: 1, name: "谷" });
+        this._resArray.push({ key: 2, name: "木" });
+        this._resArray.push({ key: 3, name: "铁" });
 
 
         EventMgr.on(LogicEvent.openCityAbout, this.openCityAbout, this);
@@ -191,6 +190,8 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+
+        this.initMoreMenu();
 
 
 
@@ -229,6 +230,47 @@ export default class MapUILogic extends Component {
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
 
         console.log("MapUILogic onDestroy")
+    }
+
+    protected initMoreMenu(): void {
+        let hudRoot = this.node.getChildByName("HudRoot");
+        if (hudRoot == null) {
+            return;
+        }
+
+        this._morePanel = hudRoot.getChildByName("MorePanel");
+        this._moreMask = hudRoot.getChildByName("MoreMask");
+        this._moreIndicator = hudRoot.getChildByPath("BottomNav/MoreButton/MoreIndicator");
+
+        if (this._moreMask) {
+            this._moreMask.on(Node.EventType.TOUCH_END, this.closeMoreMenu, this);
+        }
+        if (this._morePanel) {
+            this._morePanel.children.forEach((child) => {
+                child.on(Button.EventType.CLICK, this.closeMoreMenu, this);
+            });
+        }
+    }
+
+    public toggleMoreMenu(): void {
+        AudioManager.instance.playClick();
+        this.setMoreMenuVisible(this._morePanel != null && !this._morePanel.active);
+    }
+
+    public closeMoreMenu(): void {
+        this.setMoreMenuVisible(false);
+    }
+
+    protected setMoreMenuVisible(visible: boolean): void {
+        if (this._morePanel) {
+            this._morePanel.active = visible;
+        }
+        if (this._moreMask) {
+            this._moreMask.active = visible;
+        }
+        if (this._moreIndicator) {
+            this._moreIndicator.active = visible;
+        }
     }
 
     protected onBack(): void {
@@ -404,19 +446,8 @@ export default class MapUILogic extends Component {
             const obj = this._resArray[index];
             var label = children[i].getChildByName("New Label").getComponent(Label)
 
-            if (obj.key == "gold") {
-                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
-            } else {
-                label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
-            }
-
-            i += 1;
-        }
-
-        for (let index = 0; index < this._yieldArray.length; index++) {
-            const obj = this._yieldArray[index];
-            var label = children[i].getChildByName("New Label").getComponent(Label)
             label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
+
             i += 1;
         }
 

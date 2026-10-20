@@ -1,0 +1,26 @@
+[
+  {
+    "Id": 1,
+    "Icon": 1,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 1,
+    "Overlap": 1
+  },
+  {
+    "Id": 2,
+    "Icon": 2,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 2,
+    "Overlap": 1
+  },
+  {
+    "Id": 1001,
+    "Icon": 1001,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 3,
+    "Overlap": 1
+  }
+]

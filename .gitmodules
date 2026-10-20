@@ -1,0 +1,4 @@
+[submodule "external/game_common"]
+	path = external/game_common
+	url = git@github.com:literwave/game_common.git
+	branch = master

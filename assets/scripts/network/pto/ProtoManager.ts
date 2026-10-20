@@ -32,26 +32,8 @@ export class ProtoManager {
 
         console.log("ProtoManager init, protobuf version:", protobuf.version);
 
-        // 定义需要加载的 proto 文件列表 (相对于 assets/resources 的路径，不含扩展名)
-        const protoFiles = [
-            "protbuf/pto/common",
-            "protbuf/pto/login",
-            "protbuf/pto/chat",
-            "protbuf/pto/hero",
-            "protbuf/pto/build",
-            "protbuf/pto/heartbeat",
-            "protbuf/pto/reward",
-            "protbuf/pto/user",
-        ];
-
         try {
-            // 并行加载所有文件
-            const loadPromises = protoFiles.map(file => this.loadProtoFile(file));
-
-            // 加载 ID 映射
-            loadPromises.push(this.loadPbJson());
-
-            await Promise.all(loadPromises);
+            await Promise.all([this.loadProtoFiles(), this.loadPbJson()]);
 
             this._isReady = true;
             console.log("ProtoManager initialized successfully");
@@ -67,9 +49,9 @@ export class ProtoManager {
 
     private loadPbJson(): Promise<void> {
         return new Promise((resolve, reject) => {
-            resources.load("protbuf/netPb", JsonAsset, (err, asset: JsonAsset) => {
+            resources.load("protbuf/net_pb", JsonAsset, (err, asset: JsonAsset) => {
                 if (err) {
-                    console.error("Failed to load netPb.json", err);
+                    console.error("Failed to load net_pb.json", err);
                     reject(err);
                     return;
                 }
@@ -79,11 +61,11 @@ export class ProtoManager {
                     if (json && json.define) {
                         this.parseIdMap(json.define);
                     } else {
-                        console.error("netPb.json format incorrect: missing 'define' field");
+                        console.error("net_pb.json format incorrect: missing 'define' field");
                     }
                     resolve();
                 } catch (e) {
-                    console.error("Failed to parse netPb.json", e);
+                    console.error("Failed to parse net_pb.json", e);
                     reject(e);
                 }
             });
@@ -111,29 +93,29 @@ export class ProtoManager {
         return this._nameMap[type];
     }
 
-    /**
-     * 加载单个 .proto 文件
-     */
-    private loadProtoFile(path: string): Promise<void> {
+    private loadProtoFiles(): Promise<void> {
         return new Promise((resolve, reject) => {
-            // 使用 TextAsset 加载文本内容
-            resources.load(path, TextAsset, (err, asset: TextAsset) => {
+            resources.loadDir("protbuf/pto", TextAsset, (err, assets: TextAsset[]) => {
                 if (err) {
-                    console.error(`Failed to load ${path}:`, err);
+                    console.error("Failed to load protbuf/pto", err);
                     reject(err);
                     return;
                 }
 
+                const ordered = (assets || []).slice().sort((left, right) => {
+                    if (left.name === "common") return -1;
+                    if (right.name === "common") return 1;
+                    return left.name.localeCompare(right.name);
+                });
+
                 try {
-                    // 解析 proto 文本
-                    const parsed = protobuf.parse(asset.text);
-
-                    // 将解析出的 root 合并到主 root 中
-                    this.mergeRoot(this._root, parsed.root);
-
+                    ordered.forEach((asset) => {
+                        const parsed = protobuf.parse(asset.text);
+                        this.mergeRoot(this._root, parsed.root);
+                    });
                     resolve();
                 } catch (e) {
-                    console.error(`Failed to parse ${path}:`, e);
+                    console.error("Failed to parse protbuf/pto", e);
                     reject(e);
                 }
             });
