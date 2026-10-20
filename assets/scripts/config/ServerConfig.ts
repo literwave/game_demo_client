@@ -20,6 +20,11 @@ const ServerConfig = {
 
     c2s_req_user_res: "User.c2s_req_user_res",
     s2c_req_user_res: "User.s2c_req_user_res",
+    c2s_gm_command: "User.c2s_gm_command",
+    s2c_gm_command_help: "User.s2c_gm_command_help",
+    s2c_tell_me: "User.s2c_tell_me",
+
+    s2c_show_reward: "Reward.s2c_show_reward",
 
     //旧
     account_login: "account.login",

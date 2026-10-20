@@ -20,6 +20,8 @@ import { LogicEvent } from './common/LogicEvent';
 import { ProtoManager } from './network/pto/ProtoManager';
 import { CoreEvent } from './core/CoreEvent';
 import LoadingLogic from './common/LoadingLogic';
+import RewardCommand from './reward/RewardCommand';
+import RewardWindowLogic from './reward/RewardWindowLogic';
 
 @ccclass('Main')
 export default class Main extends Component {
@@ -72,6 +74,9 @@ export default class Main extends Component {
 
         EventMgr.on(NetEvent.ServerRequesting, this.showWaitNode, this);
         EventMgr.on(NetEvent.ServerRequestSucess, this.onServerRequest, this);
+
+        RewardCommand.getInstance();
+        RewardWindowLogic.init();
 
 
         //初始化连接

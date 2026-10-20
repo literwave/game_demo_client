@@ -9,6 +9,7 @@ export class LogicEvent {
     public static showWaiting:string = "show_waiting";
     public static hideWaiting:string = "hide_waiting";
     public static showTip:string = "show_tip";
+    public static showReward:string = "show_reward";
 
     public static createRole:string = "createRole";
     public static enterServerComplete:string = "enterServerComplete";

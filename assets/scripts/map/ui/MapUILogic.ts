@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, Sprite, Color, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -26,6 +26,9 @@ import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { Skill } from '../../skill/SkillProxy';
 import { LogicEvent } from '../../common/LogicEvent';
+import { ServerConfig } from '../../config/ServerConfig';
+import { NetManager } from '../../network/socket/NetManager';
+import { ProtoManager } from '../../network/pto/ProtoManager';
 
 
 
@@ -157,6 +160,11 @@ export default class MapUILogic extends Component {
 
     protected _gmCtrlDown: boolean = false;
     protected _gmBDown: boolean = false;
+    protected _gmHistory: string[] = [];
+    protected _gmHistoryIndex: number = -1;
+    protected _gmHistoryDraft: string = "";
+    protected _gmCommandBg: Sprite = null;
+    protected _gmMessages: string[] = [];
 
     protected _resArray: any = [];
 
@@ -190,6 +198,22 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+
+        EventMgr.on(ServerConfig.s2c_gm_command_help, this.onGMCommandHelp, this);
+        EventMgr.on(ServerConfig.s2c_tell_me, this.onGMTellMe, this);
+        if (this.gmCommandBox) {
+            this.gmCommandBox.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCommandReturn, this);
+            this.gmCommandBox.node.on(EditBox.EventType.EDITING_DID_BEGAN, this.onGMCommandFocus, this);
+            this.gmCommandBox.node.on(EditBox.EventType.EDITING_DID_ENDED, this.onGMCommandBlur, this);
+            let bgNode = this.gmCommandBox.node.getChildByName("BACKGROUND_SPRITE");
+            this._gmCommandBg = bgNode ? bgNode.getComponent(Sprite) : null;
+        }
+        if (this.gmEditBoxX) {
+            this.gmEditBoxX.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        }
+        if (this.gmEditBoxY) {
+            this.gmEditBoxY.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        }
 
         this.initMoreMenu();
 
@@ -226,6 +250,17 @@ export default class MapUILogic extends Component {
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
         EventMgr.targetOff(this);
+        if (this.gmCommandBox) {
+            this.gmCommandBox.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCommandReturn, this);
+            this.gmCommandBox.node.off(EditBox.EventType.EDITING_DID_BEGAN, this.onGMCommandFocus, this);
+            this.gmCommandBox.node.off(EditBox.EventType.EDITING_DID_ENDED, this.onGMCommandBlur, this);
+        }
+        if (this.gmEditBoxX) {
+            this.gmEditBoxX.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        }
+        if (this.gmEditBoxY) {
+            this.gmEditBoxY.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        }
         input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
 
@@ -628,6 +663,34 @@ export default class MapUILogic extends Component {
     }
 
     protected onKeyDown(event: EventKeyboard): void {
+        let raw = event.rawEvent as KeyboardEvent;
+
+        if (this.gmPanel && this.gmPanel.active) {
+            if (event.keyCode === KeyCode.ESCAPE) {
+                if (raw && raw.preventDefault) {
+                    raw.preventDefault();
+                }
+                this.onClickGMClose();
+                return;
+            }
+            if (this.gmCommandBox && this.gmCommandBox.isFocused()) {
+                if (event.keyCode === KeyCode.ARROW_UP) {
+                    if (raw && raw.preventDefault) {
+                        raw.preventDefault();
+                    }
+                    this.navigateGMHistory(1);
+                    return;
+                }
+                if (event.keyCode === KeyCode.ARROW_DOWN) {
+                    if (raw && raw.preventDefault) {
+                        raw.preventDefault();
+                    }
+                    this.navigateGMHistory(-1);
+                    return;
+                }
+            }
+        }
+
         if (event.keyCode === KeyCode.CTRL_LEFT || event.keyCode === KeyCode.CTRL_RIGHT) {
             this._gmCtrlDown = true;
             return;
@@ -640,7 +703,6 @@ export default class MapUILogic extends Component {
             this._gmBDown = true;
         }
 
-        let raw = event.rawEvent as KeyboardEvent;
         let ctrl = this._gmCtrlDown || !!(raw && raw.ctrlKey);
         if (ctrl && event.keyCode === KeyCode.KEY_B) {
             if (raw && raw.preventDefault) {
@@ -677,7 +739,18 @@ export default class MapUILogic extends Component {
             if (this.gmCommandBox) {
                 this.gmCommandBox.string = "";
             }
-            this.setGMTip("输入 goto x y 跳转，或直接填写坐标");
+            this._gmHistoryIndex = -1;
+            this._gmHistoryDraft = "";
+            this.setGMTip("就绪 · Enter 执行 · goto x y 本地跳转 · help 查看帮助");
+            this.scheduleOnce(this.focusGMCommand, 0);
+        } else if (this.gmCommandBox) {
+            this.gmCommandBox.blur();
+        }
+    }
+
+    protected focusGMCommand(): void {
+        if (this.gmPanel && this.gmPanel.active && this.gmCommandBox) {
+            this.gmCommandBox.focus();
         }
     }
 
@@ -697,16 +770,32 @@ export default class MapUILogic extends Component {
         }
     }
 
-    protected setGMTip(text: string): void {
-        if (this.gmTipLabel) {
-            this.gmTipLabel.string = text;
+    protected setGMTip(text: string, append: boolean = false): void {
+        if (this.gmTipLabel == null) {
+            return;
         }
+        let value = (text || "").trim();
+        if (append && value.length > 0) {
+            if (this._gmMessages.length > 0 && this._gmMessages[this._gmMessages.length - 1] == value) {
+                return;
+            }
+            this._gmMessages.push(value);
+            while (this._gmMessages.length > 2) {
+                this._gmMessages.shift();
+            }
+        } else {
+            this._gmMessages = value.length > 0 ? [value] : [];
+        }
+        this.gmTipLabel.string = this._gmMessages.join("\n");
     }
 
     public onClickGMClose(): void {
         AudioManager.instance.playClick();
         if (this.gmPanel) {
             this.gmPanel.active = false;
+        }
+        if (this.gmCommandBox) {
+            this.gmCommandBox.blur();
         }
     }
 
@@ -723,7 +812,71 @@ export default class MapUILogic extends Component {
         if (this.gmCommandBox == null) {
             return;
         }
-        this.executeGMCommand(this.gmCommandBox.string);
+        let command = this.gmCommandBox.string;
+        this.executeGMCommand(command);
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    protected onGMCommandReturn(): void {
+        if (this.gmCommandBox == null) {
+            return;
+        }
+        let command = this.gmCommandBox.string;
+        this.executeGMCommand(command);
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    protected onGMCommandFocus(): void {
+        if (this._gmCommandBg) {
+            this._gmCommandBg.color = new Color(58, 84, 112, 255);
+        }
+    }
+
+    protected onGMCommandBlur(): void {
+        if (this._gmCommandBg) {
+            this._gmCommandBg.color = new Color(40, 56, 74, 255);
+        }
+    }
+
+    protected onGMCoordReturn(): void {
+        this.onClickGMJump();
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    protected navigateGMHistory(direction: number): void {
+        if (!this.gmCommandBox || this._gmHistory.length == 0) {
+            return;
+        }
+        if (this._gmHistoryIndex < 0) {
+            this._gmHistoryDraft = this.gmCommandBox.string;
+            this._gmHistoryIndex = 0;
+        } else {
+            this._gmHistoryIndex += direction;
+        }
+        if (this._gmHistoryIndex < 0) {
+            this._gmHistoryIndex = -1;
+            this.gmCommandBox.string = this._gmHistoryDraft;
+            return;
+        }
+        if (this._gmHistoryIndex >= this._gmHistory.length) {
+            this._gmHistoryIndex = this._gmHistory.length - 1;
+        }
+        this.gmCommandBox.string = this._gmHistory[this._gmHistoryIndex];
+    }
+
+    protected rememberGMCommand(command: string): void {
+        let text = (command || "").trim();
+        if (text.length == 0) {
+            return;
+        }
+        if (this._gmHistory.length == 0 || this._gmHistory[0] != text) {
+            this._gmHistory.unshift(text);
+            if (this._gmHistory.length > 20) {
+                this._gmHistory.pop();
+            }
+        }
+        this._gmHistoryIndex = -1;
+        this._gmHistoryDraft = "";
     }
 
     protected parseCoord(value: string): number {
@@ -736,15 +889,16 @@ export default class MapUILogic extends Component {
     protected executeGMCommand(command: string): void {
         let text = (command || "").trim();
         if (text.length == 0) {
-            this.setGMTip("请输入命令");
+            this.setGMTip("请输入命令", true);
             return;
         }
+        this.rememberGMCommand(text);
 
         let args = text.split(/\s+/);
         let cmd = args[0].toLowerCase();
         if (cmd == "goto" || cmd == "jump" || cmd == "tp") {
             if (args.length < 3) {
-                this.setGMTip("用法：goto x y");
+                this.setGMTip("用法：goto x y", true);
                 return;
             }
             this.jumpToCell(this.parseCoord(args[1]), this.parseCoord(args[2]));
@@ -753,11 +907,11 @@ export default class MapUILogic extends Component {
         if (cmd == "pos" || cmd == "where" || cmd == "coord") {
             this.refreshGMCoord();
             let center = MapCommand.getInstance().proxy.getCurCenterPoint();
-            this.setGMTip(center ? ("当前坐标 " + center.x + " , " + center.y) : "坐标不可用");
+            this.setGMTip(center ? ("当前坐标 " + center.x + " , " + center.y) : "坐标不可用", true);
             return;
         }
-        if (cmd == "help") {
-            this.setGMTip("支持：goto x y / pos / clear");
+        if (cmd == "help" || cmd == "?") {
+            this.setGMTip("本地命令：goto x y · pos · clear · help；其它指令会发送到服务器", true);
             return;
         }
         if (cmd == "clear") {
@@ -768,10 +922,55 @@ export default class MapUILogic extends Component {
             return;
         }
         if (args.length == 2) {
-            this.jumpToCell(this.parseCoord(args[0]), this.parseCoord(args[1]));
+            let x = this.parseCoord(args[0]);
+            let y = this.parseCoord(args[1]);
+            if (!isNaN(x) && !isNaN(y)) {
+                this.jumpToCell(x, y);
+                return;
+            }
+        }
+        this.sendGMCommand(text);
+    }
+
+    protected sendGMCommand(command: string): void {
+        let msgName = ServerConfig.c2s_gm_command;
+        let protoData = ProtoManager.getInstance().encode(msgName, {
+            cmd: command
+        });
+        if (!protoData) {
+            this.setGMTip("指令编码失败，请检查 Protobuf 配置", true);
             return;
         }
-        this.setGMTip("未知命令：" + args[0]);
+        NetManager.getInstance().send({
+            name: msgName,
+            msg: protoData
+        });
+        this.setGMTip("已发送：" + command + "  ·  等待服务器返回", true);
+    }
+
+    protected onGMCommandHelp(data: any): void {
+        let list = (data && data.ret) || [];
+        if (!Array.isArray(list) || list.length == 0) {
+            this.setGMTip("服务器未返回 GM 帮助", true);
+            return;
+        }
+        let parts = list.slice(0, 8).map((item: any) => item.k + "=" + item.v);
+        this.setGMTip("GM 帮助：" + parts.join("  "), true);
+    }
+
+    protected onGMTellMe(data: any): void {
+        let raw = data && (data.msg != null ? data.msg : (data.message != null ? data.message : (data.content != null ? data.content : data.text)));
+        let msg = raw == null ? "" : String(raw).trim();
+        if (msg.length == 0) {
+            console.warn("[GM] s2c_tell_me 收到空消息", data);
+            return;
+        }
+        console.log("[GM] s2c_tell_me", msg);
+        if (this.gmPanel && this.gmPanel.active) {
+            this.setGMTip(msg, true);
+        } else {
+            EventMgr.emit(LogicEvent.showToast, msg);
+        }
     }
 
     protected jumpToCell(x: number, y: number): void {
@@ -780,7 +979,7 @@ export default class MapUILogic extends Component {
             || x < 0 || y < 0
             || x >= mapSize.width
             || y >= mapSize.height) {
-            this.setGMTip("坐标无效，范围 0 - " + (mapSize ? (mapSize.width - 1) : 0));
+            this.setGMTip("坐标无效，范围 0 - " + (mapSize ? (mapSize.width - 1) : 0), true);
             return;
         }
         EventMgr.emit(LogicEvent.scrollToMap, x, y);
@@ -790,7 +989,7 @@ export default class MapUILogic extends Component {
         if (this.gmEditBoxY) {
             this.gmEditBoxY.string = y + "";
         }
-        this.setGMTip("已跳转到 (" + x + ", " + y + ")");
+        this.setGMTip("已跳转到 (" + x + ", " + y + ")", true);
     }
 
     protected beforeScrollToMap(x: number, y: number, oldx: number, oldy: number): void {
