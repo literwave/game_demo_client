@@ -17,6 +17,7 @@ export default class EnterTransitionLogic extends Component {
     private tipLabel: Label | null = null;
     private fillSprite: Sprite | null = null;
     private trackWidth = 420;
+    private statusLeftX = -210;
     private retryNode: Node | null = null;
     private backNode: Node | null = null;
     private opacity: UIOpacity | null = null;
@@ -30,6 +31,11 @@ export default class EnterTransitionLogic extends Component {
     private tipIndex = 0;
     private running = false;
     private failed = false;
+
+    private readonly statusBaseColor = new Color(201, 183, 143, 255);
+    private readonly statusFailColor = new Color(232, 140, 112, 255);
+    private readonly fillBaseColor = new Color(255, 255, 255, 255);
+    private readonly fillFailColor = new Color(178, 158, 122, 255);
 
     private readonly tips: string[] = [
         '小提示：加入同盟，与盟友共谋天下',
@@ -64,6 +70,7 @@ export default class EnterTransitionLogic extends Component {
         const tracking = this.child('Card/Track')?.getComponent(UITransform);
         if (tracking) {
             this.trackWidth = tracking.width;
+            this.statusLeftX = -this.trackWidth / 2;
         }
         this.updateFill(0);
 
@@ -98,6 +105,16 @@ export default class EnterTransitionLogic extends Component {
         this.tipIndex = 0;
         this.updateFill(this.shownProgress);
 
+        if (this.percentLabel) {
+            this.percentLabel.node.active = true;
+        }
+        if (this.statusLabel) {
+            this.statusLabel.color = this.statusBaseColor;
+        }
+        if (this.fillSprite) {
+            this.fillSprite.color = this.fillBaseColor;
+        }
+        this.setStatusCentered(false);
         if (this.accountLabel) {
             this.accountLabel.string = `主公 · ${account || '归来的旅人'}`;
         }
@@ -153,7 +170,15 @@ export default class EnterTransitionLogic extends Component {
         this.dotsTimer = 0;
         if (this.statusLabel) {
             this.statusLabel.string = message;
+            this.statusLabel.color = this.statusFailColor;
         }
+        if (this.fillSprite) {
+            this.fillSprite.color = this.fillFailColor;
+        }
+        if (this.percentLabel) {
+            this.percentLabel.node.active = false;
+        }
+        this.setStatusCentered(true);
         if (this.tipRoot) {
             this.tipRoot.active = false;
         }
@@ -169,6 +194,16 @@ export default class EnterTransitionLogic extends Component {
         this.tipTimer = 0;
         this.updateFill(this.shownProgress);
         this.showErrorButtons(false);
+        if (this.percentLabel) {
+            this.percentLabel.node.active = true;
+        }
+        if (this.statusLabel) {
+            this.statusLabel.color = this.statusBaseColor;
+        }
+        if (this.fillSprite) {
+            this.fillSprite.color = this.fillBaseColor;
+        }
+        this.setStatusCentered(false);
         if (this.tipRoot) {
             this.tipRoot.active = true;
         }
@@ -218,6 +253,26 @@ export default class EnterTransitionLogic extends Component {
         }
         const value = Math.max(0, Math.min(1, progress));
         transform.width = this.trackWidth * value;
+    }
+
+    private setStatusCentered(centered: boolean): void {
+        if (!this.statusLabel) {
+            return;
+        }
+        const transform = this.statusLabel.node.getComponent(UITransform);
+        if (!transform) {
+            return;
+        }
+        const y = this.statusLabel.node.position.y;
+        if (centered) {
+            transform.setAnchorPoint(0.5, 0.5);
+            this.statusLabel.node.setPosition(0, y, 0);
+            this.statusLabel.horizontalAlign = HorizontalTextAlignment.CENTER;
+        } else {
+            transform.setAnchorPoint(0, 0.5);
+            this.statusLabel.node.setPosition(this.statusLeftX, y, 0);
+            this.statusLabel.horizontalAlign = HorizontalTextAlignment.LEFT;
+        }
     }
 
     private showErrorButtons(visible: boolean): void {

@@ -27,43 +27,42 @@
             "s2c_user_login": 14,
             "c2s_verify_login": 15,
             "s2c_verify_login": 16,
-            "s2c_user_create": 17,
-            "s2c_user_login_ok": 18
+            "s2c_user_login_ok": 17
         },
         "Lottery": {
-            "c2s_req_user_lottery_info": 19,
-            "s2c_req_user_lottery_info": 20,
-            "c2s_user_lottery": 21,
-            "s2c_user_lottery": 22
+            "c2s_req_user_lottery_info": 18,
+            "s2c_req_user_lottery_info": 19,
+            "c2s_user_lottery": 20,
+            "s2c_user_lottery": 21
         },
         "Mail": {
-            "c2s_req_mail_list": 23,
-            "s2c_req_mail_list": 24,
-            "c2s_req_mail_detail": 25,
-            "s2c_req_mail_detail": 26,
-            "c2s_del_mail_list": 27,
-            "s2c_del_mail_list": 28,
-            "c2s_set_mail_lock": 29,
-            "s2c_set_mail_lock": 30,
-            "c2s_get_mail_reward": 31,
-            "s2c_get_mail_reward": 32
+            "c2s_req_mail_list": 22,
+            "s2c_req_mail_list": 23,
+            "c2s_req_mail_detail": 24,
+            "s2c_req_mail_detail": 25,
+            "c2s_del_mail_list": 26,
+            "s2c_del_mail_list": 27,
+            "c2s_set_mail_lock": 28,
+            "s2c_set_mail_lock": 29,
+            "c2s_get_mail_reward": 30,
+            "s2c_get_mail_reward": 31
         },
         "Reward": {
-            "s2c_show_reward": 33,
-            "s2c_sync_user_diamond": 34
+            "s2c_show_reward": 32,
+            "s2c_sync_user_diamond": 33
         },
         "User": {
-            "c2s_user_base_info": 35,
-            "s2c_user_base_info": 36,
-            "c2s_user_create": 37,
-            "s2c_user_create": 38,
-            "c2s_req_user_res": 39,
-            "s2c_req_user_res": 40,
-            "s2c_sync_user_res_list": 41,
-            "s2c_sys_notify_by_lanid": 42,
-            "s2c_tell_me": 43,
-            "c2s_gm_command": 44,
-            "s2c_gm_command_help": 45
+            "c2s_user_base_info": 34,
+            "s2c_user_base_info": 35,
+            "c2s_user_create": 36,
+            "s2c_user_create": 37,
+            "c2s_req_user_res": 38,
+            "s2c_req_user_res": 39,
+            "s2c_sync_user_res_list": 40,
+            "s2c_sys_notify_by_lanid": 41,
+            "s2c_tell_me": 42,
+            "c2s_gm_command": 43,
+            "s2c_gm_command_help": 44
         }
     }
 }
