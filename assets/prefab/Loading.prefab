@@ -2371,8 +2371,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": 434,
-      "y": -74,
+      "x": 524,
+      "y": -144,
       "z": 0
     },
     "_lrot": {
@@ -2417,7 +2417,7 @@
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0,
+      "x": 1,
       "y": 0.5
     },
     "_id": ""
@@ -2531,7 +2531,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 346,
-      "y": -140,
+      "y": -174,
       "z": 0
     },
     "_lrot": {
@@ -3238,7 +3238,65 @@
       "__expectedType__": "cc.Prefab"
     },
     "runner": null,
-    "_id": ""
+    "_id": "",
+    "runnerFrames": [
+      {
+        "__uuid__": "43dd5247-e484-4372-bdac-9064a347543e@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "231c93d6-b53e-42c8-a799-0b4aa15e7bf1@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "e77ad1b8-5463-4e1f-a0a3-baa7f3142d91@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "842a0276-f72b-40c8-aeb4-ca04ba426876@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "972b341a-f1e5-460f-b06f-bbcde4d8f971@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "c2ca3285-0881-4819-b16b-1e7e87145026@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "b7db5491-1eed-4850-afa9-dc3df9973d69@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "37831c51-d2f3-47aa-8390-1adfb3810ee5@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "e0cc9564-21ca-4fb2-ad0f-e6687bdf75fd@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "570aeaa5-51e5-4cb2-8834-e9603ce5227c@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "09b82885-5038-4722-a553-0eaff8bb1215@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "5bbd3396-07ec-4fcd-8fbf-b91afdf29ec3@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "738dea60-968f-4b28-bd79-61c184f822c9@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "2e0145bf-2222-45be-9531-0e18c6e8396a@f9941",
+        "__expectedType__": "cc.SpriteFrame"
+      }
+    ]
   },
   {
     "__type__": "cc.CompPrefabInfo",

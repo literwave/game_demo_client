@@ -1,0 +1,13 @@
+#!/bin/sh
+# Installed as external/game_common's post-checkout hook.
+# git submodule update checks out the submodule, and this copies client files into assets/resources.
+if [ "$GAME_COMMON_SYNC" = "1" ]; then
+    exit 0
+fi
+export GAME_COMMON_SYNC=1
+root=$(git rev-parse --show-superproject-working-tree 2>/dev/null) || exit 0
+if [ -z "$root" ]; then
+    exit 0
+fi
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/tools/sync-game-common.ps1" -CopyOnly
+exit $?
