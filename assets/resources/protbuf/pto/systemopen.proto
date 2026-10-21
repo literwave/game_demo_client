@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package SystemOpen;
+// 系统开启
+
+// 请求系统开启数据
+message c2s_req_system_open {
+}
+
+// 系统开启数据返回
+message s2c_req_system_open {
+	repeated int32 systemIdList = 1;  // 已开启的系统id
+}
+
+// 同步新开启的系统
+message s2c_sync_system_open {
+	int32 systemId = 1;  // 新开启的系统id
+}

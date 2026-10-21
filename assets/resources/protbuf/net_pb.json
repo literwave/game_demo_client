@@ -51,18 +51,27 @@
             "s2c_show_reward": 32,
             "s2c_sync_user_diamond": 33
         },
+        "SystemOpen": {
+            "c2s_req_system_open": 34,
+            "s2c_req_system_open": 35,
+            "s2c_sync_system_open": 36
+        },
         "User": {
-            "c2s_user_base_info": 34,
-            "s2c_user_base_info": 35,
-            "c2s_user_create": 36,
-            "s2c_user_create": 37,
-            "c2s_req_user_res": 38,
-            "s2c_req_user_res": 39,
-            "s2c_sync_user_res_list": 40,
-            "s2c_sys_notify_by_lanid": 41,
-            "s2c_tell_me": 42,
-            "c2s_gm_command": 43,
-            "s2c_gm_command_help": 44
+            "c2s_user_base_info": 37,
+            "s2c_user_base_info": 38,
+            "c2s_user_create": 39,
+            "s2c_user_create": 40,
+            "c2s_req_user_res": 41,
+            "s2c_req_user_res": 42,
+            "s2c_sync_user_res_list": 43,
+            "s2c_sys_notify_by_lanid": 44,
+            "s2c_tell_me": 45,
+            "c2s_gm_command": 46,
+            "s2c_gm_command_help": 47
+        },
+        "World": {
+            "c2s_enter_big_world": 48,
+            "s2c_enter_big_world": 49
         }
     }
 }
