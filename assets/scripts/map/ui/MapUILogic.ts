@@ -527,24 +527,65 @@ export default class MapUILogic extends Component {
      * 角色信息
      */
     protected updateRoleRes(): void {
+        if (!this.srollLayout || !this.srollLayout.node) {
+            return;
+        }
         var children = this.srollLayout.node.children;
+        if (!children || children.length == 0) {
+            return;
+        }
         var roleRes = LoginCommand.getInstance().proxy.getRoleResData();
-
-        console.log(roleRes)
+        var resMap = this.toResMap(roleRes);
         var i = 0;
-        children[i].getChildByName("New Label").getComponent(Label).string = "令牌 " + Tools.numberToShow(roleRes[1]);
+        this.setResLabel(children, i, "令牌", 4, resMap);
         i += 1;
-
 
         for (let index = 0; index < this._resArray.length; index++) {
             const obj = this._resArray[index];
-            var label = children[i].getChildByName("New Label").getComponent(Label)
-
-            label.string = obj.name + Tools.numberToShow(roleRes[obj.key]);
-
+            this.setResLabel(children, i, obj.name, obj.key, resMap);
             i += 1;
         }
+    }
 
+    /** 服务器资源是 { resList: [{ k, v }] }，统一成 key -> 数量 */
+    private toResMap(roleRes: any): { [key: number]: number } {
+        var map: { [key: number]: number } = {};
+        if (!roleRes) {
+            return map;
+        }
+        if (Array.isArray(roleRes.resList)) {
+            for (const item of roleRes.resList) {
+                if (item && item.k !== undefined) {
+                    map[Number(item.k)] = Number(item.v) || 0;
+                }
+            }
+        }
+        for (let key = 0; key <= 20; key++) {
+            if (typeof roleRes[key] === "number") {
+                map[key] = roleRes[key];
+            }
+        }
+        return map;
+    }
+
+    private setResLabel(children: readonly Node[], index: number, name: string, itemId: number, resMap: { [key: number]: number }): void {
+        if (index >= children.length) {
+            return;
+        }
+        var labelNode = children[index].getChildByName("New Label");
+        var label = labelNode ? labelNode.getComponent(Label) : null;
+        if (!label) {
+            return;
+        }
+        label.string = name + Tools.numberToShow(this.getResCount(itemId, resMap));
+    }
+
+    private getResCount(itemId: number, resMap: { [key: number]: number }): number {
+        var proxy = LoginCommand.getInstance().proxy;
+        if (proxy.hasItemCount(itemId)) {
+            return proxy.getItemCount(itemId);
+        }
+        return resMap[itemId] || 0;
     }
 
 

@@ -42,6 +42,8 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_user_base_info, this.onGetUserBaseInfo, this);
         EventMgr.on(ServerConfig.s2c_req_user_res, this.onGetUserRes, this);
         EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
+        EventMgr.on(ServerConfig.s2c_sync_item_data, this.onSyncItemData, this);
+        EventMgr.on(ServerConfig.s2c_sync_user_res_list, this.onSyncUserResList, this);
 
         EventMgr.on(ServerConfig.account_reLogin, this.onAccountRelogin, this);
         EventMgr.on(ServerConfig.account_logout, this.onAccountLogout, this);
@@ -94,6 +96,40 @@ export default class LoginCommand {
         console.log("LoginProxy  onGetUserRes:", data);
         this._proxy.setRoleResData(data)
         this.makeSureAllDataReady()
+    }
+
+    /**物品数量同步，主界面资源栏跟着刷新*/
+    private onSyncItemData(data: any): void {
+        if (!data) {
+            return;
+        }
+        this._proxy.updateItemData(data.itemUid, data.itemId, data.itemCnt);
+        EventMgr.emit(LogicEvent.upateMyRoleRes);
+    }
+
+    /**资源列表增量同步*/
+    private onSyncUserResList(data: any): void {
+        if (!data || !Array.isArray(data.resList)) {
+            return;
+        }
+        const roleRes = this._proxy.getRoleResData();
+        if (!roleRes || !Array.isArray(roleRes.resList)) {
+            this._proxy.setRoleResData({ resList: data.resList.slice() });
+        } else {
+            const merged: Map<number, number> = new Map();
+            for (const item of roleRes.resList) {
+                if (item && item.k !== undefined) {
+                    merged.set(Number(item.k), Number(item.v) || 0);
+                }
+            }
+            for (const item of data.resList) {
+                if (item && item.k !== undefined) {
+                    merged.set(Number(item.k), Number(item.v) || 0);
+                }
+            }
+            roleRes.resList = Array.from(merged.entries()).map(([k, v]) => ({ k, v }));
+        }
+        EventMgr.emit(LogicEvent.upateMyRoleRes);
     }
 
     /**拿到玩家资源数据和玩家数据才加载界面 */

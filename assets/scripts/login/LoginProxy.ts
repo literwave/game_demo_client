@@ -37,6 +37,10 @@ export default class LoginProxy {
     //角色资源
     private _roleResData: any = null;
 
+    //物品堆叠：itemUid -> { itemId, count }；itemCnt 是该堆叠当前数量
+    private _itemStacks: Map<number, { itemId: number; count: number }> = new Map();
+    private _itemTotals: Map<number, number> = new Map();
+
     private _token: string = null;
 
     public clear() {
@@ -44,6 +48,8 @@ export default class LoginProxy {
         this._loginData = null;
         this._roleData = null;
         this._roleResData = null;
+        this._itemStacks.clear();
+        this._itemTotals.clear();
         this._token = ""
     }
 
@@ -77,6 +83,27 @@ export default class LoginProxy {
 
     public getRoleResData(): any {
         return this._roleResData;
+    }
+
+    public updateItemData(itemUid: number, itemId: number, itemCnt: number): void {
+        const uid = toProtoInt(itemUid);
+        const id = toProtoInt(itemId);
+        if (id <= 0) {
+            return;
+        }
+        this._itemStacks.set(uid, { itemId: id, count: Math.max(0, toProtoInt(itemCnt)) });
+        this._itemTotals.clear();
+        this._itemStacks.forEach(stack => {
+            this._itemTotals.set(stack.itemId, (this._itemTotals.get(stack.itemId) || 0) + stack.count);
+        });
+    }
+
+    public hasItemCount(itemId: number): boolean {
+        return this._itemTotals.has(itemId);
+    }
+
+    public getItemCount(itemId: number): number {
+        return this._itemTotals.get(itemId) || 0;
     }
 
 

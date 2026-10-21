@@ -34,6 +34,8 @@ const ServerConfig = {
     s2c_edit_troop: "World.s2c_edit_troop",
 
     s2c_show_reward: "Reward.s2c_show_reward",
+    s2c_sync_item_data: "Item.s2c_sync_item_data",
+    s2c_sync_user_res_list: "User.s2c_sync_user_res_list",
 
     //旧
     account_login: "account.login",
