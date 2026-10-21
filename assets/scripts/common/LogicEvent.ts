@@ -10,6 +10,8 @@ export class LogicEvent {
     public static hideWaiting:string = "hide_waiting";
     public static showTip:string = "show_tip";
     public static showReward:string = "show_reward";
+    public static systemOpenUpdated:string = "system_open_updated";
+    public static systemUnlock:string = "system_unlock";
 
     public static createRole:string = "createRole";
     public static enterServerComplete:string = "enterServerComplete";

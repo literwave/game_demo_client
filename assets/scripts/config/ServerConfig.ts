@@ -23,6 +23,9 @@ const ServerConfig = {
     c2s_gm_command: "User.c2s_gm_command",
     s2c_gm_command_help: "User.s2c_gm_command_help",
     s2c_tell_me: "User.s2c_tell_me",
+    c2s_req_system_open: "SystemOpen.c2s_req_system_open",
+    s2c_req_system_open: "SystemOpen.s2c_req_system_open",
+    s2c_sync_system_open: "SystemOpen.s2c_sync_system_open",
 
     s2c_show_reward: "Reward.s2c_show_reward",
 

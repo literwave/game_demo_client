@@ -29,8 +29,9 @@ import { LogicEvent } from '../../common/LogicEvent';
 import { ServerConfig } from '../../config/ServerConfig';
 import { NetManager } from '../../network/socket/NetManager';
 import { ProtoManager } from '../../network/pto/ProtoManager';
+import SystemOpenCommand from '../../systemopen/SystemOpenCommand';
 
-
+const HEAD_ICON_SYSTEM_ID = 1;
 
 @ccclass('MapUILogic')
 export default class MapUILogic extends Component {
@@ -157,6 +158,7 @@ export default class MapUILogic extends Component {
     protected _morePanel: Node = null;
     protected _moreMask: Node = null;
     protected _moreIndicator: Node = null;
+    protected _avatarEntry: Node = null;
 
     protected _gmCtrlDown: boolean = false;
     protected _gmBDown: boolean = false;
@@ -216,6 +218,8 @@ export default class MapUILogic extends Component {
         }
 
         this.initMoreMenu();
+        this.initAvatarEntry();
+        SystemOpenCommand.getInstance().requestSystemOpen();
 
 
 
@@ -250,21 +254,74 @@ export default class MapUILogic extends Component {
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
         EventMgr.targetOff(this);
-        if (this.gmCommandBox) {
-            this.gmCommandBox.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCommandReturn, this);
-            this.gmCommandBox.node.off(EditBox.EventType.EDITING_DID_BEGAN, this.onGMCommandFocus, this);
-            this.gmCommandBox.node.off(EditBox.EventType.EDITING_DID_ENDED, this.onGMCommandBlur, this);
+        const gmCommandNode = this.gmCommandBox && this.gmCommandBox.node;
+        if (gmCommandNode && gmCommandNode.isValid) {
+            gmCommandNode.off(EditBox.EventType.EDITING_RETURN, this.onGMCommandReturn, this);
+            gmCommandNode.off(EditBox.EventType.EDITING_DID_BEGAN, this.onGMCommandFocus, this);
+            gmCommandNode.off(EditBox.EventType.EDITING_DID_ENDED, this.onGMCommandBlur, this);
         }
-        if (this.gmEditBoxX) {
-            this.gmEditBoxX.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        const gmXNode = this.gmEditBoxX && this.gmEditBoxX.node;
+        if (gmXNode && gmXNode.isValid) {
+            gmXNode.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
         }
-        if (this.gmEditBoxY) {
-            this.gmEditBoxY.node.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        const gmYNode = this.gmEditBoxY && this.gmEditBoxY.node;
+        if (gmYNode && gmYNode.isValid) {
+            gmYNode.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
         }
+        if (this._avatarEntry && this._avatarEntry.isValid) {
+            this._avatarEntry.off(Button.EventType.CLICK, this.onClickAvatar, this);
+        }
+        this._avatarEntry = null;
         input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
 
         console.log("MapUILogic onDestroy")
+    }
+
+    protected initAvatarEntry(): void {
+        this._avatarEntry = this.node.getChildByPath("PlayerCard");
+        if (!this._avatarEntry) {
+            console.warn("Avatar entry skipped: PlayerCard not found");
+            return;
+        }
+        let button = this._avatarEntry.getComponent(Button);
+        if (!button) {
+            button = this._avatarEntry.addComponent(Button);
+        }
+        button.transition = Button.Transition.SCALE;
+        button.zoomScale = 0.97;
+        button.duration = 0.08;
+        this._avatarEntry.off(Button.EventType.CLICK, this.onClickAvatar, this);
+        this._avatarEntry.on(Button.EventType.CLICK, this.onClickAvatar, this);
+    }
+
+    protected onClickAvatar(): void {
+        AudioManager.instance.playClick();
+        if (!this.isAvatarSystemOpen()) {
+            const config = SystemOpenCommand.getInstance().getConfig(HEAD_ICON_SYSTEM_ID);
+            const level = this.getUnlockLevel(config);
+            const featureName = (config && config.Name) || "更换头像";
+            EventMgr.emit(LogicEvent.showToast, level > 0 ? `${featureName}将在 Lv.${level} 开启` : `${featureName}尚未开启`);
+            return;
+        }
+        EventMgr.emit(LogicEvent.showToast, "更换头像功能已开启");
+    }
+
+    protected isAvatarSystemOpen(): boolean {
+        return SystemOpenCommand.getInstance().isSystemOpen(HEAD_ICON_SYSTEM_ID);
+    }
+
+    protected getUnlockLevel(config: any): number {
+        if (!config || !Array.isArray(config.Cond)) {
+            return 0;
+        }
+        for (const condition of config.Cond) {
+            const level = Number(condition && condition.level);
+            if (level > 0) {
+                return level;
+            }
+        }
+        return 0;
     }
 
     protected initMoreMenu(): void {

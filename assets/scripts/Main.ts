@@ -22,6 +22,8 @@ import { CoreEvent } from './core/CoreEvent';
 import LoadingLogic from './common/LoadingLogic';
 import RewardCommand from './reward/RewardCommand';
 import RewardWindowLogic from './reward/RewardWindowLogic';
+import SystemOpenCommand from './systemopen/SystemOpenCommand';
+import SystemUnlockWindow from './systemopen/SystemUnlockWindow';
 
 @ccclass('Main')
 export default class Main extends Component {
@@ -77,6 +79,8 @@ export default class Main extends Component {
 
         RewardCommand.getInstance();
         RewardWindowLogic.init();
+        SystemOpenCommand.getInstance();
+        SystemUnlockWindow.init();
 
 
         //初始化连接
@@ -103,6 +107,8 @@ export default class Main extends Component {
         MapCommand.getInstance().clearData();
         GeneralCommand.getInstance().clearData();
         ArmyCommand.getInstance().clearData();
+        SystemOpenCommand.getInstance().proxy.clear();
+        SystemUnlockWindow.reset();
     }
 
     private enterLogin(): void {
