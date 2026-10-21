@@ -110,7 +110,25 @@ export { GameConfig };
 
 ## 配置表
 
-游戏数值在 `assets/resources/config`。这些 JSON 是配置文件，AI 可以读，不能改。
+游戏数值的源表在 submodule [`external/game_common`](https://github.com/literwave/game_common)，前端导出是 `client/res/*.json`。客户端运行时读的是拷贝到 `assets/resources/config` 的那份。这些 JSON 是配置文件，AI 可以读，不能改。
+
+`git submodule update --remote` **只更新 submodule 指针**，不会往 `assets/resources/config` 拷文件。所以 `git status` 里出现 `modified: external/game_common (new commits)` 时，config 可能还是旧的。
+
+拉最新 common 并拷进客户端，用：
+
+```powershell
+tools/sync-game-common.ps1
+```
+
+脚本会：
+
+1. 执行 `git submodule update --init --remote -- external/game_common`（没初始化过时必须带 `--init`，否则 `--remote` 会静默跳过）。
+2. 把 `client/res/*.json` 拷到 `assets/resources/config`，把 `proto` 和 `client/net_pb.json` 拷到 `assets/resources/protbuf`。
+3. 给 submodule 安装 `post-checkout` 钩子。装过之后，再跑 `git submodule update --remote` 会自动拷贝。
+
+钩子只存在本机 `.git` 里，不进仓库。新克隆或钩子丢了，再跑一次脚本。不要只跑 `git submodule update --remote` 就当表已经进客户端。
+
+改表在 `game_common` 里做，不要直接改 `assets/resources/config`。表里的 `Icon` 写成 `assets/resources/ui` 下的路径，不要写扩展名，例如 `"Icon": "ui/item_icons/speed_up"`，对应 `assets/resources/ui/item_icons/speed_up.png`。
 
 `.agents/` 不进仓库。其他开发者在项目里新建 `.agents/skills/game-config/SKILL.md`，把下面的内容放进去，AI 就会按这个限制工作：
 
