@@ -29,7 +29,7 @@ message p_hero_base_info {
 
 message p_mail_info {
 	int32 mailType = 1;
-	string mailId = 2;
+	int64 mailId = 2;
 	string title = 3;
 	string content = 4;
 	bool isRead = 5;

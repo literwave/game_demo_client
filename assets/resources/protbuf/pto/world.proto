@@ -14,7 +14,7 @@ package World;
 // 部队信息
 message p_troop_info {
 	uint32 troopIdx = 1;
-	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+	map<uint32, uint32> pos2HeroMap = 2;  // 位置 -> 英雄idx
 }
 
 // 请求部队数据
@@ -28,14 +28,12 @@ message s2c_req_troop {
 
 // 编辑部队
 message c2s_edit_troop {
-	uint32 troopIdx = 1;
-	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+	p_troop_info troopInfo = 1;
 }
 
 // 编辑部队返回
 message s2c_edit_troop {
-	uint32 troopIdx = 1;
-	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+	p_troop_info troopInfo = 1;
 }
 
 

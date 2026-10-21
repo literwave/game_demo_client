@@ -3,7 +3,7 @@ syntax = "proto3";
 package Item;
 
 message s2c_sync_item_data {
-	string itemId = 1;
-	int32 itemType = 2;
+	int64 itemUid = 1;
+	int32 itemId = 2;
 	int32 itemCnt = 3;
 }
