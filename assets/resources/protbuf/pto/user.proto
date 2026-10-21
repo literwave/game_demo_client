@@ -48,7 +48,13 @@ message s2c_tell_me {
 message c2s_gm_command {
     string cmd = 1;
 }
-
 message s2c_gm_command_help {
     repeated Common.p_common_info ret = 1;
+}
+
+message c2s_change_head_icon {
+    int32 headIcon = 1;
+}
+message s2c_change_head_icon {
+    int32 headIcon = 1;
 }

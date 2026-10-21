@@ -10,3 +10,32 @@ package World;
 // // 进入大世界返回
 // message s2c_enter_big_world {
 // }
+
+// 部队信息
+message p_troop_info {
+	uint32 troopIdx = 1;
+	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+}
+
+// 请求部队数据
+message c2s_req_troop {
+}
+
+// 部队数据返回
+message s2c_req_troop {
+	repeated p_troop_info troopList = 1;
+}
+
+// 编辑部队
+message c2s_edit_troop {
+	uint32 troopIdx = 1;
+	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+}
+
+// 编辑部队返回
+message s2c_edit_troop {
+	uint32 troopIdx = 1;
+	map<uint32, uint32> heroIdxMap = 2;  // 英雄idx -> 位置
+}
+
+
