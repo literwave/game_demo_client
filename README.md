@@ -108,6 +108,39 @@ export { GameConfig };
 
 ![聊天](img/14.png)
 
+## 配置表
+
+游戏数值在 `assets/resources/config`。这些 JSON 是配置文件，AI 可以读，不能改。
+
+`.agents/` 不进仓库。其他开发者在项目里新建 `.agents/skills/game-config/SKILL.md`，把下面的内容放进去，AI 就会按这个限制工作：
+
+```markdown
+---
+name: game-config
+description: >-
+  Read game tables under assets/resources/config without editing them.
+  Use when reading or changing config, Global.json, SystemOpen.json,
+  or any JSON game table, or when the user mentions 配置.
+---
+
+# Game config
+
+`assets/resources/config` 里的文件是配置文件。可以读，不能修改。
+
+## 可以做
+
+- 读取 `assets/resources/config` 下的 JSON，按现有字段写逻辑。
+- 字段缺失时按缺省处理，不要补写配置。
+
+## 不能做
+
+- 不能修改、新增、删除、重排或格式化 `assets/resources/config` 里的文件，包括同目录的 `.meta`。
+- 不能用同步脚本覆盖这些文件。
+- 用户没有明确要求改配置时，也不要改。
+
+需要改表时停下来，说明要改哪张表、哪个字段，等用户自己改配置。
+```
+
 ## Cocos AI Copilot
 
 可选的编辑器插件，不随仓库提交。每个开发者在本机安装，游戏构建和运行不依赖它。

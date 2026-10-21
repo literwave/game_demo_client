@@ -3,6 +3,6 @@
     "Id": 1,
     "Name": "进入大世界",
     "Desc": "开启后可进入大世界",
-    "Enum": "enter_big_world"
+    "Enum": "ENTER_BIG_WORLD"
   }
 ]
