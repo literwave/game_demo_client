@@ -143,20 +143,19 @@ description: >-
 
 ## 提交说明
 
-生成 git 提交说明时使用中文。规则在 `.cursor/rules/commit-message.mdc`，会随仓库提交。生成提交说明时读的是这条项目规则，不是上面的 Skill。
+生成提交说明时读的是仓库根目录的 `.cursorrules`，不是 Skill，也不是 `.cursor/rules`。文件已放在项目里，内容是：
 
 ```markdown
----
-description: 生成 git 提交说明时使用中文
-alwaysApply: true
----
+# Commit messages
 
-# 提交说明
+All generated commit messages must be written in Simplified Chinese (简体中文).
 
-生成 git 提交说明时使用中文。
+Format:
+- First line: one concise Chinese summary of why/what changed (imperative / 陈述句均可)
+- Optional body: short Chinese bullets if needed
+- Do not use English Conventional Commit prefixes like feat:/fix: unless the user asks
 
-- 用一两句说明这次改动为什么做。
-- 不要用英文标题，也不要照抄历史里的英文提交说明。
+Match recent repo history style (short Chinese one-liners).
 ```
 
 ## Cocos AI Copilot
