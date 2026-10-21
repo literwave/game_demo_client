@@ -12,6 +12,8 @@ message s2c_user_base_info {
     int32 headIcon = 2;
     int32 sex = 3;
     int32 birthTime = 4;
+    int32 level = 5;
+    int32 exp = 6;
 }
 
 message c2s_user_create {

@@ -3,10 +3,10 @@ syntax = "proto3";
 package World;
 // 大世界
 
-// 请求进入大世界
-message c2s_enter_big_world {
-}
+// // 请求进入大世界
+// message c2s_enter_big_world {
+// }
 
-// 进入大世界返回
-message s2c_enter_big_world {
-}
+// // 进入大世界返回
+// message s2c_enter_big_world {
+// }
