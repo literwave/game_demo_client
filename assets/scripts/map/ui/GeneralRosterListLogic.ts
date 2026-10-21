@@ -28,13 +28,17 @@ export default class GeneralRosterListLogic extends Component {
 
 
     protected initGeneralCfg():void{
-
+        if (!this.scrollView) {
+            return;
+        }
         let cfgs = GeneralCommand.getInstance().proxy.getGeneralAllCfg();
         var arr = Array.from(cfgs.values());
         arr.sort(this.sortStar);
 
         var comp = this.scrollView.node.getComponent(ListLogic);
-        comp.setData(arr);
+        if (comp) {
+            comp.setData(arr);
+        }
 
     }
 
@@ -43,7 +47,8 @@ export default class GeneralRosterListLogic extends Component {
         if(a.star < b.star){
             return 1;
         }else if(a.star == b.star){
-            return a.cfgId - b.cfgId;
+            const sortDiff = (a.sort || 0) - (b.sort || 0);
+            return sortDiff != 0 ? sortDiff : a.cfgId - b.cfgId;
         }else{
             return -1;
         }

@@ -27,6 +27,8 @@ export class LogicEvent {
 
     public static updateArmy:string = "update_army";
     public static updateArmyList:string = "update_army_list";
+    public static updateTroopList:string = "update_troop_list";
+    public static updateTroop:string = "update_troop";
     public static updateTag:string = "update_tag";
     public static updateBuilds:string = "update_builds";
     public static updateBuild:string = "update_build";

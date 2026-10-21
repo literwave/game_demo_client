@@ -77,12 +77,13 @@ export default class GeneralComposeLogic  extends Component {
 
 
     protected updateGeneral():void{
-        let list:any[] = GeneralCommand.getInstance().proxy.getComposeGenerals(this._cfgData.cfgId,this._currData.id);
+        let list:any[] = GeneralCommand.getInstance().proxy.getMyGeneralsNotUse()
+            .filter((general) => general.hero_type != this._currData.id && general.config && general.config.cfgId == this._cfgData.cfgId);
         let listTemp = list.concat();
 
 
         listTemp.forEach(item => {
-            item.type = GeneralItemType.GeneralSelect;
+            item.listType = GeneralItemType.GeneralSelect;
         })
 
         var comp = this.scrollView.node.getComponent(ListLogic);

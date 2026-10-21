@@ -1,5 +1,7 @@
 
 import { _decorator, Component, Prefab, ToggleContainer, Node, instantiate } from 'cc';
+import GeneralCommand from "../../general/GeneralCommand";
+import { ServerConfig } from '../../config/ServerConfig';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
 import { EventMgr } from '../../utils/EventMgr';
@@ -29,6 +31,7 @@ export default class GeneralInfoLogic  extends Component {
 
     private _curIndex:number = 0;
     private _nodeList:Node[] = [];
+    private _supportedTabs:boolean[] = [true, false, false];
 
     protected onLoad():void{
         EventMgr.on(LogicEvent.updateOneGenerals, this.updateOnce, this); 
@@ -50,6 +53,18 @@ export default class GeneralInfoLogic  extends Component {
         this._nodeList[0] = des;
         this._nodeList[1] = comp;
         this._nodeList[2] = addd;
+
+        this._supportedTabs[1] = GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.general_composeGeneral);
+        this._supportedTabs[2] = GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.general_addPrGeneral);
+        const toggles = this.generalToggleContainer ? this.generalToggleContainer.toggleItems : [];
+        for (let i = 1; i < this._supportedTabs.length; i++) {
+            if (toggles[i] && toggles[i].node) {
+                toggles[i].node.active = this._supportedTabs[i];
+            }
+            if (!this._supportedTabs[i] && this._nodeList[i]) {
+                this._nodeList[i].active = false;
+            }
+        }
     }
 
     protected updateOnce(curData:any):void{
@@ -76,10 +91,18 @@ export default class GeneralInfoLogic  extends Component {
     }
 
     protected setIndex(index:number = 0):void{
+        if (!this._supportedTabs[index]) {
+            index = 0;
+        }
+        if (!this._nodeList[index]) {
+            return;
+        }
         this._curIndex = index;
         this.allVisible();
         this._nodeList[index].active = true;
-        this.generalToggleContainer.toggleItems[index].isChecked = true;
+        if (this.generalToggleContainer && this.generalToggleContainer.toggleItems[index]) {
+            this.generalToggleContainer.toggleItems[index].isChecked = true;
+        }
 
         let logicNameArr:string[] = ["GeneralDesLogic","GeneralComposeLogic","GeneralAddPrLogic"]
         let com = this._nodeList[index].getComponent(logicNameArr[index]);

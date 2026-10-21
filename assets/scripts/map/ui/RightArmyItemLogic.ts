@@ -5,6 +5,7 @@ import { ArmyCmd, ArmyData } from "../../general/ArmyProxy";
 import GeneralCommand from "../../general/GeneralCommand";
 import ArmyCommand from "../../general/ArmyCommand";
 import { GeneralConfig, GeneralData } from "../../general/GeneralProxy";
+import { TroopData } from "../../general/TroopProxy";
 import { MapCityData } from "../MapCityProxy";
 import MapCommand from "../MapCommand";
 import DateUtil from "../../utils/DateUtil";
@@ -36,11 +37,13 @@ export default class RightArmyItemLogic extends Component {
 
     public order: number = 0;
     protected _data: ArmyData = null;
+    protected _troop: TroopData = null;
     protected _firstGeneral: GeneralData = null;
     protected _qryReturnTime: number = 0;
 
     protected onLoad(): void {
         EventMgr.on(LogicEvent.updateGeneral, this.onUpdateGeneral, this);
+        EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
         this.node.getComponent(UITransform).height -= this.bottomNode.getComponent(UITransform).height;
         this.bottomNode.active = false;
     }
@@ -48,6 +51,7 @@ export default class RightArmyItemLogic extends Component {
     protected onDestroy(): void {
         EventMgr.targetOff(this);
         this._data = null;
+        this._troop = null;
     }
 
     protected update(): void {
@@ -71,7 +75,16 @@ export default class RightArmyItemLogic extends Component {
     }
 
     protected onUpdateGeneral(): void {
+        if (this._troop) {
+            this.updateItem();
+        }
+    }
 
+    protected onUpdateTroop(troop: TroopData): void {
+        if (this._troop && troop && troop.troopIdx == this._troop.troopIdx) {
+            this._troop = troop;
+            this.updateItem();
+        }
     }
 
     protected onClickTop(): void {
@@ -95,8 +108,12 @@ export default class RightArmyItemLogic extends Component {
     protected onClickSetting(): void {
         AudioManager.instance.playClick();
         if (this._data) {
-            let cityData: MapCityData = MapCommand.getInstance().cityProxy.getMyCityById(this._data.cityId);
             EventMgr.emit(LogicEvent.openArmySetting, this._data.cityId, this.order);
+        } else if (this._troop) {
+            const mainCity: MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
+            if (mainCity) {
+                EventMgr.emit(LogicEvent.openArmySetting, mainCity.cityId, this.order);
+            }
         }
     }
 
@@ -114,6 +131,10 @@ export default class RightArmyItemLogic extends Component {
     }
 
     protected updateItem(): void {
+        if (!this._data && this._troop) {
+            this.updateTroopItem();
+            return;
+        }
         if (this._data && this._data.generals[0] != 0) {
             // console.log("updateItem", this._data);
             this.node.active = true;
@@ -153,8 +174,51 @@ export default class RightArmyItemLogic extends Component {
         }
     }
 
+    protected updateTroopItem(): void {
+        this.node.active = true;
+        const heroes = this._troop.getSortedHeroes();
+        const firstHeroIdx = heroes.length > 0 ? heroes[0].heroIdx : 0;
+        this._firstGeneral = firstHeroIdx > 0 ? GeneralCommand.getInstance().proxy.getMyGeneral(firstHeroIdx) : null;
+        const firstCfg: GeneralConfig = this._firstGeneral ? (this._firstGeneral.config || GeneralCommand.getInstance().proxy.getGeneralCfg(firstHeroIdx)) : null;
+        const teamName = firstCfg && firstCfg.name ? firstCfg.name : "未编队";
+
+        if (this.headIcon) {
+            this.headIcon.node.active = firstHeroIdx > 0;
+            const headLogic = this.headIcon.getComponent(GeneralHeadLogic);
+            if (firstHeroIdx > 0 && headLogic) {
+                headLogic.setHeadId(firstHeroIdx);
+            }
+        }
+        if (this.labelInfo) this.labelInfo.string = "第" + this.order + "部队 · " + teamName;
+        if (this.labelPos) this.labelPos.string = "武将 " + heroes.length + "/3";
+        if (this.labelSoldierCnt) this.labelSoldierCnt.string = "上阵 " + heroes.length + "/3";
+        if (this.labelStrength) {
+            this.labelStrength.string = firstCfg ? "速度 " + firstCfg.speed : "尚未配置武将";
+        }
+        if (this.labelMorale) {
+            let attack: number = 0;
+            heroes.forEach((hero) => {
+                const general = GeneralCommand.getInstance().proxy.getMyGeneral(hero.heroIdx);
+                const cfg = general ? (general.config || GeneralCommand.getInstance().proxy.getGeneralCfg(hero.heroIdx)) : null;
+                if (cfg) {
+                    attack += cfg.attack;
+                }
+            });
+            this.labelMorale.string = "攻击 " + attack;
+        }
+        if (this.btnBack) this.btnBack.active = false;
+        if (this.btnSetting) this.btnSetting.active = true;
+    }
+
     public setArmyData(data: ArmyData): void {
         this._data = data;
+        this.updateItem();
+    }
+
+    public setTroopData(data: TroopData, order: number = 0): void {
+        this._data = null;
+        this._troop = data;
+        this.order = order > 0 ? order : (data ? data.troopIdx : 0);
         this.updateItem();
     }
 }

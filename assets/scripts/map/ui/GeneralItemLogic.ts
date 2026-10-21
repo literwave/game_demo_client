@@ -3,7 +3,8 @@ import { _decorator, Component, Label, Sprite, Layout, Node, color } from 'cc';
 const { ccclass, property } = _decorator;
 
 import GeneralCommand from "../../general/GeneralCommand";
-import { GeneralCampType, GeneralData } from "../../general/GeneralProxy";
+import { GeneralData } from "../../general/GeneralProxy";
+import TroopCommand from "../../general/TroopCommand";
 import GeneralHeadLogic from "./GeneralHeadLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
@@ -54,28 +55,42 @@ export default class GeneralItemLogic extends Component {
     selectNode: Node = null;
 
     private _curData: any = null;
-    private _type: number = -1;
+    private _type: number = GeneralItemType.GeneralInfo;
     private _position: number = 0;
     private _cityData: any = null;
     private _orderId: number = 1;
     private _isSelect: boolean = false;
 
     protected onLoad(): void {
-        this.delNode.active = false;
+        if (this.delNode) this.delNode.active = false;
+        if (this.useNode) this.useNode.active = false;
+        if (this.selectNode) this.selectNode.active = false;
         this._isSelect = false;
     }
 
 
     public setData(curData: GeneralData, type: number = 0, position: number = 0): void {
-        this.updateItem(curData);
+        this.applyItemData(curData, type, position);
     }
 
 
 
-    public updateItem(curData: any): void {
+    public updateItem(curData: any, type: number = null, position: number = null): void {
+        if (!curData) {
+            return;
+        }
+        this._type = type != null ? type : (curData.listType != null ? curData.listType : GeneralItemType.GeneralInfo);
+        this._position = position != null ? position : (curData.listPosition != null ? curData.listPosition : 0);
         this.updateView(curData);
-        this._type = this._curData.type == undefined ? -1 : this._curData.type;
-        this._position = this._curData.position == undefined ? 0 : this._curData.position;
+    }
+
+    private applyItemData(curData: any, type: number, position: number): void {
+        if (!curData) {
+            return;
+        }
+        this._type = type;
+        this._position = position;
+        this.updateView(curData);
     }
 
 
@@ -83,36 +98,44 @@ export default class GeneralItemLogic extends Component {
         this._curData = curData;
 
         // 服务器下发的 hero_type 就是配置 ID
-        const hero_type = this._curData.hero_type || 0;
+        const hero_type = this.getHeroIdx(this._curData);
         let cfgData = GeneralCommand.getInstance().proxy.getGeneralCfg(hero_type);
 
         if (cfgData && cfgData.name) {
             this.nameLabel.string = cfgData.name;
             this.showStar(cfgData.star, this._curData.star_lv || 0);
-            if (this.armLabel) this.armLabel.string = this.armstr(cfgData.arms || []);
-            if (this.costLabel) this.costLabel.string = cfgData.cost + "";
+            if (this.armLabel) this.armLabel.string = cfgData.heroClass || this.armstr(cfgData.arms || []);
+            if (this.costLabel) {
+                const costText = cfgData.cost > 0 ? String(cfgData.cost) : (cfgData.quality > 0 ? String(cfgData.quality) : "");
+                this.costLabel.string = costText;
+                this.costLabel.node.active = costText != "";
+            }
 
-            // 处理阵营显示
             const campMap: { [key: number]: string } = {
                 1: "汉", 2: "群", 3: "魏", 4: "蜀", 5: "吴"
             };
-            this.campLabel.string = campMap[cfgData.camp] || "未知";
+            const campText = cfgData.campText || campMap[cfgData.camp] || "";
+            if (this.campLabel) {
+                this.campLabel.string = campText;
+                this.campLabel.node.active = campText != "";
+            }
         } else {
             this.nameLabel.string = "未知武将";
             this.showStar(0, 0);
             console.warn("武将显示异常: hero_type=", hero_type, "cfgData=", cfgData, "原始数据对象:", this._curData);
         }
 
-        this.lvLabel.string = " Lv." + this._curData.level;
+        this.lvLabel.string = "Lv." + (this._curData.level || 1);
 
-        const headLogic = this.spritePic.getComponent(GeneralHeadLogic);
+        const headLogic = this.spritePic ? this.spritePic.getComponent(GeneralHeadLogic) : null;
         if (headLogic) {
             headLogic.setHeadId(hero_type);
         } else {
             console.warn("GeneralItemLogic: GeneralHeadLogic component not found on spritePic node.");
         }
 
-        this.delNode.active = false;
+        if (this.delNode) this.delNode.active = false;
+        if (this.useNode) this.useNode.active = TroopCommand.getInstance().proxy.isHeroInTroop(hero_type);
         this.select(false);
     }
 
@@ -130,6 +153,15 @@ export default class GeneralItemLogic extends Component {
         return str;
     }
 
+    private getHeroIdx(data: any): number {
+        if (!data) {
+            return 0;
+        }
+        return Number(data.hero_type != null ? data.hero_type :
+            (data.heroType != null ? data.heroType :
+                (data.cfgId != null ? data.cfgId : data.id))) || 0;
+    }
+
 
     public select(flag: boolean): void {
         if (this.selectNode) {
@@ -140,14 +172,21 @@ export default class GeneralItemLogic extends Component {
 
 
     protected showStar(star: number = 3, star_lv: number = 0): void {
+        if (!this.starLayout || !this.starLayout.node) {
+            return;
+        }
         var childen = this.starLayout.node.children;
         for (var i = 0; i < childen.length; i++) {
+            const starSprite = childen[i].getComponent(Sprite);
+            if (!starSprite) {
+                continue;
+            }
             if (i < star) {
                 childen[i].active = true;
                 if (i < star_lv) {
-                    childen[i].getComponent(Sprite).color = color(255, 0, 0);
+                    starSprite.color = color(255, 0, 0);
                 } else {
-                    childen[i].getComponent(Sprite).color = color(255, 255, 255);
+                    starSprite.color = color(255, 255, 255);
                 }
             } else {
                 childen[i].active = false;
@@ -158,14 +197,15 @@ export default class GeneralItemLogic extends Component {
     protected setOtherData(cityData: any, orderId: number = 1): void {
         this._cityData = cityData;
         this._orderId = orderId
-        this.delNode.active = true;
+        if (this.delNode) this.delNode.active = true;
     }
 
 
     protected onClickGeneral(event: any): void {
         AudioManager.instance.playClick();
         if (this._curData) {
-            var cfgData = this._curData.config;
+            const heroType = this.getHeroIdx(this._curData);
+            var cfgData = this._curData.config || GeneralCommand.getInstance().proxy.getGeneralCfg(heroType);
             console.log("onClickGeneral:", this._type);
 
             //武将详情
@@ -200,7 +240,10 @@ export default class GeneralItemLogic extends Component {
      * 下阵
      */
     protected onDelete(): void {
-        var cfgData = this._curData.config;
+        if (!this._curData) {
+            return;
+        }
+        var cfgData = this._curData.config || GeneralCommand.getInstance().proxy.getGeneralCfg(this.getHeroIdx(this._curData));
         EventMgr.emit(LogicEvent.chosedGeneral, cfgData, this._curData, -1);
     }
 

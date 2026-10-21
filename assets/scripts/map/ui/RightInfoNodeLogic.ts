@@ -2,7 +2,8 @@ import { _decorator, Component, Toggle, ScrollView, Prefab, Node, instantiate, t
 const { ccclass, property } = _decorator;
 
 import { ArmyData } from "../../general/ArmyProxy";
-import ArmyCommand from "../../general/ArmyCommand";
+import TroopCommand from "../../general/TroopCommand";
+import { TroopData } from "../../general/TroopProxy";
 import MapCommand from "../MapCommand";
 import RightArmyItemLogic from "./RightArmyItemLogic";
 import { MapCityData } from "../MapCityProxy";
@@ -47,6 +48,8 @@ export default class RightInfoNodeLogic extends Component {
     protected onLoad(): void {
         EventMgr.on(LogicEvent.updateArmyList, this.onUpdateArmyList, this);
         EventMgr.on(LogicEvent.updateArmy, this.onUpdateArmy, this);
+        EventMgr.on(LogicEvent.updateTroopList, this.onUpdateTroopList, this);
+        EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
         EventMgr.on(LogicEvent.updateTag, this.onUpdateTag, this);
 
         this.initCollapseState();
@@ -54,7 +57,8 @@ export default class RightInfoNodeLogic extends Component {
         this.armyScrollView.node.active = true;
         this.cityScrollView.node.active = false;
         this.tagsScrollView.node.active = false;
-        // this.initArmys();
+        this.initArmys();
+        TroopCommand.getInstance().requestTroops();
         // this.initCitys();
         // this.initTags();
     }
@@ -74,19 +78,32 @@ export default class RightInfoNodeLogic extends Component {
     }
 
     protected initArmys(): void {
-        let cityId: number = MapCommand.getInstance().cityProxy.getMyMainCity().cityId;
-        let datas: ArmyData[] = ArmyCommand.getInstance().proxy.getArmyList(cityId);
+        const oldItems = this.armyScrollView.content.children.slice();
         this.armyScrollView.content.removeAllChildren();
-        console.log("datas", datas);
-        if (datas) {
-            this._armys.length = datas.length;
-            for (let i: number = 0; i < datas.length; i++) {
-                let item: Node = instantiate(this.armyItemPrefabs);
-                item.parent = this.armyScrollView.content;
-                this._armys[i] = item;
-                item.getComponent(RightArmyItemLogic).order = i + 1;
-                item.getComponent(RightArmyItemLogic).setArmyData(datas[i]);
+        oldItems.forEach((item) => {
+            if (item && item.isValid) {
+                item.destroy();
             }
+        });
+        const troops: TroopData[] = TroopCommand.getInstance().proxy.getTroops();
+        const troopMap: Map<number, TroopData> = new Map<number, TroopData>();
+        troops.forEach((troop) => troopMap.set(troop.troopIdx, troop));
+
+        const troopCount = Math.max(3, troops.length > 0 ? troops[troops.length - 1].troopIdx : 0);
+        this._armys.length = 0;
+        for (let troopIdx: number = 1; troopIdx <= troopCount; troopIdx++) {
+            let troop = troopMap.get(troopIdx);
+            if (!troop) {
+                troop = new TroopData();
+                troop.troopIdx = troopIdx;
+            }
+            let item: Node = instantiate(this.armyItemPrefabs);
+            item.parent = this.armyScrollView.content;
+            const itemLogic = item.getComponent(RightArmyItemLogic);
+            if (itemLogic) {
+                itemLogic.setTroopData(troop, troopIdx);
+            }
+            this._armys.push(item);
         }
     }
 
@@ -120,8 +137,28 @@ export default class RightInfoNodeLogic extends Component {
     }
 
     protected onUpdateArmy(data: ArmyData): void {
-        if (MapCommand.getInstance().cityProxy.getMyMainCity().cityId == data.cityId) {
+        const mainCity = MapCommand.getInstance().cityProxy.getMyMainCity();
+        if (data && mainCity && this._armys[data.order - 1] && mainCity.cityId == data.cityId) {
             this._armys[data.order - 1].getComponent(RightArmyItemLogic).setArmyData(data);
+        }
+    }
+
+    protected onUpdateTroopList(): void {
+        this.initArmys();
+    }
+
+    protected onUpdateTroop(troop: TroopData): void {
+        if (!troop) {
+            return;
+        }
+        const item = this._armys[troop.troopIdx - 1];
+        if (item) {
+            const itemLogic = item.getComponent(RightArmyItemLogic);
+            if (itemLogic) {
+                itemLogic.setTroopData(troop, troop.troopIdx);
+            }
+        } else {
+            this.initArmys();
         }
     }
 

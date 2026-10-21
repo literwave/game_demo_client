@@ -6,6 +6,7 @@ import LoaderManager, { LoadData, LoadDataType } from "./core/LoaderManager";
 import ConfigManager from "./core/ConfigManager";
 import ArmyCommand from "./general/ArmyCommand";
 import GeneralCommand from "./general/GeneralCommand";
+import TroopCommand from "./general/TroopCommand";
 import LoginCommand from "./login/LoginCommand";
 import MapCommand from "./map/MapCommand";
 import MapUICommand from "./map/ui/MapUICommand";
@@ -81,6 +82,7 @@ export default class Main extends Component {
         RewardWindowLogic.init();
         SystemOpenCommand.getInstance();
         SystemUnlockWindow.init();
+        TroopCommand.getInstance();
 
 
         //初始化连接
@@ -107,6 +109,7 @@ export default class Main extends Component {
         MapCommand.getInstance().clearData();
         GeneralCommand.getInstance().clearData();
         ArmyCommand.getInstance().clearData();
+        TroopCommand.getInstance().clearData();
         SystemOpenCommand.getInstance().proxy.clear();
         SystemUnlockWindow.reset();
     }

@@ -3,6 +3,7 @@ const { ccclass, property } = _decorator;
 
 import { ServerConfig } from "../config/ServerConfig";
 import LoginCommand from "./LoginCommand";
+import { toProtoInt } from "./LoginProxy";
 import { EventMgr } from '../utils/EventMgr';
 import { createName } from '../libs/NameDict';
 import { AudioManager } from '../common/AudioManager';
@@ -27,7 +28,7 @@ export default class CreateLogic extends Component {
         AudioManager.instance.playClick();
         var sex = this.manToggle.isChecked ? 1 : 2;
         var loginData: any = LoginCommand.getInstance().proxy.getLoginData();
-        LoginCommand.getInstance().role_create(loginData.uid, this.editName.string, sex, LoginCommand.getInstance().proxy.serverId, 0)
+        LoginCommand.getInstance().role_create(toProtoInt(loginData.userId), this.editName.string, sex, LoginCommand.getInstance().proxy.serverId, 0)
     }
 
     protected onClickToggle() {

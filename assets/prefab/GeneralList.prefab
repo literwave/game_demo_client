@@ -1355,9 +1355,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 134,
-      "g": 36,
-      "b": 22,
+      "r": 218,
+      "g": 192,
+      "b": 138,
       "a": 255
     },
     "_string": "(10/100)",
@@ -1508,12 +1508,12 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 134,
-      "g": 36,
-      "b": 22,
+      "r": 218,
+      "g": 192,
+      "b": 138,
       "a": 255
     },
-    "_string": "武将卡：",
+    "_string": "拥有武将：",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 28,

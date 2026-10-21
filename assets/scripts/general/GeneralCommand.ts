@@ -29,6 +29,7 @@ export default class GeneralCommand {
 
     constructor() {
         EventMgr.on(ServerConfig.s2c_req_all_hero_base_info, this.onMyGenerals, this);
+        EventMgr.on(ServerConfig.s2c_sync_hero_base_info, this.onHeroSync, this);
         EventMgr.on(ServerConfig.general_push, this.onGeneralPush, this);
         EventMgr.on(ServerConfig.general_drawGeneral, this.onDrawGenerals, this);
         EventMgr.on(ServerConfig.general_composeGeneral, this.onComposeGeneral, this);
@@ -49,15 +50,31 @@ export default class GeneralCommand {
         this._proxy.clearData();
     }
 
+    public isProtocolAvailable(msgName: string): boolean {
+        const id = ProtoManager.getInstance().getIdByMsgType(msgName);
+        return id != null && id > 0;
+    }
+
     public get proxy(): GeneralProxy {
         return this._proxy;
     }
 
     /**我的将领列表*/
     protected onMyGenerals(data: any): void {   
-        this._proxy.updateMyGenerals(data.heroInfoList);
+        this._proxy.setMyGenerals(data.heroInfoList || data.hero_info_list || []);
         EventMgr.emit(LogicEvent.updateMyGenerals);
 
+    }
+
+    protected onHeroSync(data: any): void {
+        const payload = data && data.msg && typeof data.msg === 'object' ? data.msg : data;
+        const heroInfo = payload ? (payload.heroInfo || payload.hero_info) : null;
+        if (!heroInfo) {
+            return;
+        }
+        this._proxy.updateGeneral(heroInfo);
+        EventMgr.emit(LogicEvent.updateGeneral);
+        EventMgr.emit(LogicEvent.updateMyGenerals);
     }
 
     protected onGeneralPush(data: any): void {

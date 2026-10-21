@@ -17,6 +17,7 @@ const ServerConfig = {
 
     c2s_req_all_hero_base_info: "Hero.c2s_req_all_hero_base_info",
     s2c_req_all_hero_base_info: "Hero.s2c_req_all_hero_base_info",
+    s2c_sync_hero_base_info: "Hero.s2c_sync_hero_base_info",
 
     c2s_req_user_res: "User.c2s_req_user_res",
     s2c_req_user_res: "User.s2c_req_user_res",
@@ -26,6 +27,11 @@ const ServerConfig = {
     c2s_req_system_open: "SystemOpen.c2s_req_system_open",
     s2c_req_system_open: "SystemOpen.s2c_req_system_open",
     s2c_sync_system_open: "SystemOpen.s2c_sync_system_open",
+
+    c2s_req_troop: "World.c2s_req_troop",
+    s2c_req_troop: "World.s2c_req_troop",
+    c2s_edit_troop: "World.c2s_edit_troop",
+    s2c_edit_troop: "World.s2c_edit_troop",
 
     s2c_show_reward: "Reward.s2c_show_reward",
 

@@ -346,7 +346,7 @@ export default class ListLogic extends Component {
         if (this.itemLogicScriptName) {
             comp = item.getComponent(this.itemLogicScriptName);
             if (comp && comp.updateItem) {
-                comp.updateItem(this._datas[index], index);
+                comp.updateItem(this._datas[index]);
             }
         }
     }

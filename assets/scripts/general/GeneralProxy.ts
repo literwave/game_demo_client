@@ -4,8 +4,22 @@ import GeneralCommand from "./GeneralCommand";
 
 /**武将(配置)*/
 export class GeneralConfig {
+    id: number = 0;
+    cfgId: number = 0;
+    heroId: number = 0;
     name: string = "";
     hero_type: number = 0;
+    sort: number = 0;
+    desc: string = "";
+    quality: number = 0;
+    campText: string = "";
+    attack: number = 0;
+    hp: number = 0;
+    heroClass: string = "";
+    crit: number = 0;
+    skill: string = "";
+
+    // 旧战斗逻辑使用的兼容字段
     force: number = 0;
     strategy: number = 0;
     defense: number = 0;
@@ -61,7 +75,10 @@ export class gSkill {
 
 /**武将基础数据类*/
 export class GeneralData {
+    id: number = 0;
+    cfgId: number = 0;
     hero_type: number = 0;  // 配置ID & 唯一ID
+    heroType: number = 0;
     exp: number = 0;
     level: number = 0;
     order: number = 0;
@@ -80,29 +97,58 @@ export class GeneralData {
     destroy_added: number = 0;
     star_lv: number = 0;
     physical_power: number = 0;
+    hasPrPoint: number = 0;
+    usePrPoint: number = 0;
 
     public static createFromServer(serverData: any, generalData: GeneralData = null, generalCfg: GeneralConfig): GeneralData {
         let data: GeneralData = generalData || new GeneralData();
         if (!serverData) return data;
-        data.hero_type = serverData.heroType;
+        const heroIdx = Number(serverData.heroType != null ? serverData.heroType :
+            (serverData.hero_type != null ? serverData.hero_type :
+                (serverData.heroIdx != null ? serverData.heroIdx : serverData.id)));
+        data.hero_type = heroIdx;
+        data.heroType = heroIdx;
+        data.id = heroIdx;
+        data.cfgId = heroIdx;
 
-        data.level = serverData.lv;
-        data.exp = serverData.exp;
-        data.star = serverData.star;
-        data.state = serverData.state;
+        data.level = Number(serverData.lv != null ? serverData.lv : (serverData.level != null ? serverData.level : 1));
+        data.exp = Number(serverData.exp || 0);
+        data.star = Number(serverData.star || 0);
+        data.state = Number(serverData.state || 0);
+        data.order = Number(serverData.order || 0);
+        data.parentId = Number(serverData.parentId != null ? serverData.parentId : (serverData.parent_id || 0));
+        data.cityId = Number(serverData.cityId != null ? serverData.cityId : (serverData.city_id || 0));
 
         data.config = generalCfg || (typeof GeneralCommand !== 'undefined' && GeneralCommand.getInstance() ? GeneralCommand.getInstance().proxy.getGeneralCfg(data.hero_type) : null) || new GeneralConfig();
-        data.skills = serverData.skillList || [];
+        data.skills = GeneralData.normalizeSkills(serverData.skillList != null ? serverData.skillList : serverData.skill_list);
 
         data.force_added = serverData.force_added || 0;
         data.strategy_added = serverData.strategy_added || 0;
         data.defense_added = serverData.defense_added || 0;
         data.speed_added = serverData.speed_added || 0;
         data.destroy_added = serverData.destroy_added || 0;
-        data.star_lv = serverData.star_lv || 0;
+        data.star_lv = Number(serverData.star_lv != null ? serverData.star_lv : (serverData.starLv || 0));
         data.physical_power = serverData.physical_power || 0;
+        data.hasPrPoint = Number(serverData.hasPrPoint != null ? serverData.hasPrPoint : (serverData.has_pr_point || 0));
+        data.usePrPoint = Number(serverData.usePrPoint != null ? serverData.usePrPoint : (serverData.use_pr_point || 0));
 
         return data;
+    }
+
+    private static normalizeSkills(rawSkills: any): gSkill[] {
+        if (!Array.isArray(rawSkills)) {
+            return [];
+        }
+        return rawSkills.map((item: any) => {
+            const skill = new gSkill();
+            const skillId = item && typeof item === 'object' ?
+                (item.cfgId != null ? item.cfgId : (item.k != null ? item.k : item.id)) : item;
+            skill.id = Number(skillId || 0);
+            skill.cfgId = Number(skillId || 0);
+            skill.lv = Number(item && typeof item === 'object' ?
+                (item.lv != null ? item.lv : (item.v != null ? item.v : 1)) : 1);
+            return skill;
+        }).filter((skill) => skill.cfgId > 0);
     }
 
     public static getPrStr(base: number, added: number, level: number, grow: number): string {
@@ -127,15 +173,30 @@ export default class GeneralProxy {
         for (let key in heroJson) {
             const data = heroJson[key];
             const cfg = new GeneralConfig();
-            cfg.hero_type = Number(data.HeroId || key);
+            cfg.id = Number(data.Id != null ? data.Id : (data.HeroId != null ? data.HeroId : key));
+            cfg.cfgId = cfg.id;
+            cfg.heroId = Number(data.HeroId != null ? data.HeroId : cfg.id);
+            cfg.hero_type = cfg.id;
             cfg.name = data.name;
             cfg.resource = data.Resources;
+            cfg.sort = Number(data.Sort || 0);
+            cfg.desc = data.Desc || "";
+            cfg.quality = Number(data.Quality || 0);
+            cfg.campText = data.Camp || "";
+            cfg.attack = Number(data.Attack || 0);
+            cfg.hp = Number(data.Hp || 0);
+            cfg.heroClass = data.Class || "";
+            cfg.crit = Number(data.Crit || 0);
+            cfg.skill = data.Skill || "";
 
-            // 基础属性
-            cfg.star = data.star || 3;
-            cfg.camp = data.camp || 1;
-            cfg.arms = data.arms || [1];
-            cfg.cost = data.cost || 2;
+            // 新配置字段映射到旧显示/战斗字段
+            cfg.star = Number(data.Star != null ? data.Star : (data.star || 0));
+            cfg.defense = Number(data.Defense || 0);
+            cfg.speed = Number(data.Speed || 0);
+            cfg.force = cfg.attack;
+            cfg.camp = this.parseCamp(data.Camp);
+            cfg.arms = Array.isArray(data.arms) ? data.arms.map(Number) : [];
+            cfg.cost = Number(data.cost || 0);
 
             if (bCost && bCost.general) {
                 cfg.physical_power_limit = bCost.general.physical_power_limit;
@@ -156,6 +217,16 @@ export default class GeneralProxy {
             this._commonConfig.reclamation_time = bCost.general.reclamation_time;
             this._commonConfig.draw_general_cost = bCost.general.draw_general_cost;
         }
+    }
+
+    protected parseCamp(camp: any): number {
+        const text = String(camp == null ? "" : camp).trim();
+        const campMap: { [key: string]: number } = { "汉": 1, "群": 2, "魏": 3, "蜀": 4, "吴": 5 };
+        if (campMap[text] != null) {
+            return campMap[text];
+        }
+        const value = Number(text);
+        return isNaN(value) ? 0 : value;
     }
 
     public initGeneralConfig(cfgs: any, bCost: any): void {
@@ -184,15 +255,26 @@ export default class GeneralProxy {
 
         for (var i = 0; i < datas.length; i++) {
             const serverItem = datas[i];
-            let id = serverItem.hero_type;
+            let id = Number(serverItem.heroType != null ? serverItem.heroType :
+                (serverItem.hero_type != null ? serverItem.hero_type :
+                    (serverItem.heroIdx != null ? serverItem.heroIdx : serverItem.id)));
             let data: GeneralData = GeneralData.createFromServer(serverItem, null, this.getGeneralCfg(id));
             this._myGenerals.set(data.hero_type, data);
         }
     }
 
+    public setMyGenerals(datas: any[]): void {
+        this._myGenerals.clear();
+        this.updateMyGenerals(datas);
+    }
+
     public updateGeneral(data: any) {
-        let id = data.hero_type;
-        if (data.state != 0 && id) {
+        if (!data) {
+            return;
+        }
+        let id = Number(data.heroType != null ? data.heroType : (data.hero_type != null ? data.hero_type : data.id));
+        const state = Number(data.state || 0);
+        if (state != 0 && id) {
             this._myGenerals.delete(Number(id));
         } else if (id) {
             let general: GeneralData = GeneralData.createFromServer(data, this._myGenerals.get(Number(id)), this.getGeneralCfg(id));
@@ -228,19 +310,35 @@ export default class GeneralProxy {
     }
 
     public getMyActiveGeneralCnt(): number {
-        let cnt = 0;
-        this._myGenerals.forEach(g => { if (g.state == 0) cnt++; });
-        return cnt;
+        return this._myGenerals.size;
     }
 
     public getUseGenerals(): GeneralData[] {
         let list = this.getMyGenerals();
         list.sort((a, b) => {
-            if (a.order > 0 && b.order == 0) return -1;
-            if (a.order == 0 && b.order > 0) return 1;
-            return b.level - a.level;
+            const starDiff = (b.config ? b.config.star : b.star) - (a.config ? a.config.star : a.star);
+            if (starDiff != 0) return starDiff;
+            const sortDiff = (a.config ? a.config.sort : 0) - (b.config ? b.config.sort : 0);
+            if (sortDiff != 0) return sortDiff;
+            if (b.level != a.level) return b.level - a.level;
+            return a.hero_type - b.hero_type;
         });
         return list;
+    }
+
+    public getMyGeneralsNotUse(): GeneralData[] {
+        return this.getMyGenerals();
+    }
+
+    public getGeneralIds(hero_type: number): number[] {
+        return this._myGenerals.has(Number(hero_type)) ? [Number(hero_type)] : [];
+    }
+
+    public removeMyGenerals(ids: number[]): void {
+        if (!Array.isArray(ids)) {
+            return;
+        }
+        ids.forEach((id) => this._myGenerals.delete(Number(id)));
     }
 
     /**武将头像素材*/

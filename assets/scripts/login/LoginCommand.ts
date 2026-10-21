@@ -1,7 +1,7 @@
 import { ServerConfig } from "../config/ServerConfig";
 import { NetManager } from "../network/socket/NetManager";
 import { Tools } from "../utils/Tools";
-import LoginProxy from "./LoginProxy";
+import LoginProxy, { toProtoInt } from "./LoginProxy";
 import { NetEvent } from "../network/socket/NetInterface";
 import MapCommand from "../map/MapCommand";
 import { LocalCache } from "../utils/LocalCache";
@@ -218,8 +218,8 @@ export default class LoginCommand {
             accountType: 1, // 根据 proto 定义补充字段
             appId: "",
             cchid: "",
-            serverId: "120",
-            userId: ""
+            serverId: 120,
+            userId: 0
         });
 
         if (!protoData) {
@@ -245,7 +245,7 @@ export default class LoginCommand {
      * @param sid 
      * @param headId 
      */
-    public role_create(uid: string, nickName: string, sex: number = 0, sid: number = 0, headId: number = 0) {
+    public role_create(uid: number, nickName: string, sex: number = 0, sid: number = 0, headId: number = 0) {
         var msgName = ServerConfig.c2s_user_create;
         var protoData = ProtoManager.getInstance().encode(msgName, {
             sex: sex,
@@ -266,7 +266,7 @@ export default class LoginCommand {
         // 注意：这里需要根据你的 .proto 文件里的定义来写
         // 假设 login.proto 里定义的请求消息是 c2s_user_login，并且在 Login 包下
         var protoData = ProtoManager.getInstance().encode(msgName, {
-            userId: loginData.userId,
+            userId: toProtoInt(loginData.userId),
             passwd: loginData.passwd,
             token: loginData.token, // 根据 proto 定义补充字段
         });

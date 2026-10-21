@@ -1,7 +1,7 @@
 import { _decorator, Component, Label, Sprite, Layout, color } from 'cc';
 const { ccclass, property } = _decorator;
 
-import { GeneralCampType, GeneralConfig } from "../../general/GeneralProxy";
+import { GeneralConfig } from "../../general/GeneralProxy";
 import GeneralHeadLogic from "./GeneralHeadLogic";
 
 
@@ -47,42 +47,52 @@ export default class GeneralRosterLogic extends Component {
     }
 
     protected updateItem(cfg:GeneralConfig):void{
-        // console.log("updateItem");
+        if (!cfg) {
+            return;
+        }
         this._cfg = cfg;
-        this.nameLabel.string = this._cfg.name 
-        this.spritePic.getComponent(GeneralHeadLogic).setHeadId(this._cfg.cfgId);
+        this.nameLabel.string = this._cfg.name;
+        const headLogic = this.spritePic ? this.spritePic.getComponent(GeneralHeadLogic) : null;
+        if (headLogic) {
+            headLogic.setHeadId(this._cfg.cfgId);
+        }
         this.showStar(this._cfg.star, 0);
         
         if(this.costLabel){
-            this.costLabel.string = this._cfg.cost + "";
+            this.costLabel.string = this._cfg.quality > 0 ? String(this._cfg.quality) : "";
+            this.costLabel.node.active = this.costLabel.string != "";
         }
 
-        if(this._cfg.camp == GeneralCampType.Han){
-            this.campLabel.string = "汉";
-        }else if(this._cfg.camp == GeneralCampType.Qun){
-            this.campLabel.string = "群";
-        }else if(this._cfg.camp == GeneralCampType.Wei){
-            this.campLabel.string = "魏";
-        }else if(this._cfg.camp == GeneralCampType.Shu){
-            this.campLabel.string = "蜀";
-        }else if(this._cfg.camp == GeneralCampType.Wu){
-            this.campLabel.string = "吴";
+        const campMap: { [key: number]: string } = { 1: "汉", 2: "群", 3: "魏", 4: "蜀", 5: "吴" };
+        const campText = this._cfg.campText || campMap[this._cfg.camp] || "";
+        if (this.campLabel) {
+            this.campLabel.string = campText;
+            this.campLabel.node.active = campText != "";
         }
 
-        this.armLabel.string = this.armstr(this._cfg.arms);
+        if (this.armLabel) {
+            this.armLabel.string = this._cfg.heroClass || this.armstr(this._cfg.arms || []);
+        }
         
     }
 
 
     protected showStar(star:number = 3,star_lv:number = 0):void{
+        if (!this.starLayout || !this.starLayout.node) {
+            return;
+        }
         var childen = this.starLayout.node.children;
         for(var i = 0;i<childen.length;i++){
+            const starSprite = childen[i].getComponent(Sprite);
+            if (!starSprite) {
+                continue;
+            }
             if(i < star){
                 childen[i].active = true;
                 if(i < star_lv){
-                    childen[i].getComponent(Sprite).color = color(255,0,0);
+                    starSprite.color = color(255,0,0);
                 }else{
-                    childen[i].getComponent(Sprite).color = color(255,255,255);
+                    starSprite.color = color(255,255,255);
                 }
             }else{
                 childen[i].active = false; 

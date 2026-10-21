@@ -7,7 +7,7 @@ const { ccclass } = _decorator;
 
 export interface RewardInfo {
     rewardType: number;
-    itemType: number;
+    itemId: number;
     itemCount: number;
 }
 
@@ -226,9 +226,9 @@ export default class RewardWindowLogic extends Component {
 
     private getIconPath(info: RewardInfo): string {
         if (info.rewardType === 3) {
-            return `hero/${this.getHeroResource(info.itemType)}/spriteFrame`;
+            return `hero/${this.getHeroResource(info.itemId)}/spriteFrame`;
         }
-        const iconName = RESOURCE_ICONS[info.itemType];
+        const iconName = RESOURCE_ICONS[info.itemId];
         if (info.rewardType === 1 && iconName) {
             return `ui/resource_icons/icon_${iconName}/spriteFrame`;
         }
@@ -237,11 +237,11 @@ export default class RewardWindowLogic extends Component {
 
     private getRewardName(info: RewardInfo): string {
         if (info.rewardType === 3) {
-            const hero = this.getHeroConfig(info.itemType);
-            return (hero && hero.name) || `武将 ${info.itemType}`;
+            const hero = this.getHeroConfig(info.itemId);
+            return (hero && hero.name) || `武将 ${info.itemId}`;
         }
         if (info.rewardType === 1) {
-            return RESOURCE_NAMES[info.itemType] || "资源";
+            return RESOURCE_NAMES[info.itemId] || "资源";
         }
         if (info.rewardType === 2 || info.rewardType === 4) {
             return "道具";

@@ -51,7 +51,7 @@ export default class GeneralConvertLogic extends Component {
         let listTemp = list.concat();
 
         listTemp.forEach(item => {
-            item.type = GeneralItemType.GeneralSelect;
+            item.listType = GeneralItemType.GeneralSelect;
         })
 
 

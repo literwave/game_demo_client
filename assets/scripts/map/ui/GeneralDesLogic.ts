@@ -90,23 +90,29 @@ export default class GeneralDesLogic extends Component {
     }
 
     protected updateGeneral() {
-        var data = GeneralCommand.getInstance().proxy.getMyGeneral(this._currData.id);
+        if (!this._currData) {
+            return;
+        }
+        var data = GeneralCommand.getInstance().proxy.getMyGeneral(this._currData.hero_type);
         if (data) {
             this.setData(this._cfgData, data);
         }
     }
 
     public setData(cfgData: any, curData: GeneralData): void {
+        if (!cfgData || !curData) {
+            return;
+        }
         this._currData = curData;
         this._cfgData = cfgData;
 
         var nextCfg = GeneralCommand.getInstance().proxy.getGeneralLevelCfg(this._currData.level + 1);
         var levelExp = nextCfg ? nextCfg.exp : "MAX";
         var maxLevel: number = GeneralCommand.getInstance().proxy.getMaxLevel();
-        this.lvLabel.string = '等级:' + this._currData.level + "/" + maxLevel;
-        this.expLabel.string = "经验:" + curData.exp + "/" + levelExp;
+        if (this.lvLabel) this.lvLabel.string = '等级:' + this._currData.level + "/" + maxLevel;
+        if (this.expLabel) this.expLabel.string = "经验:" + curData.exp + "/" + levelExp;
 
-        this.nameLab.string = this._cfgData.name;
+        if (this.nameLab) this.nameLab.string = this._cfgData.name;
 
         this._addPrObj = {
             force: this._currData.force_added,
@@ -117,28 +123,42 @@ export default class GeneralDesLogic extends Component {
         };
 
 
-        this.foreLabel.string = this.getAttrStr("force");
-        this.strategyLabel.string = this.getAttrStr("strategy");
-        this.defenseLabel.string = this.getAttrStr("defense");
-        this.speedLabel.string = this.getAttrStr("speed");
-        this.destroyLabel.string = this.getAttrStr("destroy");
+        if (this.foreLabel) this.foreLabel.string = "攻击:" + this.formatStat(cfgData.attack);
+        if (this.strategyLabel) this.strategyLabel.string = "生命:" + this.formatStat(cfgData.hp);
+        if (this.defenseLabel) this.defenseLabel.string = "防御:" + this.formatStat(cfgData.defense);
+        if (this.speedLabel) this.speedLabel.string = "速度:" + this.formatStat(cfgData.speed);
+        if (this.destroyLabel) this.destroyLabel.string = "暴击:" + this.formatStat(cfgData.crit);
 
-        var com = this._generalNode.getComponent(GeneralItemLogic);
+        var com = this._generalNode ? this._generalNode.getComponent(GeneralItemLogic) : null;
         if (com) {
             com.updateItem(this._currData);
         }
 
-        this.powerLabel.string = "体力:" + curData.physical_power + "/" + cfgData.physical_power_limit;
-        this.costLabel.string = "cost:" + cfgData.cost;
+        if (this.powerLabel) this.powerLabel.string = "职业:" + (cfgData.heroClass || "无");
+        if (this.costLabel) this.costLabel.string = "技能:" + (cfgData.skill || "无");
 
-        for (let index = 0; index < curData.skills.length; index++) {
+        const skills = curData.skills || [];
+        for (let index = 0; index < this.skillIcons.length; index++) {
+            if (index >= skills.length) {
+                const icon = this.skillIcons[index];
+                const iconNameLab = this.skillNameLab[index];
+                if (icon && icon.getComponent(SkillIconLogic)) {
+                    icon.getComponent(SkillIconLogic).setData(null, null);
+                }
+                if (iconNameLab) {
+                    iconNameLab.string = index == 0 ? (cfgData.skill || "") : "";
+                }
+                continue;
+            }
             let gSkill = curData.skills[index];
             let icon = this.skillIcons[index];
             let iconNameLab = this.skillNameLab[index];
 
             if (gSkill == null) {
-                icon.getComponent(SkillIconLogic).setData(null, null);
-                iconNameLab.string = "";
+                if (icon && icon.getComponent(SkillIconLogic)) {
+                    icon.getComponent(SkillIconLogic).setData(null, null);
+                }
+                if (iconNameLab) iconNameLab.string = "";
             } else {
 
                 let skillConf = SkillCommand.getInstance().proxy.getSkillCfg(gSkill.cfgId);
@@ -147,8 +167,10 @@ export default class GeneralDesLogic extends Component {
                     icon.getComponent(SkillIconLogic).setData(skill, gSkill);
                     iconNameLab.string = skillConf.name;
                 } else {
-                    icon.getComponent(SkillIconLogic).setData(null, null);
-                    iconNameLab.string = "";
+                    if (icon && icon.getComponent(SkillIconLogic)) {
+                        icon.getComponent(SkillIconLogic).setData(null, null);
+                    }
+                    if (iconNameLab) iconNameLab.string = "";
                 }
             }
         }
@@ -162,15 +184,24 @@ export default class GeneralDesLogic extends Component {
         return this._nameObj[key] + ":" + str;
     }
 
+    private formatStat(value: any): string {
+        const numberValue = Number(value || 0);
+        return Number.isInteger(numberValue) ? String(numberValue) : numberValue.toFixed(2);
+    }
+
     protected onClickSkill(event: EventTouch, pos) {
         AudioManager.instance.playClick();
         console.log("event", event, pos);
         var node: Node = event.target;
-        var isEmpty = node.getComponent(SkillIconLogic).isEmpty();
+        const skillIcon = node ? node.getComponent(SkillIconLogic) : null;
+        if (!skillIcon) {
+            return;
+        }
+        var isEmpty = skillIcon.isEmpty();
         if (isEmpty) {
             EventMgr.emit(LogicEvent.openSkill, 1, this._currData, pos);
         } else {
-            let skill = node.getComponent(SkillIconLogic).getSkill();
+            let skill = skillIcon.getSkill();
             EventMgr.emit(LogicEvent.openSkillInfo, skill, 2, this._currData, pos);
         }
     }

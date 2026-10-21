@@ -206,7 +206,7 @@ export class ProtoManager {
                 defaults: true,  // 填充默认值
                 arrays: true,    // 空数组也会存在
                 objects: true,   // 空对象也会存在
-                // longs: String,  // Long 类型转为 String (防止精度丢失)
+                longs: Number,   // int64 用数字，不用字符串
             });
         } catch (e) {
             console.error(`Proto decode error [${typeName}]:`, e);

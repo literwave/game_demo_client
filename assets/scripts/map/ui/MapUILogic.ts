@@ -30,6 +30,7 @@ import { ServerConfig } from '../../config/ServerConfig';
 import { NetManager } from '../../network/socket/NetManager';
 import { ProtoManager } from '../../network/pto/ProtoManager';
 import SystemOpenCommand from '../../systemopen/SystemOpenCommand';
+import TroopCommand from '../../general/TroopCommand';
 
 const HEAD_ICON_SYSTEM_ID = 1;
 
@@ -220,6 +221,7 @@ export default class MapUILogic extends Component {
         this.initMoreMenu();
         this.initAvatarEntry();
         SystemOpenCommand.getInstance().requestSystemOpen();
+        TroopCommand.getInstance().requestTroops();
 
 
 

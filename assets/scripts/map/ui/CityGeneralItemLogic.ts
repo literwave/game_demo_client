@@ -1,9 +1,8 @@
 import { _decorator, Component, Node, Label, Sprite, ProgressBar } from 'cc';
 const { ccclass, property } = _decorator;
 
-import ArmyCommand from "../../general/ArmyCommand";
-import { ArmyData } from "../../general/ArmyProxy";
 import GeneralCommand from "../../general/GeneralCommand";
+import TroopCommand from "../../general/TroopCommand";
 import { GeneralCampType, GeneralConfig, GeneralData } from "../../general/GeneralProxy";
 import DateUtil from "../../utils/DateUtil";
 import GeneralHeadLogic from "./GeneralHeadLogic";
@@ -73,14 +72,20 @@ export default class CityGeneralItemLogic extends Component {
 
     protected onClickDown(): void {
         AudioManager.instance.playClick();
-        ArmyCommand.getInstance().generalDispose(this._cityId, this._data.id, this._data.order, -1, null);
+        if (!this._data) {
+            return;
+        }
+        const troop = TroopCommand.getInstance().proxy.getTroop(this._order);
+        const heroMap = troop ? troop.getHeroMap() : {};
+        delete heroMap[String(this._data.hero_type)];
+        TroopCommand.getInstance().editTroop(this._order, heroMap);
     }
 
     protected onClickItem(): void {
         AudioManager.instance.playClick();
         if (this._data) {
             //点击展示武将信息
-            let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._data.cfgId);
+            let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._data.hero_type);
             EventMgr.emit(LogicEvent.openGeneralDes, cfg, this._data);
         } else if (this.addNode.active) {
             //上阵武将
@@ -90,23 +95,7 @@ export default class CityGeneralItemLogic extends Component {
     }
 
     protected getAllGenerals(): number[] {
-        let cityArmyData: ArmyData[] = ArmyCommand.getInstance().proxy.getArmyList(this._cityId);
-        let general: GeneralData = null;
-        var arr = [];
-        for (var i = 0; i < cityArmyData.length; i++) {
-            if (cityArmyData[i]) {
-                arr = arr.concat(cityArmyData[i].generals);
-                for (let j: number = 0; j < cityArmyData[i].generals.length; j++) {
-                    if (cityArmyData[i].generals[j] > 0) {
-                        general = GeneralCommand.getInstance().proxy.getMyGeneral(cityArmyData[i].generals[j]);
-                        if (general) {
-                            arr = arr.concat(GeneralCommand.getInstance().proxy.getGeneralIds(general.cfgId));
-                        }
-                    }
-                }
-            }
-        }
-        return arr;
+        return Array.from(TroopCommand.getInstance().proxy.getAssignedHeroIds());
     }
 
     protected updateItem(): void {
@@ -121,8 +110,9 @@ export default class CityGeneralItemLogic extends Component {
             this.addNode.active = false;
             this.lockNode.active = true;
             this.btnDown.active = false;
-            let desName: string = MapUICommand.getInstance().proxy.getFacilityCfgByType(14).name;
-            this.labelTip.string = desName + " 等级" + this._order + "开启";
+            const facilityCfg = MapUICommand.getInstance().proxy.getFacilityCfgByType(14);
+            let desName: string = facilityCfg ? facilityCfg.name : "兵营";
+            this.labelTip.string = desName + " 等级" + this._order + " 开启";
             this.conBg.active = false;
         } else if (this._data == null) {
             //未配置武将
@@ -141,33 +131,26 @@ export default class CityGeneralItemLogic extends Component {
             
             this.updateCon();
 
-            let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._data.cfgId);
-            this.headIcon.getComponent(GeneralHeadLogic).setHeadId(this._data.cfgId);
+            let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._data.hero_type);
+            if (!cfg) {
+                this.infoNode.active = false;
+                this.addNode.active = true;
+                this.btnDown.active = false;
+                return;
+            }
+            const headLogic = this.headIcon ? this.headIcon.getComponent(GeneralHeadLogic) : null;
+            if (headLogic) {
+                headLogic.setHeadId(this._data.hero_type);
+            }
             this.labelLv.string = this._data.level + "";
             this.labelName.string = cfg.name;
-            this.labelSoldierCnt.string = this._soldierCnt + "/" + this._totalSoldierCnt;
-            this.progressBar.progress = this._soldierCnt / this._totalSoldierCnt;
-            this.labelCost.string = "Cost " + cfg.cost;
-            switch (this._data.config.camp) {
-                case GeneralCampType.Han:
-                    this.labelCamp.string = "汉";
-                    break;
-                case GeneralCampType.Qun:
-                    this.labelCamp.string = "群";
-                    break;
-                case GeneralCampType.Wei:
-                    this.labelCamp.string = "魏";
-                    break;
-                case GeneralCampType.Shu:
-                    this.labelCamp.string = "蜀";
-                    break;
-                case GeneralCampType.Wu:
-                    this.labelCamp.string = "吴";
-                    break;
-                default:
-                    this.labelCamp.string = "无";
-                    break;
+            this.labelSoldierCnt.string = this._totalSoldierCnt > 0 ? (this._soldierCnt + "/" + this._totalSoldierCnt) : "兵力待同步";
+            if (this.progressBar) {
+                this.progressBar.progress = this._totalSoldierCnt > 0 ? this._soldierCnt / this._totalSoldierCnt : 0;
             }
+            this.labelCost.string = cfg.heroClass || "";
+            const campMap: { [key: number]: string } = { 1: "汉", 2: "群", 3: "魏", 4: "蜀", 5: "吴" };
+            this.labelCamp.string = cfg.campText || campMap[cfg.camp] || (cfg.heroClass ? cfg.heroClass.slice(0, 1) : "无");
 
         }
     }
