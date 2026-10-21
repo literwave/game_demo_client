@@ -4,22 +4,22 @@
     "value2": [
       {
         "reward_type": 1,
-        "item_id": 1,
+        "item_type": 1,
         "item_count": 1000
       },
       {
         "reward_type": 1,
-        "item_id": 2,
+        "item_type": 2,
         "item_count": 1000
       },
       {
         "reward_type": 3,
-        "item_id": 1001,
+        "item_type": 1001,
         "item_count": 1
       },
       {
         "reward_type": 4,
-        "item_id": 1,
+        "item_type": 1,
         "item_count": 1000
       }
     ]
@@ -35,17 +35,5 @@
   {
     "Id": 4,
     "value1": 30
-  },
-  {
-    "Id": 5,
-    "value1": 50
-  },
-  {
-    "Id": 6,
-    "value1": 3
-  },
-  {
-    "Id": 7,
-    "value1": 3
   }
 ]

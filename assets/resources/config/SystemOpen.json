@@ -1,13 +1,11 @@
 [
   {
     "Id": 1,
-    "Name": "更换头像",
-    "Enum": "HEAD_ICON",
-    "Desc": "开启后可更换头像",
-    "Cond": [
-      {
-        "level": 1
-      }
-    ]
+    "Name": "进入大世界",
+    "Key": "enter_big_world",
+    "Desc": "开启后可进入大世界",
+    "OpenType": 1,
+    "Sort": 1,
+    "ConfigEnum": ""
   }
 ]

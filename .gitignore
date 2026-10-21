@@ -9,6 +9,10 @@ build/
 profiles/
 native
 
+# leftover Cocos folder under assets (directory meta with no matching folder)
+assets/temp/
+assets/temp.meta
+
 #//////////////////////////
 # Local editor extensions
 #//////////////////////////
