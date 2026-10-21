@@ -22,5 +22,45 @@
     "useParams": [],
     "Kind": 3,
     "Overlap": 1
+  },
+  {
+    "Id": 3,
+    "Icon": 3,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 1,
+    "Overlap": 1000
+  },
+  {
+    "Id": 4,
+    "Icon": 4,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 4,
+    "Overlap": 1000
+  },
+  {
+    "Id": 5,
+    "Icon": 5,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 5,
+    "Overlap": 1
+  },
+  {
+    "Id": 6,
+    "Icon": 6,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 6,
+    "Overlap": 1
+  },
+  {
+    "Id": 7,
+    "Icon": 7,
+    "BuyDiamond": 10,
+    "useParams": [],
+    "Kind": 7,
+    "Overlap": 1
   }
 ]
