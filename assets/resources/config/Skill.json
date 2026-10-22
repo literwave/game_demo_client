@@ -1,0 +1,810 @@
+[
+  {
+    "Id": 1001,
+    "Name": "无双乱舞",
+    "Desc": "对敌军1-2个目标发动猛攻，造成物理伤害（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 6,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 40,
+        "effect_value": [
+          120
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          140
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 50,
+        "effect_value": [
+          160
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1002,
+    "Name": "汉室余晖",
+    "Desc": "战斗中使我军全体防御提升%n%",
+    "Icon": "",
+    "Trigger": 2,
+    "Target": 4,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      3
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          15
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          20
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          25
+        ],
+        "effect_round": [
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1003,
+    "Name": "宦官乱政",
+    "Desc": "使敌军单体攻击降低%n%",
+    "Icon": "",
+    "Trigger": 2,
+    "Target": 5,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      2
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          12
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          16
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          20
+        ],
+        "effect_round": [
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1004,
+    "Name": "闭月",
+    "Desc": "对敌军单体发动一次攻击（伤害率%n%），并提升自身速度%n%",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 5,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1,
+      5
+    ],
+    "Levels": [
+      {
+        "probability": 45,
+        "effect_value": [
+          90,
+          20
+        ],
+        "effect_round": [
+          0,
+          1
+        ]
+      },
+      {
+        "probability": 50,
+        "effect_value": [
+          105,
+          25
+        ],
+        "effect_round": [
+          0,
+          1
+        ]
+      },
+      {
+        "probability": 55,
+        "effect_value": [
+          120,
+          30
+        ],
+        "effect_round": [
+          0,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1005,
+    "Name": "垂帘",
+    "Desc": "指挥使我军全体谋略提升%n%",
+    "Icon": "",
+    "Trigger": 4,
+    "Target": 4,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      4
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          15
+        ],
+        "effect_round": [
+          3
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          20
+        ],
+        "effect_round": [
+          3
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          25
+        ],
+        "effect_round": [
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1006,
+    "Name": "苦肉计",
+    "Desc": "自身防御提升%n%，并嘲讽敌军单体",
+    "Icon": "",
+    "Trigger": 2,
+    "Target": 1,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      3
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          25
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          35
+        ],
+        "effect_round": [
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          45
+        ],
+        "effect_round": [
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1007,
+    "Name": "西凉铁骑",
+    "Desc": "指挥使我军全体普通攻击伤害提升%n%",
+    "Icon": "",
+    "Trigger": 4,
+    "Target": 4,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          12
+        ],
+        "effect_round": [
+          3
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          16
+        ],
+        "effect_round": [
+          3
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          20
+        ],
+        "effect_round": [
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1008,
+    "Name": "太平道法",
+    "Desc": "对敌军2-3个目标发动谋略攻击（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 7,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 40,
+        "effect_value": [
+          100
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          120
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 50,
+        "effect_value": [
+          140
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1009,
+    "Name": "魔王再临",
+    "Desc": "对敌军1-2个目标发动猛攻（伤害率%n%），并提升自身攻击%n%",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 6,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1,
+      2
+    ],
+    "Levels": [
+      {
+        "probability": 40,
+        "effect_value": [
+          110,
+          15
+        ],
+        "effect_round": [
+          0,
+          2
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          130,
+          20
+        ],
+        "effect_round": [
+          0,
+          2
+        ]
+      },
+      {
+        "probability": 50,
+        "effect_value": [
+          150,
+          25
+        ],
+        "effect_round": [
+          0,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1010,
+    "Name": "戟震山河",
+    "Desc": "普通攻击后追加一次攻击（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 3,
+    "Target": 5,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 35,
+        "effect_value": [
+          80
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 40,
+        "effect_value": [
+          100
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          120
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1022,
+    "Name": "乱世奸雄",
+    "Desc": "战斗中使自身攻击与谋略提升%n%",
+    "Icon": "",
+    "Trigger": 2,
+    "Target": 1,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      2,
+      4
+    ],
+    "Levels": [
+      {
+        "probability": 100,
+        "effect_value": [
+          15,
+          15
+        ],
+        "effect_round": [
+          2,
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          20,
+          20
+        ],
+        "effect_round": [
+          2,
+          2
+        ]
+      },
+      {
+        "probability": 100,
+        "effect_value": [
+          25,
+          25
+        ],
+        "effect_round": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1023,
+    "Name": "武圣",
+    "Desc": "对敌军单体发动一次强力攻击（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 5,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 45,
+        "effect_value": [
+          130
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 50,
+        "effect_value": [
+          150
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 55,
+        "effect_value": [
+          170
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1024,
+    "Name": "当阳桥",
+    "Desc": "对敌军2-3个目标发动攻击（伤害率%n%），并降低其速度%n%",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 7,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1,
+      5
+    ],
+    "Levels": [
+      {
+        "probability": 35,
+        "effect_value": [
+          90,
+          15
+        ],
+        "effect_round": [
+          0,
+          1
+        ]
+      },
+      {
+        "probability": 40,
+        "effect_value": [
+          105,
+          20
+        ],
+        "effect_round": [
+          0,
+          1
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          120,
+          25
+        ],
+        "effect_round": [
+          0,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1025,
+    "Name": "火烧赤壁",
+    "Desc": "对敌军全体发动谋略攻击（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 1,
+    "Target": 8,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 35,
+        "effect_value": [
+          80
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 40,
+        "effect_value": [
+          95
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          110
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 1026,
+    "Name": "枭姬",
+    "Desc": "普通攻击后追加一次攻击（伤害率%n%）",
+    "Icon": "",
+    "Trigger": 3,
+    "Target": 5,
+    "Limit": 1,
+    "Arms": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "IncludeEffect": [
+      1
+    ],
+    "Levels": [
+      {
+        "probability": 35,
+        "effect_value": [
+          85
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 40,
+        "effect_value": [
+          100
+        ],
+        "effect_round": [
+          0
+        ]
+      },
+      {
+        "probability": 45,
+        "effect_value": [
+          115
+        ],
+        "effect_round": [
+          0
+        ]
+      }
+    ]
+  }
+]
