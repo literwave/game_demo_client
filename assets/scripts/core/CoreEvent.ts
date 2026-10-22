@@ -7,5 +7,6 @@ export class CoreEvent {
     public static mapReady:string = "map_ready";
     public static mapLoadProgress:string = "map_load_progress";
     public static mapLoadFailed:string = "map_load_failed";
+    public static gameReady:string = "game_ready";
     
 }

@@ -10,6 +10,8 @@ interface RewardShowModes {
 }
 
 export default class RewardCommand {
+    private _uiReady = false;
+    private _pendingRewards: any[] = [];
     protected static _instance: RewardCommand;
     public static getInstance(): RewardCommand {
         if (this._instance == null) {
@@ -32,12 +34,32 @@ export default class RewardCommand {
     }
 
     public onDestory(): void {
+        this.clearData();
         EventMgr.targetOff(this);
+    }
+
+    public clearData(): void {
+        this._uiReady = false;
+        this._pendingRewards.length = 0;
+    }
+
+    public setUIReady(): void {
+        if (this._uiReady) return;
+        this._uiReady = true;
+        const pending = this._pendingRewards.splice(0);
+        for (const data of pending) {
+            if (!this._uiReady) break;
+            this.onShowReward(data);
+        }
     }
 
     protected onShowReward(data: any): void {
         const rewardList = (data && data.rewardList) || [];
         if (!rewardList.length) {
+            return;
+        }
+        if (!this._uiReady) {
+            this._pendingRewards.push(data);
             return;
         }
         if (!this.needWindow(data.showTypeList)) {

@@ -219,17 +219,15 @@ export default class MapProxy {
             if (this._curCenterAreaId == -1 || this._curCenterAreaId != areaId) {
                 //展示区域变化
                 let areaData: MapAreaData = this.getMapAreaData(areaId);
-                let oldIds: number[] = null;
+                const oldIds = this._curCenterAreaId === -1 ? [] : MapUtil.get9GridVaildAreaIds(this._curCenterAreaId);
                 let newIds: number[] = MapUtil.get9GridVaildAreaIds(areaData.id);
-                let addIds: number[] = [];
-                let removeIds: number[] = [];
+                const addIds = newIds.filter(id => oldIds.indexOf(id) < 0);
+                const removeIds = oldIds.filter(id => newIds.indexOf(id) < 0);
                 let firstAreaIds: number[] = null;
                 let otherAreaIds: number[] = [];
                 if (this._curCenterAreaId == -1
                     || this.getMapAreaData(this._curCenterAreaId).fuzzyEquals(areaData, 3) == false) {
-                    //全量刷新
-                    oldIds = [];
-                    addIds = newIds;
+                    // 首次进入或远距离跳转只改变优先级，旧区域仍必须按差集移除。
                     //计算四个角所在的区域 用于判断需要优先请求的区域
                     let temp = pixelPoint.clone();
                     let leftTopPixelPoint: Vec2 = temp.add(new Vec2(-view.getVisibleSize().width * 0.5, view.getVisibleSize().height * 0.5));
@@ -246,22 +244,13 @@ export default class MapProxy {
 
                     firstAreaIds = MapUtil.getVaildAreaIdsByPixelPoints(temp, leftTopPixelPoint, leftDownPixelPoint, rightTopPixelPoint, rightDownPixelPoint);
                 } else {
-                    oldIds = MapUtil.get9GridVaildAreaIds(this._curCenterAreaId);
-                    for (let i: number = 0; i < newIds.length; i++) {
-                        if (oldIds.indexOf(newIds[i]) == -1) {
-                            addIds.push(newIds[i]);
-                        }
-                    }
-                    for (let i: number = 0; i < oldIds.length; i++) {
-                        if (newIds.indexOf(oldIds[i]) == -1) {
-                            removeIds.push(oldIds[i]);
-                        }
-                    }
                     //其他情况优先请求中心区域
-                    if (addIds.indexOf(areaData.id)) {
+                    if (addIds.indexOf(areaData.id) >= 0) {
                         firstAreaIds = [areaData.id];
                     }
                 }
+
+                if (firstAreaIds) firstAreaIds = firstAreaIds.filter(id => addIds.indexOf(id) >= 0);
 
                 if (firstAreaIds && firstAreaIds.length > 0) {
                     for (let i: number = 0; i < addIds.length; i++) {
@@ -279,8 +268,8 @@ export default class MapProxy {
                 } else {
                     qryIndexs = otherAreaIds;
                 }
-                this.qryAreaIds = this.qryAreaIds.concat(qryIndexs);
-                // this.qryAreaIds = [18];
+                this.qryAreaIds = qryIndexs.concat(this.qryAreaIds)
+                    .filter((id, index, ids) => newIds.indexOf(id) >= 0 && ids.indexOf(id) === index);
 
                 this._curCenterAreaId = areaId;
                 EventMgr.emit(LogicEvent.mapShowAreaChange, point, this._curCenterAreaId, addIds, removeIds);

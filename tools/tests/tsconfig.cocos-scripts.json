@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "../../temp/declarations/cc.custom-macro",
+      "../../temp/declarations/jsb",
+      "../../temp/declarations/cc",
+      "../../temp/declarations/cc.env"
+    ]
+  },
+  "include": ["../../assets/scripts/**/*.ts"],
+  "exclude": ["../../assets/resources/**/*.tsx"]
+}

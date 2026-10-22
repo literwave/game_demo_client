@@ -1,8 +1,6 @@
 import { _decorator, Component, Node } from 'cc';
 import MapCommand from "../MapCommand";
 import { MapResData } from "../MapProxy";
-import { EventMgr } from '../../utils/EventMgr';
-import { LogicEvent } from '../../common/LogicEvent';
 const { ccclass, property } = _decorator;
 
 
@@ -18,14 +16,9 @@ export default class BuildTagLogic extends Component {
         this.tagIconNode.active = false;
     }
 
-    protected onEnable(): void {
-        EventMgr.on(LogicEvent.updateTag, this.onUpdateTag, this);
-
-    }
-
     protected onDisable(): void {
         this._data = null;
-        EventMgr.targetOff(this);
+        this.tagIconNode.active = false;
     }
 
      public setResourceData(data: MapResData): void {
@@ -39,7 +32,4 @@ export default class BuildTagLogic extends Component {
         }
     }
 
-    protected onUpdateTag() {
-        this.updateUI();
-    }
 }

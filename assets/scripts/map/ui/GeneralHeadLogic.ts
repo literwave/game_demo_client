@@ -1,38 +1,30 @@
-import { _decorator, Component, Sprite, SpriteFrame, resources } from 'cc';
+import { _decorator, Component, Sprite, isValid } from 'cc';
 const { ccclass } = _decorator;
 import GeneralCommand from "../../general/GeneralCommand";
 
 @ccclass('GeneralHeadLogic')
 export default class GeneralHeadLogic extends Component {
+    private _headRequestId = 0;
+
+    protected onDestroy(): void {
+        this._headRequestId++;
+    }
 
     public setHeadId(hero_type: any): void {
-        let sp = this.node.getComponent(Sprite);
+        const requestId = ++this._headRequestId;
+        const sp = this.node.getComponent(Sprite);
+        if (!sp) return;
+        const proxy = GeneralCommand.getInstance().proxy;
+        const cached = proxy.getGeneralTex(hero_type);
+        // 列表会复用卡片；新图未就绪时先清掉上一张，不能沿用旧武将画像。
+        sp.spriteFrame = cached && isValid(cached) ? cached : null;
+        if (sp.spriteFrame) return;
 
-        const cfg = GeneralCommand.getInstance().proxy.getGeneralCfg(hero_type);
-        const resPath = cfg && cfg.resource ? cfg.resource.split('.')[0] : ("card_" + hero_type);
-
-        var frame = GeneralCommand.getInstance().proxy.getGeneralTex(hero_type);
-        if (frame) {
-            if (sp) {
-                sp.spriteFrame = frame;
-            }
-        } else {
-            console.log("load setHeadId from hero folder:", resPath);
-            resources.load("hero/" + resPath + "/spriteFrame", SpriteFrame,
-                (finish: number, total: number) => {
-                },
-                (error: Error, asset: any) => {
-                    if (error != null) {
-                        console.log("setHeadId error using path:", "hero/" + resPath, "error:", error.message);
-                    } else {
-                        var frame = asset as SpriteFrame;
-                        if (sp) {
-                            sp.spriteFrame = frame;
-                        }
-
-                        GeneralCommand.getInstance().proxy.setGeneralTex(hero_type, frame);
-                    }
-                });
-        }
+        proxy.loadGeneralTex(hero_type).then((asset) => {
+            if (!asset) return;
+            // 较早的异步请求可能晚返回，不能覆盖已复用卡片或访问已销毁的组件。
+            if (requestId !== this._headRequestId || !isValid(this, true) || !isValid(sp, true)) return;
+            sp.spriteFrame = asset;
+        });
     }
 }

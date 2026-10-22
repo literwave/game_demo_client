@@ -2,6 +2,7 @@ import { _decorator, Component, EditBox, EventTouch, Graphics, Node, Sprite, Spr
 import { EventMgr } from "../utils/EventMgr";
 import { LogicEvent } from "../common/LogicEvent";
 import ConfigManager from "../core/ConfigManager";
+import { getGeneralPortraitPath } from '../general/GeneralPortrait';
 
 const { ccclass } = _decorator;
 
@@ -664,7 +665,7 @@ export default class RewardWindowLogic extends Component {
             }
         }
         if (info.rewardType === REWARD_TYPE_HERO) {
-            return `hero/${this.getHeroResource(info.itemId)}/spriteFrame`;
+            return getGeneralPortraitPath(info.itemId, this.getHeroResource(info.itemId));
         }
         return '';
     }

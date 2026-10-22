@@ -55,8 +55,16 @@ class mgr {
         for (let i = 0; i < events.length; i++) {
             const eh:EventHandler = events[i];
             if(eh.handler == handler && eh.target == target){
-                events.splice(i, i+1);
+                events.splice(i, 1);
                 break;
+            }
+        }
+        if (events.length === 0) this.events.delete(name);
+        if (!events.some(event => event.target === target)) {
+            const names = this.targetInName.get(target);
+            if (names) {
+                names.delete(name);
+                if (names.size === 0) this.targetInName.delete(target);
             }
         }
     }
@@ -87,14 +95,16 @@ class mgr {
                for (let i = 0; i < events.length; i++) {
                    const eh = events[i];
                    if(eh.target == target){
-                        events.splice(i, i+1);
+                        events.splice(i, 1);
                         i = i-1;
                    }
                }
+               if (events.length === 0) this.events.delete(name);
             }
         });
         
         targetInName.clear();
+        this.targetInName.delete(target);
     }
 }
 

@@ -26,8 +26,6 @@ export enum NetNodeType {
 }
 
 
-const recvMessage = "recvMessage";
-
 export interface NetConnectOptions {
     host?: string,              // 地址
     port?: number,              // 端口
@@ -145,25 +143,6 @@ export class NetNode {
 
     protected initTimer() {
         this._timer.init();
-
-        EventMgr.on(NetEvent.ServerTimeOut, this.onTimeOut, this);
-    }
-
-    protected onTimeOut(msg: any) {
-        console.log("NetNode onTimeOut!", msg)
-        //超时删除 请求队列
-        for (var i = 0; i < this._requests.length; i++) {
-            let req = this._requests[i];
-            if (msg.name == req.rspName && msg.seq == req.seq) {
-                console.log("NetNode remove:", req)
-                this._requests.splice(i, 1);
-                this.destroyInvoke(req);
-                i--;
-
-                EventMgr.emit(recvMessage, msg, req);
-            }
-        }
-
     }
 
     protected updateNetTips(tipsType: NetTipsType, isShow: boolean) {
@@ -370,33 +349,13 @@ export class NetNode {
 
 
 
-    public send(send_data: any, force: boolean = false): Promise<any> {
+    public send(send_data: any, force: boolean = false): void {
 
         let requestIns = this.createInvoke();
         requestIns.dat = send_data;
         requestIns.name = send_data.name;
-        // requestIns.rspName = send_data.name;
-
-        let p = new Promise(function (resolve, reject) {
-            let self = this;
-            let ok = (rsp, req) => {
-                if (dat == req) {
-                    let obj = {
-                        req: data.json,
-                        rsp: rsp
-                    };
-                    EventMgr.off(recvMessage, ok, self);
-                    // console.log("ok");
-                    resolve(obj);
-                }
-            }
-
-            EventMgr.on(recvMessage, ok, self);
-
-        });
-
+        // 回包由 onMessage 按协议名分发给 Command；没有通用的请求应答匹配事件。
         this.sendPack(requestIns, force);
-        return p;
     }
 
     // 发起请求，如果当前处于重连中，进入缓存列表等待重连完成后发送

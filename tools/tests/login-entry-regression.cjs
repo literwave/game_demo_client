@@ -1,0 +1,120 @@
+// Login/create timing tests: no live account or server mutation is performed here.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require(process.argv[2] || 'typescript');
+const root = path.resolve(__dirname, '../..');
+const engine = {
+    Component: class {},
+    _decorator: { ccclass: () => type => type, property: () => () => {} },
+};
+const asDefault = value => ({ default: value });
+function load(file, imports = {}) {
+    const result = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {
+        fileName: file, reportDiagnostics: true, compilerOptions: {
+            target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.CommonJS, experimentalDecorators: true,
+        },
+    });
+    assert.equal(result.diagnostics.length, 0, file);
+    const mod = { exports: {} };
+    new Function('require', 'module', 'exports', result.outputText)(id => {
+        if (id === 'cc') return engine;
+        if (Object.hasOwn(imports, id)) return imports[id];
+        throw new Error(`Unmocked dependency ${file}: ${id}`);
+    }, mod, mod.exports);
+    return mod.exports;
+}
+const { LogicEvent } = load('assets/scripts/common/LogicEvent.ts');
+const { ServerConfig } = load('assets/scripts/config/ServerConfig.ts');
+const netInterface = load('assets/scripts/network/socket/NetInterface.ts');
+const proxyModule = load('assets/scripts/login/LoginProxy.ts');
+function fixture() {
+    const { EventMgr } = load('assets/scripts/utils/EventMgr.ts');
+    const sent = [];
+    const Command = load('assets/scripts/login/LoginCommand.ts', {
+        './LoginProxy': proxyModule,
+        '../config/ServerConfig': { ServerConfig }, '../utils/EventMgr': { EventMgr },
+        '../common/LogicEvent': { LogicEvent }, '../network/socket/NetInterface': netInterface,
+        '../network/socket/NetManager': { NetManager: { getInstance: () => ({ send: data => sent.push(data) }) } },
+        '../network/pto/ProtoManager': { ProtoManager: { getInstance: () => ({ encode: () => new Uint8Array([1]) }) } },
+        '../utils/Tools': { Tools: {} }, '../utils/LocalCache': { LocalCache: {} },
+        '../utils/DateUtil': asDefault({}), '../libs/crypto/md5': { Md5: {} },
+    }).default;
+    const command = Command.getInstance();
+    command.proxy.saveLoginData({ userId: 1, serverId: 120 });
+    let entries = 0, resourceRefreshes = 0;
+    EventMgr.on(LogicEvent.enterMap, () => entries++, {});
+    EventMgr.on(LogicEvent.upateMyRoleRes, () => resourceRefreshes++, {});
+    return { EventMgr, command, sent, get entries() { return entries; }, get resourceRefreshes() { return resourceRefreshes; } };
+}
+let passed = 0;
+function test(name, run) { run(); passed++; console.log(`PASS ${name}`); }
+
+test('new character immediately enters loading even when resources have not returned', () => {
+    const f = fixture();
+    assert.equal(f.command.proxy.getRoleResData(), null);
+    f.EventMgr.emit(ServerConfig.s2c_user_create, { name: '时序测试', sex: 1 });
+    assert.equal(f.entries, 1, 'entry must be emitted in the create response callback');
+    assert.equal(f.command.proxy.getRoleData().name, '时序测试');
+    assert.equal(f.command.proxy.getRoleResData(), null, 'entry must not synthesize a resource response');
+    const laterResources = { resList: [{ k: 1, v: 1000 }] };
+    f.EventMgr.emit(ServerConfig.s2c_req_user_res, laterResources);
+    assert.equal(f.entries, 1, 'late resources must not trigger another entry');
+    assert.equal(f.command.proxy.getRoleResData(), laterResources);
+    assert.equal(f.resourceRefreshes, 1, 'HUD receives the late resource update');
+});
+
+test('resources received before creation do not open the map without a character', () => {
+    const f = fixture();
+    f.EventMgr.emit(ServerConfig.s2c_req_user_res, { resList: [] });
+    assert.equal(f.entries, 0);
+    f.EventMgr.emit(ServerConfig.s2c_user_create, { name: '先资源后角色', sex: 2 });
+    assert.equal(f.entries, 1);
+    f.EventMgr.emit(ServerConfig.s2c_req_user_res, { resList: [{ k: 2, v: 200 }] });
+    assert.equal(f.entries, 1);
+});
+
+test('failed creation remains on the create page; existing characters still enter immediately', () => {
+    const f = fixture();
+    f.EventMgr.emit(ServerConfig.s2c_user_create, null);
+    f.EventMgr.emit(ServerConfig.s2c_user_create, { name: '' });
+    assert.equal(f.entries, 0);
+    f.EventMgr.emit(ServerConfig.s2c_user_base_info, { name: '已有角色', sex: 1 });
+    assert.equal(f.entries, 1);
+    assert.equal(f.command.proxy.getRoleResData(), null);
+    assert.equal(f.sent[0].name, ServerConfig.c2s_req_user_res, 'resource request remains active after entry');
+});
+
+test('create page does not preload map assets and rapid clicks still send only one create request', () => {
+    const f = fixture();
+    const tasks = [];
+    const Create = load('assets/scripts/login/CreateLogic.ts', {
+        '../config/ServerConfig': { ServerConfig }, './LoginCommand': asDefault({ getInstance: () => f.command }),
+        './LoginProxy': proxyModule, '../utils/EventMgr': { EventMgr: f.EventMgr },
+        '../libs/NameDict': { createName: () => '测试新角色' },
+        '../common/AudioManager': { AudioManager: { instance: { playClick() {} } } },
+        '../common/LogicEvent': { LogicEvent },
+    }).default;
+    const create = new Create();
+    create.editName = { string: '' }; create.manToggle = { isChecked: true };
+    create.createButton = { interactable: true }; create.createButtonLabel = { string: '' };
+    create.statusLabel = { string: '' };
+    create.scheduleOnce = (callback, delay) => tasks.push({ callback, delay });
+    create.unschedule = callback => {
+        const i = tasks.findIndex(task => task.callback === callback);
+        if (i >= 0) tasks.splice(i, 1);
+    };
+    create.onLoad();
+    assert.equal(tasks.length, 0, 'opening creation must not schedule map/config downloads');
+    create.onClickCreate(); create.onClickCreate();
+    assert.equal(create.createButton.interactable, false);
+    tasks.find(task => task.delay === 0).callback();
+    assert.equal(f.sent.length, 1);
+    assert.equal(f.sent[0].name, ServerConfig.c2s_user_create);
+    f.EventMgr.emit(ServerConfig.s2c_user_create, { name: create.editName.string });
+    assert.equal(f.entries, 1);
+    assert.equal(tasks.some(task => task.delay === 12), false, 'successful response cancels the request timeout');
+    create.onDestroy();
+});
+
+console.log(`PASS ${passed} login/create entry regression groups`);

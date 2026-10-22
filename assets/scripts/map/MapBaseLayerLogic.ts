@@ -13,6 +13,8 @@ export default class MapBaseLayerLogic extends Component {
     protected _cmd: MapCommand;
     protected _itemPool: NodePool = new NodePool();
     protected _itemMap: Map<number, Map<number, Node>> = new Map<number, Map<number, Node>>();
+    // 离开视野后先移交节点引用，由 MapScene 统一预算逐帧回收。
+    protected _retiredItems: Map<number, Map<number, Node>> = new Map();
 
     protected onLoad(): void {
         this._cmd = MapCommand.getInstance();
@@ -25,16 +27,19 @@ export default class MapBaseLayerLogic extends Component {
         });
         this._itemMap.clear();
         this._itemMap = null;
+        this._retiredItems.clear();
         this._itemPool.clear();
         this._itemPool = null;
     }
 
     public addItem(areaIndex: number, data: any): Node {
+        if (!data) return null;
         if (this._itemMap.has(areaIndex)) {
             let id: number = this.getIdByData(data);
             let item: Node = this.getItem(areaIndex, id);
             if (item == null) {
-                item = this.createItem();
+                // 快速移回同一区域时直接接回尚未回收的节点，避免重复显示。
+                item = this.takeRetiredItem(areaIndex, id) || this.createItem();
                 item.parent = this.parentLayer;
                 let list: Map<number, Node> = this._itemMap.get(areaIndex);
                 list.set(this.getIdByData(data), item);
@@ -46,7 +51,7 @@ export default class MapBaseLayerLogic extends Component {
     }
 
     public updateItem(areaIndex: number, data: any, item: Node = null): void {
-        
+        if (!data) return;
         if (this._itemMap.has(areaIndex)) {
             let realItem: Node = item;
             if (item == null) {
@@ -65,11 +70,16 @@ export default class MapBaseLayerLogic extends Component {
     }
 
     public removeItem(areaIndex: number, id: number): boolean {
-        let list: Map<number, Node> = this._itemMap.get(areaIndex);
-        if (list.has(id)) {
+        const list = this._itemMap.get(areaIndex);
+        if (list && list.has(id)) {
             let item: Node = list.get(id);
             this._itemPool.put(item);
             list.delete(id);
+            return true;
+        }
+        const retired = this.takeRetiredItem(areaIndex, id);
+        if (retired) {
+            this._itemPool.put(retired);
             return true;
         }
         return false;
@@ -77,13 +87,14 @@ export default class MapBaseLayerLogic extends Component {
 
     public getItem(areaIndex: number, id: number): Node {
         let list: Map<number, Node> = this._itemMap.get(areaIndex);
-        if (list.has(id)) {
+        if (list && list.has(id)) {
             return list.get(id);
         }
         return null;
     }
 
     protected createItem(): Node {
+        if (this._itemPool.size() === 0) this.recycleOneItem();
         if (this._itemPool.size() > 0) {
             return this._itemPool.get();
         }
@@ -93,13 +104,32 @@ export default class MapBaseLayerLogic extends Component {
 
     public removeArea(areaIndex: number): void {
         if (this._itemMap.has(areaIndex)) {
-            let list: Map<number, Node> = this._itemMap.get(areaIndex);
-            list.forEach((node: Node, key: number) => {
-                this._itemPool.put(node);
-            });
-            list.clear();
+            const list = this._itemMap.get(areaIndex);
+            const retired = this._retiredItems.get(areaIndex);
+            if (retired) list.forEach((node, id) => retired.set(id, node));
+            else if (list.size > 0) this._retiredItems.set(areaIndex, list);
             this._itemMap.delete(areaIndex);
         }
+    }
+
+    private takeRetiredItem(areaIndex: number, id: number): Node {
+        const list = this._retiredItems.get(areaIndex);
+        if (!list) return null;
+        const item = list.get(id);
+        if (!item) return null;
+        list.delete(id);
+        if (list.size === 0) this._retiredItems.delete(areaIndex);
+        return item;
+    }
+
+    public recycleOneItem(): boolean {
+        const area = this._retiredItems.entries().next();
+        if (area.done) return false;
+        const [areaId, list] = area.value;
+        const id = list.keys().next().value;
+        const item = this.takeRetiredItem(areaId, id);
+        this._itemPool.put(item);
+        return true;
     }
 
     public addArea(areaIndex: number): void {

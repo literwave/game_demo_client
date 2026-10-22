@@ -4,6 +4,9 @@ import GeneralProxy from "./GeneralProxy";
 import { EventMgr } from "../utils/EventMgr";
 import { LogicEvent } from "../common/LogicEvent";
 import { ProtoManager } from "../network/pto/ProtoManager";
+import { NetEvent } from '../network/socket/NetInterface';
+
+const GENERAL_REQUEST_TIMEOUT_MS = 8000;
 
 export default class GeneralCommand {
     //单例
@@ -26,10 +29,18 @@ export default class GeneralCommand {
 
     //数据model
     protected _proxy: GeneralProxy = new GeneralProxy();
+    private _sessionActive = false;
+    private _uiReady = false;
+    private _generalsDirty = false;
+    private _hasGeneralSnapshot = false;
+    private _generalRequest: Promise<boolean> | null = null;
+    private _resolveGeneralRequest: ((ready: boolean) => void) | null = null;
+    private _generalRequestTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
         EventMgr.on(ServerConfig.s2c_req_all_hero_base_info, this.onMyGenerals, this);
         EventMgr.on(ServerConfig.s2c_sync_hero_base_info, this.onHeroSync, this);
+        EventMgr.on(NetEvent.ServerReconnectSuccess, this.onReconnectSuccess, this);
         EventMgr.on(ServerConfig.general_push, this.onGeneralPush, this);
         EventMgr.on(ServerConfig.general_drawGeneral, this.onDrawGenerals, this);
         EventMgr.on(ServerConfig.general_composeGeneral, this.onComposeGeneral, this);
@@ -43,11 +54,45 @@ export default class GeneralCommand {
     }
 
     public onDestory(): void {
+        this.clearData();
         EventMgr.targetOff(this);
     }
 
     public clearData(): void {
+        this._sessionActive = false;
+        this._uiReady = false;
+        this._generalsDirty = false;
+        this._hasGeneralSnapshot = false;
+        this.completeGeneralRequest(false);
         this._proxy.clearData();
+    }
+
+    /** 登录验证完成后立即请求，接收数据不依赖地图或界面是否已创建。 */
+    public beginLoading(): Promise<boolean> {
+        this._sessionActive = true;
+        this._uiReady = false;
+        return this.qryMyGenerals();
+    }
+
+    public setUIReady(): void {
+        if (!this._sessionActive || this._uiReady) return;
+        this._uiReady = true;
+        if (this._generalsDirty) this.notifyGeneralsChanged();
+    }
+
+    private notifyGeneralsChanged(): void {
+        this._generalsDirty = true;
+        if (!this._uiReady) return;
+        this._generalsDirty = false;
+        EventMgr.emit(LogicEvent.updateGeneral);
+        EventMgr.emit(LogicEvent.updateMyGenerals);
+    }
+
+    private onReconnectSuccess(): void {
+        if (!this._sessionActive) return;
+        this.completeGeneralRequest(false);
+        this._hasGeneralSnapshot = false;
+        this.qryMyGenerals();
     }
 
     public isProtocolAvailable(msgName: string): boolean {
@@ -60,21 +105,28 @@ export default class GeneralCommand {
     }
 
     /**我的将领列表*/
-    protected onMyGenerals(data: any): void {   
-        this._proxy.setMyGenerals(data.heroInfoList || data.hero_info_list || []);
-        EventMgr.emit(LogicEvent.updateMyGenerals);
-
+    protected onMyGenerals(data: any): void {
+        if (!this._sessionActive) return;
+        const payload = data && data.msg && typeof data.msg === 'object' ? data.msg : data;
+        if (!payload || (payload.code != null && Number(payload.code) !== 0)) {
+            this.completeGeneralRequest(false);
+            return;
+        }
+        this._proxy.setMyGenerals(payload.heroInfoList || payload.hero_info_list || []);
+        this._hasGeneralSnapshot = true;
+        this.completeGeneralRequest(true);
+        this.notifyGeneralsChanged();
     }
 
     protected onHeroSync(data: any): void {
+        if (!this._sessionActive) return;
         const payload = data && data.msg && typeof data.msg === 'object' ? data.msg : data;
         const heroInfo = payload ? (payload.heroInfo || payload.hero_info) : null;
         if (!heroInfo) {
             return;
         }
         this._proxy.updateGeneral(heroInfo);
-        EventMgr.emit(LogicEvent.updateGeneral);
-        EventMgr.emit(LogicEvent.updateMyGenerals);
+        this.notifyGeneralsChanged();
     }
 
     protected onGeneralPush(data: any): void {
@@ -142,21 +194,40 @@ export default class GeneralCommand {
         EventMgr.emit(LogicEvent.updateMyGenerals);
     }
 
-    public qryMyGenerals(): void {
+    public qryMyGenerals(force: boolean = false): Promise<boolean> {
+        if (!this._sessionActive) return Promise.resolve(false);
+        if (this._generalRequest) return this._generalRequest;
+        if (this._hasGeneralSnapshot && !force) return Promise.resolve(true);
         var msgName = ServerConfig.c2s_req_all_hero_base_info;
         var protoData = ProtoManager.getInstance().encode(msgName, {
         });
 
         if (!protoData) {
-            console.error("Failed to encode login request");
-            return;
+            console.error("Failed to encode hero request");
+            return Promise.resolve(false);
         }
 
         var sendData = {
             name: msgName,
             msg: protoData, // 这里直接传 Uint8Array
         };
+        const request = new Promise<boolean>((resolve) => this._resolveGeneralRequest = resolve);
+        this._generalRequest = request;
+        this._generalRequestTimer = setTimeout(() => {
+            console.warn('武将协议等待超时，后续打开界面可重试');
+            this.completeGeneralRequest(false);
+        }, GENERAL_REQUEST_TIMEOUT_MS);
         NetManager.getInstance().send(sendData);
+        return request;
+    }
+
+    private completeGeneralRequest(ready: boolean): void {
+        if (this._generalRequestTimer !== null) clearTimeout(this._generalRequestTimer);
+        this._generalRequestTimer = null;
+        const resolve = this._resolveGeneralRequest;
+        this._resolveGeneralRequest = null;
+        this._generalRequest = null;
+        if (resolve) resolve(ready);
     }
 
 

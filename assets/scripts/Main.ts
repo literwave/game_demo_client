@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, SpriteFrame, sys, AudioSource, assert, resources, Camera, screen, view } from 'cc';
+import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, AudioSource, assert, Camera, screen, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { GameConfig } from "./config/GameConfig";
@@ -58,12 +58,14 @@ export default class Main extends Component {
     private _reconnectNode: Node = null;
     private _reconnectLogic: ReconnectLogic = null;
     private _retryTimes: number = 0;
-    private _h5GeneralPicIndex: number = 0;
-    private _h5GeneralPic = [];
     private _loadGeneration = 0;
     private _enteringMap = false;
     private _mapReady = false;
     private _mapUiReady = false;
+    private _heroAssetsReady = false;
+    private _finishingLoading = false;
+    private _heroRequest: Promise<boolean> | null = null;
+    private _heroWarmupTimer: ReturnType<typeof setTimeout> | null = null;
     private _mapPreparation: Generator<void, void, unknown> | null = null;
 
 
@@ -96,9 +98,7 @@ export default class Main extends Component {
         EventMgr.on(NetEvent.ServerReconnectFailed, this.onServerReconnectFailed, this);
 
         RewardCommand.getInstance();
-        RewardWindowLogic.init();
         SystemOpenCommand.getInstance();
-        SystemUnlockWindow.init();
         TroopCommand.getInstance();
 
 
@@ -108,6 +108,7 @@ export default class Main extends Component {
 
         // 初始化 Protobuf (异步)
         ProtoManager.getInstance().init().then(() => {
+            if (!this.isValid) return;
             console.log("Protobuf initialized");
             //初始化业务模块
             LoginCommand.getInstance();
@@ -122,6 +123,8 @@ export default class Main extends Component {
         view.off('design-resolution-changed', this.alignUiCamera, this);
         this._loadGeneration++;
         this._mapPreparation = null;
+        if (this._heroWarmupTimer !== null) clearTimeout(this._heroWarmupTimer);
+        GeneralCommand.getInstance().clearData();
         EventMgr.targetOff(this);
     }
 
@@ -140,7 +143,8 @@ export default class Main extends Component {
         GeneralCommand.getInstance().clearData();
         ArmyCommand.getInstance().clearData();
         TroopCommand.getInstance().clearData();
-        SystemOpenCommand.getInstance().proxy.clear();
+        RewardCommand.getInstance().clearData();
+        SystemOpenCommand.getInstance().clearData();
         SystemUnlockWindow.reset();
     }
 
@@ -154,7 +158,6 @@ export default class Main extends Component {
         this._loginScene = instantiate(this.loginScenePrefab);
         this.node.addChild(this._loginScene);
 
-        //this.h5LoadGeneralTex();
     }
 
     private onServerReconnecting(state: ReconnectState): void {
@@ -227,7 +230,12 @@ export default class Main extends Component {
         this._enteringMap = true;
         this._mapReady = false;
         this._mapUiReady = false;
+        this._heroAssetsReady = false;
+        this._finishingLoading = false;
         const generation = ++this._loadGeneration;
+        this.hideWaitNode();
+        // 此时已经通过登录验证，武将协议与地图/配置加载并行。
+        this._heroRequest = GeneralCommand.getInstance().beginLoading();
         // 先给加载页一帧显示机会，缓存命中也不会在点击回调里直接建整张地图。
         this.scheduleOnce(() => {
             if (!this.isValid || generation !== this._loadGeneration) return;
@@ -259,6 +267,11 @@ export default class Main extends Component {
         if (!tiledMap || !Array.isArray(configAssets)) throw new Error('战场启动资源不完整');
         const configs = ConfigManager.getInstance();
         configs.loadConfigs(configAssets);
+        const heroJson = configs.getConfig('Hero');
+        const basicCfg = configs.getConfig('Global');
+        MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
+        if (heroJson) GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
+        this.prepareHeroAssets();
         EventMgr.emit(CoreEvent.mapLoadProgress, 0.72, '正在整理山河地形…');
         yield;
 
@@ -268,13 +281,8 @@ export default class Main extends Component {
             EventMgr.emit(CoreEvent.mapLoadProgress, 0.72 + progress * 0.1, '正在整理山河地形…');
             yield;
         }
-        const heroJson = configs.getConfig('Hero');
-        const basicCfg = configs.getConfig('Global');
-        MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
-        if (heroJson) GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
         const globalWarFree = configs.getConfigItem('Global', '3');
         if (globalWarFree) mapProxy.setWarFree(globalWarFree.value1);
-        GeneralCommand.getInstance().qryMyGenerals();
         EventMgr.emit(CoreEvent.mapLoadProgress, 0.83, '正在铺展战场…');
         yield;
 
@@ -312,12 +320,48 @@ export default class Main extends Component {
     }
 
     private tryFinishLoading(): void {
-        if (this._mapReady && this._mapUiReady) this.finishLoading();
+        if (!this._enteringMap || this._finishingLoading || !this._mapReady || !this._mapUiReady) return;
+        if (!this._heroAssetsReady) {
+            EventMgr.emit(CoreEvent.mapLoadProgress, 0.98, '正在准备武将画像…');
+            return;
+        }
+        this.finishLoading();
+    }
+
+    private prepareHeroAssets(): void {
+        const generation = this._loadGeneration;
+        let settled = false;
+        const isCurrent = () => !settled && this.isValid && generation === this._loadGeneration;
+        const finish = () => {
+            if (!isCurrent()) return;
+            settled = true;
+            if (this._heroWarmupTimer !== null) clearTimeout(this._heroWarmupTimer);
+            this._heroWarmupTimer = null;
+            this._heroAssetsReady = true;
+            this.tryFinishLoading();
+        };
+        // 网络/图片异常不阻塞进图，界面打开时仍可按需重试。
+        this._heroWarmupTimer = setTimeout(() => {
+            if (isCurrent()) console.warn('武将预加载超时，剩余画像将按需加载');
+            finish();
+        }, 10000);
+        (this._heroRequest || Promise.resolve(false)).then((ready) => {
+            if (!isCurrent()) return;
+            if (!ready) {
+                finish();
+                return;
+            }
+            return GeneralCommand.getInstance().proxy.preloadMyPortraits(isCurrent).then(finish);
+        }).catch((error) => {
+            console.warn('武将预加载未完成:', error);
+            finish();
+        });
     }
 
     private finishLoading(): void {
+        this._finishingLoading = true;
         if (!this._loadingNode) {
-            this._enteringMap = false;
+            this.completeMapEntry();
             return;
         }
         const loadingNode = this._loadingNode;
@@ -326,14 +370,27 @@ export default class Main extends Component {
             logic.finish(() => {
                 if (this._loadingNode === loadingNode) {
                     this._loadingNode = null;
-                    this._enteringMap = false;
+                    this.completeMapEntry();
                 }
             });
         } else {
             if (loadingNode.isValid) loadingNode.destroy();
             this._loadingNode = null;
-            this._enteringMap = false;
+            this.completeMapEntry();
         }
+    }
+
+    private completeMapEntry(): void {
+        this._enteringMap = false;
+        this._finishingLoading = false;
+        this._heroRequest = null;
+        // UI 先注册，再统一补发加载期间积累的数据刷新和展示事件。
+        EventMgr.emit(CoreEvent.gameReady);
+        GeneralCommand.getInstance().setUIReady();
+        RewardWindowLogic.init();
+        SystemUnlockWindow.init();
+        RewardCommand.getInstance().setUIReady();
+        SystemOpenCommand.getInstance().setUIReady();
     }
 
     private disposeLoadingNow(): void {
@@ -342,65 +399,17 @@ export default class Main extends Component {
         this._enteringMap = false;
         this._mapReady = false;
         this._mapUiReady = false;
+        this._heroAssetsReady = false;
+        this._finishingLoading = false;
+        this._heroRequest = null;
+        if (this._heroWarmupTimer !== null) clearTimeout(this._heroWarmupTimer);
+        this._heroWarmupTimer = null;
         if (this._loadingNode) {
             if (this._loadingNode.isValid) {
                 this._loadingNode.destroy();
             }
             this._loadingNode = null;
         }
-    }
-
-    private h5LoadGeneralTex() {
-        if (!sys.isBrowser) {
-            return;
-        }
-
-        if (this._h5GeneralPic.length == 0) {
-            let generalpic = resources.getDirWithPath("./generalpic");
-            // console.log("generalpic:", generalpic);
-            generalpic.forEach(v => {
-                if (v.ctor == SpriteFrame) {
-                    this._h5GeneralPic.push(v);
-                }
-            });
-        }
-
-        let f = () => {
-
-            for (let index = this._h5GeneralPicIndex; index < this._h5GeneralPic.length; index++) {
-                const pic = this._h5GeneralPic[index];
-
-                let name = pic.path.replaceAll("spriteFrame", "");
-                name = name.replaceAll("/", "");
-                name = name.replaceAll("\\", "");
-
-                let id: number = Number(String(name).split("_")[1]);
-                let frame = GeneralCommand.getInstance().proxy.getGeneralTex(id);
-                this._h5GeneralPicIndex = index + 1;
-                // console.log("load index 1111:", index);
-
-                if (!frame) {
-                    resources.load(pic.path, SpriteFrame,
-                        (finish: number, total: number) => {
-                        },
-                        (error: Error, asset: any) => {
-                            if (error != null) {
-                                console.log("h5LoadGeneralTex error:", error.message);
-                            } else {
-                                GeneralCommand.getInstance().proxy.setGeneralTex(id, asset);
-                            }
-                        });
-                    break;
-                }
-            }
-            if (this._h5GeneralPicIndex >= this._h5GeneralPic.length) {
-                this.unschedule(f);
-                console.log("h5 load generalPic finish");
-            }
-        }
-
-        this.schedule(f, 0.01);
-
     }
 
     protected addLoadingNode(): void {
@@ -416,6 +425,7 @@ export default class Main extends Component {
 
 
     protected showWaitNode(): void {
+        if (this._enteringMap) return;
         if (this._waitNode == null) {
             this._waitNode = instantiate(this.waitPrefab);
             this._waitNode.parent = this.node;
@@ -425,12 +435,7 @@ export default class Main extends Component {
     }
 
     protected hideWaitNode(): void {
-        if (this._waitNode == null) {
-            this._waitNode = instantiate(this.waitPrefab);
-            this._waitNode.parent = this.node;
-            this._waitNode.setSiblingIndex(this.topLayer() + 2);
-        }
-        this._waitNode.active = false;
+        if (this._waitNode) this._waitNode.active = false;
     }
 
 

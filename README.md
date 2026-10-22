@@ -4,7 +4,9 @@
 
 素材来源于网络，仅供学习使用，请勿用于商业用途。
 
-服务端 demo：https://github.com/literwave/game_demo.git
+仓库：https://github.com/literwave/slg_game_client.git
+
+服务端：https://github.com/literwave/slg_game.git
 
 如果对这个项目感兴趣，欢迎加入 QQ 群一起交流：204727149。
 

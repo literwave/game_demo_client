@@ -164,10 +164,12 @@ export default class MapUtil {
 
     public static get9GridVaildAreaIds(id: number): number[] {
         let list: number[] = [];
-        let totalList: number[] = this.get9GridAreaIds(id);
-        for (let i: number = 0; i < totalList.length; i++) {
-            if (this.isVaildAreaId(totalList[i])) {
-                list.push(totalList[i]);
+        const center = this.getAreaPointById(id);
+        for (let dy = 1; dy >= -1; dy--) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const point = v2(center.x + dx, center.y + dy);
+                // 只校验线性 ID 会让左右边界串到另一行。
+                if (this.isVaildAreaPoint(point)) list.push(this.getIdByAreaPoint(point.x, point.y));
             }
         }
         return list;

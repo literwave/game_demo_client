@@ -192,6 +192,8 @@ export default class GeneralItemLogic extends Component {
                 childen[i].active = false;
             }
         }
+        // 星数变化后立即按实际内容居中，避免复用卡牌时保留上一帧的位置。
+        this.starLayout.updateLayout();
     }
 
     protected setOtherData(cityData: any, orderId: number = 1): void {

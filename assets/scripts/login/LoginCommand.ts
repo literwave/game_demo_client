@@ -37,7 +37,6 @@ export default class LoginCommand {
 
     //数据model
     protected _proxy: LoginProxy = new LoginProxy();
-    private isAllReady: boolean = false;
     private _heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     /** 最近一次收到 s2c_heart_beat 的单调钟 */
     private _lastHeartbeatMono: number = 0;
@@ -108,9 +107,11 @@ export default class LoginCommand {
 
     /**玩家资源*/
     private onGetUserRes(data: any): void {
+        if (!data) return;
         console.log("LoginProxy  onGetUserRes:", data);
-        this._proxy.setRoleResData(data)
-        this.makeSureAllDataReady()
+        this._proxy.setRoleResData(data);
+        // 资源回包只同步数据；不能用它决定是否进入加载页。
+        EventMgr.emit(LogicEvent.upateMyRoleRes);
     }
 
     /**物品数量同步，主界面资源栏跟着刷新*/
@@ -147,23 +148,13 @@ export default class LoginCommand {
         EventMgr.emit(LogicEvent.upateMyRoleRes);
     }
 
-    /**拿到玩家资源数据和玩家数据才加载界面 */
-    private makeSureAllDataReady(): void {
-        console.log("LoginProxy  makeSureAllDataReady:");
-        if (this._proxy.getRoleResData() && this._proxy.getRoleData()) {
-            this.isAllReady = true;
-        }
-        if (this.isAllReady) {
-            EventMgr.emit(LogicEvent.enterMap);
-        }
-    }
-
     /**创建玩家*/
     private onUserCreate(data: any): void {
         console.log("LoginProxy  onUserCreate:", data);
         if (!data || !data.name) return;
         this._proxy.saveEnterData(data);
-        this.makeSureAllDataReady()
+        // 与已有角色保持一致：创建成功立即显示进度页，其它资源在加载阶段就绪。
+        EventMgr.emit(LogicEvent.enterMap);
     }
 
     /**登录回调*/

@@ -3,6 +3,7 @@ const { ccclass, property } = _decorator;
 
 import LoaderManager, { LoadData, LoadDataType } from "../core/LoaderManager";
 import GeneralCommand from "../general/GeneralCommand";
+import { GENERAL_PORTRAIT_DIRECTORY } from '../general/GeneralPortrait';
 import { GeneralConfig } from "../general/GeneralProxy";
 import GeneralRosterLogic from "../map/ui/GeneralRosterLogic";
 import { JSB } from 'cc/env';
@@ -89,7 +90,7 @@ export default class GeneralTool extends Component {
         let dataList: LoadData[] = [];
         // 加载整个 config 目录（包含 Hero.json）
         dataList.push(new LoadData("config", LoadDataType.DIR, JsonAsset));
-        dataList.push(new LoadData("generalpic", LoadDataType.DIR, SpriteFrame));
+        dataList.push(new LoadData(GENERAL_PORTRAIT_DIRECTORY, LoadDataType.DIR, SpriteFrame));
 
         LoaderManager.getInstance().startLoadList(dataList, null,
             (error: Error, paths: string[], datas: any[]) => {

@@ -98,6 +98,8 @@ export default class GeneralRosterLogic extends Component {
                 childen[i].active = false; 
             }
         }
+        // 与武将列表保持一致：仅显示当前星数，并在同一帧完成居中。
+        this.starLayout.updateLayout();
     }
 
     protected armstr(arms:number []): string{

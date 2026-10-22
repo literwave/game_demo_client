@@ -13,6 +13,7 @@ import MapUtil from "../map/MapUtil";
 import MapFacilityBuildLogic from "../map/MapFacilityBuildLogic";
 import MapBuildTagLogic from "../map/MapBuildTagLogic";
 import MapSysCityLogic from "../map/MapSysCityLogic";
+import MapBaseLayerLogic from "../map/MapBaseLayerLogic";
 import { EventMgr } from '../utils/EventMgr';
 import { LogicEvent } from '../common/LogicEvent';
 import { CoreEvent } from '../core/CoreEvent';
@@ -43,6 +44,8 @@ export default class MapScene extends Component {
     private _ready = false;
     private _failed = false;
     private _tiledMap: TiledMap = null;
+    private _recycleLayers: MapBaseLayerLogic[] = [];
+    private _recycleLayerIndex = 0;
     private _itemLayers: {
         res: MapResLogic; build: MapResBuildLogic; facility: MapFacilityBuildLogic;
         tag: MapBuildTagLogic; tips: MapBuildTipsLogic; city: MapCityLogic; sysCity: MapSysCityLogic;
@@ -89,8 +92,23 @@ export default class MapScene extends Component {
         if (this._failed) return;
         try {
             const started = Date.now();
+            // 七个图层共享预算；回收先取最多 2ms / 32 个节点，避免区域切换时集中解绑。
+            let recycled = 0;
+            while (recycled < 32 && Date.now() - started < 2) {
+                let didRecycle = false;
+                for (let i = 0; i < this._recycleLayers.length; i++) {
+                    const layer = this._recycleLayers[this._recycleLayerIndex];
+                    this._recycleLayerIndex = (this._recycleLayerIndex + 1) % this._recycleLayers.length;
+                    if (layer.recycleOneItem()) {
+                        didRecycle = true;
+                        recycled++;
+                        break;
+                    }
+                }
+                if (!didRecycle) break;
+            }
             let processed = 0;
-            // 地块中的资源、城池、标签预制体按 16 格 / 4ms 的预算逐帧生成。
+            // 回收与生成合计 4ms；生成仍限制为每帧最多 16 格。
             while (this._pendingAreas.length > 0 && processed < 16 && Date.now() - started < 4) {
                 const area = this._pendingAreas[0];
                 this.addMapCell(area.id, area.x, area.y);
@@ -155,6 +173,7 @@ export default class MapScene extends Component {
     protected onDestroy(): void {
         this._pendingAreas.length = 0;
         EventMgr.targetOff(this);
+        this._recycleLayers.length = 0;
         if (this._cmd) this._cmd.proxy.clearData();
         this._cmd = null;
     }
@@ -193,6 +212,7 @@ export default class MapScene extends Component {
         let sysCityLogic: MapSysCityLogic = this.node.getComponent(MapSysCityLogic);
         this._itemLayers = { res: resLogic, build: buildResLogic, facility: buildFacilityLogic,
             tag: tagLogic, tips: buildTipsLogic, city: cityLogic, sysCity: sysCityLogic };
+        this._recycleLayers = [resLogic, buildResLogic, buildFacilityLogic, tagLogic, buildTipsLogic, cityLogic, sysCityLogic];
 
         //更新展示区域
         resLogic.udpateShowAreas(addIds, removeIds);
@@ -227,9 +247,15 @@ export default class MapScene extends Component {
         const build = this._cmd.buildProxy.getBuild(cellId);
         const city = this._cmd.cityProxy.getCity(cellId);
         if (resource) {
-            layers.res.addItem(areaId, resource);
+            // 空地、城池等没有 ResLogic 图像，不创建空的资源节点。
+            if (resource.type === MapResType.SYS_FORTRESS
+                || (resource.type >= MapResType.WOOD && resource.type <= MapResType.GRAIN)) {
+                layers.res.addItem(areaId, resource);
+            }
             if (resource.type === MapResType.SYS_CITY) layers.sysCity.addItem(areaId, resource);
-            if (resource.type <= MapResType.FORTRESS) layers.tag.addItem(areaId, resource);
+            if (resource.type <= MapResType.FORTRESS && this._cmd.proxy.isPosTag(x, y)) {
+                layers.tag.addItem(areaId, resource);
+            }
         }
         if (build) {
             if (build.type === MapResType.SYS_CITY) layers.sysCity.addItem(areaId, build);

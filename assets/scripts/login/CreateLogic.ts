@@ -1,4 +1,4 @@
-import { _decorator, Component, EditBox, Toggle, Button, Label, resources, TiledMapAsset, JsonAsset } from 'cc';
+import { _decorator, Component, EditBox, Toggle, Button, Label } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ServerConfig } from "../config/ServerConfig";
@@ -35,14 +35,7 @@ export default class CreateLogic extends Component {
         EventMgr.on(ServerConfig.s2c_user_create, this.onCreated, this);
         EventMgr.on(LogicEvent.enterMap, this.onEnteringMap, this);
         this.editName.string = this.getRandomName();
-        // 先显示角色页，再低优先级预下载；正式加载仍由 Main 负责。
-        this.scheduleOnce(() => {
-            const onPreloaded = (error: Error | null) => {
-                if (error) console.warn('战场资源预下载未完成，将在进入时重试:', error.message);
-            };
-            resources.preload('world/map', TiledMapAsset, onPreloaded);
-            resources.preloadDir('config', JsonAsset, onPreloaded);
-        }, 0.05);
+        // 地图和配置统一由 Main 在进度页显示后加载，创建页只负责角色创建。
     }
 
     protected onClickCreate() {

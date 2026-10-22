@@ -1,6 +1,7 @@
 
-import { SpriteFrame } from "cc";
+import { SpriteFrame, resources, isValid } from "cc";
 import GeneralCommand from "./GeneralCommand";
+import { getGeneralPortraitPath } from './GeneralPortrait';
 
 /**武将(配置)*/
 export class GeneralConfig {
@@ -162,6 +163,7 @@ export default class GeneralProxy {
     protected _levelConfigs: GenaralLevelConfig[] = [];
     protected _commonConfig: GeneralCommonConfig = new GeneralCommonConfig();
     protected _heroTexs: Map<string, SpriteFrame> = new Map<string, SpriteFrame>();
+    private _heroTexLoads = new Map<string, Promise<SpriteFrame | null>>();
     protected _myGenerals: Map<number, GeneralData> = new Map<number, GeneralData>();
 
     public clearData(): void {
@@ -208,6 +210,10 @@ export default class GeneralProxy {
                 console.warn(`GeneralConfig for hero_type ${cfg.hero_type} has no name.`);
             }
         }
+        // 协议可能先于配置返回，补齐同一份数据的配置，不能重建后丢失增量同步。
+        this._myGenerals.forEach((general) => {
+            general.config = this.getGeneralCfg(general.hero_type) || new GeneralConfig();
+        });
         console.log("武将配置初始化完成，共加载数量:", this._heroConfigs.size);
 
         if (bCost && bCost.general) {
@@ -348,5 +354,47 @@ export default class GeneralProxy {
 
     public setGeneralTex(hero_type: any, frame: SpriteFrame) {
         this._heroTexs.set(String(hero_type), frame);
+    }
+
+    /** 加载页与卡片共用缓存和在途请求。失败不缓存，后续打开界面可以重试。 */
+    public loadGeneralTex(heroType: number | string): Promise<SpriteFrame | null> {
+        const cached = this.getGeneralTex(heroType);
+        if (cached && isValid(cached)) return Promise.resolve(cached);
+        const config = this.getGeneralCfg(heroType);
+        const path = getGeneralPortraitPath(heroType, config && config.resource);
+        const pending = this._heroTexLoads.get(path);
+        if (pending) return pending;
+        const request = new Promise<SpriteFrame | null>((resolve) => {
+            const timer = setTimeout(() => {
+                console.warn('武将画像等待超时:', path);
+                resolve(null);
+            }, 8000);
+            resources.load(path, SpriteFrame, (error, frame) => {
+                clearTimeout(timer);
+                if (error || !(frame instanceof SpriteFrame)) {
+                    console.warn('武将画像加载失败:', path, error ? error.message : '资源不是 SpriteFrame');
+                    resolve(null);
+                    return;
+                }
+                this.setGeneralTex(heroType, frame);
+                resolve(frame);
+            });
+        });
+        this._heroTexLoads.set(path, request);
+        request.then(() => this._heroTexLoads.delete(path));
+        return request;
+    }
+
+    public async preloadMyPortraits(isCurrent: () => boolean): Promise<void> {
+        const generals = this.getUseGenerals();
+        let index = 0;
+        const worker = async () => {
+            while (isCurrent() && index < generals.length) {
+                const general = generals[index++];
+                await this.loadGeneralTex(general.hero_type);
+            }
+        };
+        // 限制并发，避免 full_hero 时把解码和纹理创建集中在同一帧。
+        await Promise.all(Array.from({ length: Math.min(4, generals.length) }, worker));
     }
 }

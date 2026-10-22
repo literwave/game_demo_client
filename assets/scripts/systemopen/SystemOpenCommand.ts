@@ -30,6 +30,9 @@ export default class SystemOpenCommand {
     private _configReady: boolean = false;
     private _configLoading: boolean = false;
     private _configWaiters: Array<() => void> = [];
+    private _uiReady = false;
+    private _openStateDirty = false;
+    private _pendingUnlocks = new Set<number>();
 
     constructor() {
         EventMgr.on(ServerConfig.s2c_req_system_open, this.onSystemOpenList, this);
@@ -38,7 +41,34 @@ export default class SystemOpenCommand {
     }
 
     public onDestory(): void {
+        this.clearData();
         EventMgr.targetOff(this);
+    }
+
+    public clearData(): void {
+        this._uiReady = false;
+        this._openStateDirty = false;
+        this._pendingUnlocks.clear();
+        this._proxy.clear();
+    }
+
+    public setUIReady(): void {
+        if (this._uiReady) return;
+        this._uiReady = true;
+        if (this._openStateDirty) this.notifyOpenState();
+        const pending = Array.from(this._pendingUnlocks);
+        this._pendingUnlocks.clear();
+        for (const id of pending) {
+            if (!this._uiReady) break;
+            EventMgr.emit(LogicEvent.systemUnlock, id);
+        }
+    }
+
+    private notifyOpenState(): void {
+        this._openStateDirty = true;
+        if (!this._uiReady) return;
+        this._openStateDirty = false;
+        EventMgr.emit(LogicEvent.systemOpenUpdated, this._proxy.getOpenedIds());
     }
 
     public get proxy(): SystemOpenProxy {
@@ -111,7 +141,7 @@ export default class SystemOpenCommand {
         }
         const ids = payload.systemIdList || payload.system_id_list || payload.ids || [];
         this._proxy.setOpenedIds(Array.isArray(ids) ? ids : []);
-        EventMgr.emit(LogicEvent.systemOpenUpdated, this._proxy.getOpenedIds());
+        this.notifyOpenState();
     }
 
     private onSystemOpenSync(data: any): void {
@@ -125,8 +155,9 @@ export default class SystemOpenCommand {
             return;
         }
         this._proxy.markOpened(id);
-        EventMgr.emit(LogicEvent.systemOpenUpdated, this._proxy.getOpenedIds());
-        EventMgr.emit(LogicEvent.systemUnlock, id);
+        this.notifyOpenState();
+        if (this._uiReady) EventMgr.emit(LogicEvent.systemUnlock, id);
+        else this._pendingUnlocks.add(id);
     }
 
     private getPayload(data: any): any {

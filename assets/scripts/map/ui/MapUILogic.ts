@@ -31,6 +31,7 @@ import { NetManager } from '../../network/socket/NetManager';
 import { ProtoManager } from '../../network/pto/ProtoManager';
 import SystemOpenCommand from '../../systemopen/SystemOpenCommand';
 import TroopCommand from '../../general/TroopCommand';
+import { CoreEvent } from '../../core/CoreEvent';
 
 const HEAD_ICON_SYSTEM_ID = 1;
 
@@ -170,6 +171,7 @@ export default class MapUILogic extends Component {
     protected _gmMessages: string[] = [];
 
     protected _resArray: any = [];
+    private _uiListenersReady = false;
 
     protected onLoad(): void {
 
@@ -178,32 +180,10 @@ export default class MapUILogic extends Component {
         this._resArray.push({ key: 3, name: "铁" });
 
 
-        EventMgr.on(LogicEvent.openCityAbout, this.openCityAbout, this);
-        EventMgr.on(LogicEvent.closeCityAbout, this.closeCityAbout, this);
-        EventMgr.on(LogicEvent.openFortressAbout, this.openFortressAbout, this);
-        EventMgr.on(LogicEvent.openFacility, this.openFacility, this);
-        EventMgr.on(LogicEvent.openArmySetting, this.openArmySetting, this);
-        EventMgr.on(LogicEvent.upateMyRoleRes, this.updateRoleRes, this);
-        EventMgr.on(LogicEvent.openGeneralDes, this.openGeneralDes, this);
-        EventMgr.on(LogicEvent.openGeneralChoose, this.openGeneralChoose, this);
-        EventMgr.on(LogicEvent.openArmySelectUi, this.onOpenArmySelectUI, this);
-        EventMgr.on(LogicEvent.openDrawResult, this.openDrawR, this);
+        EventMgr.on(CoreEvent.gameReady, this.onGameReady, this);
+        // 被顶号需要立即处理，普通界面事件等加载结束再接入。
         EventMgr.on(LogicEvent.robLoginUI, this.robLoginUI, this);
-        EventMgr.on(LogicEvent.interiorCollect, this.onCollection, this);
-        EventMgr.on(LogicEvent.openGeneralConvert, this.onOpenGeneralConvert, this);
-        EventMgr.on(LogicEvent.openGeneralRoster, this.onOpenGeneralRoster, this);
-        EventMgr.on(LogicEvent.openGeneral, this.openGeneral, this);
-        EventMgr.on(LogicEvent.openSkill, this.onOpenSkill, this);
-        EventMgr.on(LogicEvent.closeSkill, this.onCloseSkill, this);
-        EventMgr.on(LogicEvent.openSkillInfo, this.onOpenSkillInfo, this);
-        EventMgr.on(LogicEvent.beforeScrollToMap, this.beforeScrollToMap, this);
-        EventMgr.on(LogicEvent.showTip, this.showTip, this);
-        EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
-        input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
-        input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
 
-        EventMgr.on(ServerConfig.s2c_gm_command_help, this.onGMCommandHelp, this);
-        EventMgr.on(ServerConfig.s2c_tell_me, this.onGMTellMe, this);
         if (this.gmCommandBox) {
             this.gmCommandBox.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCommandReturn, this);
             this.gmCommandBox.node.on(EditBox.EventType.EDITING_DID_BEGAN, this.onGMCommandFocus, this);
@@ -223,11 +203,44 @@ export default class MapUILogic extends Component {
         this.node.on(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
         this.layoutHud();
         this.scheduleOnce(this.layoutHud, 0);
+        this.updateRoleRes();
+        this.updateRole();
+    }
+
+    private onGameReady(): void {
+        if (this._uiListenersReady || !this.isValid) return;
+        this._uiListenersReady = true;
+        EventMgr.on(LogicEvent.openCityAbout, this.openCityAbout, this);
+        EventMgr.on(LogicEvent.closeCityAbout, this.closeCityAbout, this);
+        EventMgr.on(LogicEvent.openFortressAbout, this.openFortressAbout, this);
+        EventMgr.on(LogicEvent.openFacility, this.openFacility, this);
+        EventMgr.on(LogicEvent.openArmySetting, this.openArmySetting, this);
+        EventMgr.on(LogicEvent.upateMyRoleRes, this.updateRoleRes, this);
+        EventMgr.on(LogicEvent.openGeneralDes, this.openGeneralDes, this);
+        EventMgr.on(LogicEvent.openGeneralChoose, this.openGeneralChoose, this);
+        EventMgr.on(LogicEvent.openArmySelectUi, this.onOpenArmySelectUI, this);
+        EventMgr.on(LogicEvent.openDrawResult, this.openDrawR, this);
+        EventMgr.on(LogicEvent.interiorCollect, this.onCollection, this);
+        EventMgr.on(LogicEvent.openGeneralConvert, this.onOpenGeneralConvert, this);
+        EventMgr.on(LogicEvent.openGeneralRoster, this.onOpenGeneralRoster, this);
+        EventMgr.on(LogicEvent.openGeneral, this.openGeneral, this);
+        EventMgr.on(LogicEvent.openSkill, this.onOpenSkill, this);
+        EventMgr.on(LogicEvent.closeSkill, this.onCloseSkill, this);
+        EventMgr.on(LogicEvent.openSkillInfo, this.onOpenSkillInfo, this);
+        EventMgr.on(LogicEvent.beforeScrollToMap, this.beforeScrollToMap, this);
+        EventMgr.on(LogicEvent.showTip, this.showTip, this);
+        EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
+        input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+        input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
+
+        EventMgr.on(ServerConfig.s2c_gm_command_help, this.onGMCommandHelp, this);
+        EventMgr.on(ServerConfig.s2c_tell_me, this.onGMTellMe, this);
         SystemOpenCommand.getInstance().requestSystemOpen();
         TroopCommand.getInstance().requestTroops();
 
 
 
+        // 加载期间数据层继续同步，在这里一次性取最新缓存刷新 HUD。
         this.updateRoleRes();
         this.updateRole();
         let unionId = MapCommand.getInstance().cityProxy.myUnionId;
