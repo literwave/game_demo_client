@@ -8,7 +8,8 @@ const ServerConfig = {
     c2s_verify_login: "Login.c2s_verify_login",
     s2c_verify_login: "Login.s2c_verify_login",
     s2c_user_login_ok: "Login.s2c_user_login_ok",
-    s2c_heart_beat: "Login.s2c_heart_beat",
+    c2s_heart_beat: "Heartbeat.c2s_heart_beat",
+    s2c_heart_beat: "Heartbeat.s2c_heart_beat",
 
     c2s_user_base_info: "User.c2s_user_base_info",
     s2c_user_base_info: "User.s2c_user_base_info",

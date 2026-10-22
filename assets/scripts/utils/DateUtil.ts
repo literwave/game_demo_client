@@ -1,16 +1,38 @@
+import { game } from 'cc';
 
 export default class DateUtil {
-    protected static _serverTime: number = 0;
-    protected static _getServerTime: number = 0;
+    /** 最近一次心跳带回的服务器时间，毫秒 */
+    protected static _serverTimeMs: number = 0;
+    /** 对上那一次心跳时的单调钟，毫秒 */
+    protected static _monoAtSync: number = 0;
+    protected static _synced: boolean = false;
 
-    public static setServerTime(time: number): void {
-        this._serverTime = time;
-        this._getServerTime = Date.now();
+    /** 不受手机改时间影响的时钟。倒计时用它往前走，不用 Date.now() */
+    public static monotonicNow(): number {
+        const perf = (globalThis as any).performance;
+        if (perf && typeof perf.now === "function") {
+            return perf.now();
+        }
+        return game.totalTime;
     }
 
+    /** heartBeatTime 是服务器 unix 秒 */
+    public static setServerTime(unixSec: number): void {
+        const sec = Number(unixSec);
+        if (!sec || sec <= 0) {
+            return;
+        }
+        this._serverTimeMs = sec * 1000;
+        this._monoAtSync = this.monotonicNow();
+        this._synced = true;
+    }
+
+    /** 当前服务器时间，毫秒。还没对过时先用本机时间，避免界面停在 1970 */
     public static getServerTime(): number {
-        let nowTime: number = Date.now();
-        return nowTime - this._getServerTime + this._serverTime;
+        if (!this._synced) {
+            return Date.now();
+        }
+        return this._serverTimeMs + (this.monotonicNow() - this._monoAtSync);
     }
 
     //是否在该时间之后

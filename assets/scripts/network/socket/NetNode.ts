@@ -47,6 +47,8 @@ export class NetNode {
 
     protected _keepAliveTimer: any = null;                                  // 心跳定时器
     protected _reconnectTimer: any = null;                                  // 重连定时器
+    /** 这次断开后要重新走网关登录 */
+    protected _relogin: boolean = false;
     protected _heartTime: number = 10 * 1000;                                 // 心跳间隔
     protected _receiveTime: number = 10 * 1000;                               // 多久没收到数据断开
     protected _reconnetTimeOut: number = 2 * 1000;                            // 重连间隔
@@ -176,10 +178,10 @@ export class NetNode {
         // 直接调用 onChecked 处理队列中的请求
         this.onChecked();
 
-        // 启动心跳
-        // this.resetHearbeatTimer();
-
-        // EventMgr.emit(NetEvent.ServerConnected);
+        if (this._relogin) {
+            this._relogin = false;
+            EventMgr.emit(NetEvent.ServerCheckLogin);
+        }
     }
 
     // 连接验证成功，进入工作状态
@@ -214,17 +216,21 @@ export class NetNode {
 
     protected onError(event) {
         console.log("onError:", event);
-
-        //出错后清空定时器 那后断开服务 尝试链接
-        this.clearTimer();
         this.restReq();
-        this.tryConnet();
+        if (this._reconnectTimer !== null) {
+            return;
+        }
+        if (this._state != NetNodeState.Closed && this._socket) {
+            this._socket.close();
+        }
     }
 
     protected onClosed(event) {
         console.log("onClosed:", event);
-
-        //出错后
+        EventMgr.emit(NetEvent.ServerDisconnected);
+        if (this._reconnectTimer !== null) {
+            return;
+        }
         this.clearTimer();
         this.tryConnet();
     }
@@ -240,27 +246,48 @@ export class NetNode {
      * 重连
      */
     public tryConnet() {
+        if (this._reconnectTimer !== null) {
+            return;
+        }
         console.log("tryConnet", this._autoReconnect)
         if (this.isAutoReconnect()) {
             this.updateNetTips(NetTipsType.ReConnecting, true);
+            if (this._connectOptions && this._connectOptions.type == NetNodeType.GateServer) {
+                this._relogin = true;
+            }
 
-
-            this._socket.close();
             this._state = NetNodeState.Closed;
-
             this._reconnectTimer = setTimeout(() => {
+                this._reconnectTimer = null;
                 console.log("NetNode tryConnet!")
                 this.connect(this._connectOptions);
                 if (this._autoReconnect > 0) {
                     this._autoReconnect -= 1;
                 }
-
-
             }, this._reconnetTimeOut);
+            if (this._socket) {
+                this._socket.close();
+            }
         } else {
+            const relogin = this._relogin;
+            this._relogin = false;
             this._state = NetNodeState.Closed;
+            if (relogin) {
+                EventMgr.emit(NetEvent.ServerReconnectFailed);
+            }
         }
 
+    }
+
+    /** 心跳超时或链路已死时关掉当前连接，交给重连。主动关闭请用 closeSocket */
+    public dropConnection() {
+        if (this._state == NetNodeState.Closed) {
+            this.tryConnet();
+            return;
+        }
+        if (this._socket) {
+            this._socket.close();
+        }
     }
 
     // 只是关闭Socket套接字（仍然重用缓存与当前状态）
@@ -377,9 +404,11 @@ export class NetNode {
     protected clearTimer() {
         if (this._keepAliveTimer !== null) {
             clearTimeout(this._keepAliveTimer);
+            this._keepAliveTimer = null;
         }
         if (this._reconnectTimer !== null) {
             clearTimeout(this._reconnectTimer);
+            this._reconnectTimer = null;
         }
         this._timer.destroy();
     }

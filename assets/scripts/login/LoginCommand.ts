@@ -11,6 +11,11 @@ import { Md5 } from "../libs/crypto/md5";
 import { LogicEvent } from "../common/LogicEvent";
 import { ProtoManager } from "../network/pto/ProtoManager";
 
+/** 心跳间隔。短于常见 NAT 的 30 秒空闲断开 */
+const HEARTBEAT_INTERVAL_MS = 5000;
+/** 连续大约 3 次没收到回包就当掉线 */
+const HEARTBEAT_TIMEOUT_MS = 15000;
+
 export default class LoginCommand {
     //单例
     protected static _instance: LoginCommand;
@@ -33,9 +38,15 @@ export default class LoginCommand {
     //数据model
     protected _proxy: LoginProxy = new LoginProxy();
     private isAllReady: boolean = false;
+    private _heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    /** 最近一次收到 s2c_heart_beat 的单调钟 */
+    private _lastHeartbeatMono: number = 0;
 
     constructor() {
         EventMgr.on(NetEvent.ServerCheckLogin, this.onServerConneted, this);
+        EventMgr.on(NetEvent.ServerDisconnected, this.stopHeartbeat, this);
+        EventMgr.on(NetEvent.ServerReconnectFailed, this.onReconnectFailed, this);
+        EventMgr.on(LogicEvent.enterLogin, this.stopHeartbeat, this);
         EventMgr.on(ServerConfig.s2c_user_login, this.onAccountLogin, this);
         EventMgr.on(ServerConfig.s2c_heart_beat, this.setServerTime, this);
         EventMgr.on(ServerConfig.s2c_user_login_ok, this.onEnterServer, this);
@@ -53,6 +64,7 @@ export default class LoginCommand {
     }
 
     public onDestory(): void {
+        this.stopHeartbeat();
         EventMgr.targetOff(this);
     }
 
@@ -160,9 +172,50 @@ export default class LoginCommand {
         EventMgr.emit(LogicEvent.loginComplete, data.code);
     }
 
-    /**进入服务器回调*/
+    /** 心跳回包。heartBeatTime 是服务器 unix 秒，倒计时在这之上加单调钟 */
     private setServerTime(data: any): void {
+        if (!data) {
+            return;
+        }
         DateUtil.setServerTime(data.heartBeatTime);
+        this._lastHeartbeatMono = DateUtil.monotonicNow();
+    }
+
+    private startHeartbeat(): void {
+        this.stopHeartbeat();
+        this._lastHeartbeatMono = DateUtil.monotonicNow();
+        this.sendHeartbeat();
+        this._heartbeatTimer = setInterval(() => this.tickHeartbeat(), HEARTBEAT_INTERVAL_MS);
+    }
+
+    private stopHeartbeat(): void {
+        if (this._heartbeatTimer !== null) {
+            clearInterval(this._heartbeatTimer);
+            this._heartbeatTimer = null;
+        }
+    }
+
+    private tickHeartbeat(): void {
+        const silent = DateUtil.monotonicNow() - this._lastHeartbeatMono;
+        if (silent >= HEARTBEAT_TIMEOUT_MS) {
+            console.log("heartbeat timeout", silent);
+            this.stopHeartbeat();
+            NetManager.getInstance().dropConnection();
+            return;
+        }
+        this.sendHeartbeat();
+    }
+
+    private sendHeartbeat(): void {
+        const msgName = ServerConfig.c2s_heart_beat;
+        const protoData = ProtoManager.getInstance().encode(msgName, {});
+        if (!protoData) {
+            return;
+        }
+        NetManager.getInstance().send({
+            name: msgName,
+            msg: protoData,
+        });
     }
 
     /**进入服务器回调*/
@@ -190,20 +243,26 @@ export default class LoginCommand {
             msg: protoData, // 这里直接传 Uint8Array
         };
         NetManager.getInstance().send(sendData);
+        this.startHeartbeat();
     }
 
-    /**重连回调*/
+    /** 网关重连成功后重新验证，不走旧的 account.reLogin */
     private onServerConneted(): void {
-        //重新连接成功 重新登录
-        var loginData = this._proxy.getLoginData();
-        var roleData = this._proxy.getRoleData();
-        console.log("LoginProxy  conneted:", loginData, roleData);
+        const loginData = this._proxy.getLoginData();
+        console.log("LoginProxy  conneted:", loginData);
 
-        if (loginData) {
-            this.account_reLogin(loginData.session);
-        } else {
-            EventMgr.emit(NetEvent.ServerHandShake);
+        if (loginData && loginData.token) {
+            EventMgr.emit(LogicEvent.showToast, "正在重新连接");
+            this.role_enterServer(loginData);
+            return;
         }
+        EventMgr.emit(NetEvent.ServerHandShake);
+    }
+
+    private onReconnectFailed(): void {
+        this.stopHeartbeat();
+        EventMgr.emit(LogicEvent.showToast, "连接已断开，请重新登录");
+        EventMgr.emit(LogicEvent.enterLogin);
     }
 
     /**重新登录回调回调*/

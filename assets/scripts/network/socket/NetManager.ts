@@ -33,4 +33,9 @@ export class NetManager {
     public tryConnet(): void {
         this._netNode.tryConnet();
     }
+
+    /** 丢掉当前连接并走重连。不会把自动重连次数清掉 */
+    public dropConnection(): void {
+        this._netNode.dropConnection();
+    }
 }
