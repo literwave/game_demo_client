@@ -6,6 +6,8 @@
 
 服务端 demo：https://github.com/literwave/game_demo.git
 
+如果对这个项目感兴趣，欢迎加入 QQ 群一起交流：204727149。
+
 ## 运行
 
 用 Cocos Creator 3.8.8 打开本项目，预览 `MainScene`。
