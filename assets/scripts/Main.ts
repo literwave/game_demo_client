@@ -12,6 +12,7 @@ import MapCommand from "./map/MapCommand";
 import MapUICommand from "./map/ui/MapUICommand";
 import { HttpManager } from "./network/http/HttpManager";
 import { NetEvent } from "./network/socket/NetInterface";
+import { NetManager } from "./network/socket/NetManager";
 import SkillCommand from "./skill/SkillCommand";
 import Toast from "./utils/Toast";
 import { Tools } from "./utils/Tools";
@@ -118,6 +119,8 @@ export default class Main extends Component {
         this.disposeLoadingNow();
         this.clearAllScene();
         this.clearData();
+        // 先取消网关重连，再打开登录页。否则登录页出来后，旧的重连定时器还会去连网关
+        NetManager.getInstance().close();
         this._loginScene = instantiate(this.loginScenePrefab);
         this.node.addChild(this._loginScene);
 

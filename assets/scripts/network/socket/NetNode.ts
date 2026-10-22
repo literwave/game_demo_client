@@ -49,6 +49,10 @@ export class NetNode {
     protected _reconnectTimer: any = null;                                  // 重连定时器
     /** 这次断开后要重新走网关登录 */
     protected _relogin: boolean = false;
+    /** 主动关掉，不要接着重连。回到登录页走这条 */
+    protected _manualClose: boolean = false;
+    /** 关掉当前连接后要改连的地址，比如从网关换回登录服 */
+    protected _pendingConnect: NetConnectOptions = null;
     protected _heartTime: number = 10 * 1000;                                 // 心跳间隔
     protected _receiveTime: number = 10 * 1000;                               // 多久没收到数据断开
     protected _reconnetTimeOut: number = 2 * 1000;                            // 重连间隔
@@ -70,16 +74,25 @@ export class NetNode {
 
     public connect(options: NetConnectOptions): boolean {
         console.log(`NetNode connect socket:`, options);
+        if (this._state != NetNodeState.Closed) {
+            this._pendingConnect = options;
+            this.closeSocket();
+            return true;
+        }
+        return this.openSocket(options);
+    }
+
+    protected openSocket(options: NetConnectOptions): boolean {
+        this._pendingConnect = null;
+        this._manualClose = false;
         if (this._socket && this._state == NetNodeState.Closed) {
             this._state = NetNodeState.Connecting;
             if (!this._socket.connect(options)) {
+                this._state = NetNodeState.Closed;
                 this.updateNetTips(NetTipsType.Connecting, false);
                 return false;
             }
 
-            // if (this._connectOptions == null) {
-            //     options.autoReconnect = options.autoReconnect;
-            // }
             this._connectOptions = options;
             this.updateNetTips(NetTipsType.Connecting, true);
             return true;
@@ -211,7 +224,13 @@ export class NetNode {
         if (msg) {
             EventMgr.emit(typeName, msg);
         }
-        console.log("NetNode onMessage!", typeName, msg);
+        if (!this.isHeartbeat(typeName)) {
+            console.log("NetNode onMessage!", typeName, msg);
+        }
+    }
+
+    protected isHeartbeat(name: string): boolean {
+        return !!name && name.indexOf("heart_beat") >= 0;
     }
 
     protected onError(event) {
@@ -228,10 +247,18 @@ export class NetNode {
     protected onClosed(event) {
         console.log("onClosed:", event);
         EventMgr.emit(NetEvent.ServerDisconnected);
-        if (this._reconnectTimer !== null) {
+        if (this._reconnectTimer !== null && !this._manualClose) {
             return;
         }
         this.clearTimer();
+        const manual = this._manualClose;
+        this._manualClose = false;
+        this._state = NetNodeState.Closed;
+        if (manual) {
+            this._relogin = false;
+            this.openPending();
+            return;
+        }
         this.tryConnet();
     }
 
@@ -269,7 +296,8 @@ export class NetNode {
                 this._socket.close();
             }
         } else {
-            const relogin = this._relogin;
+            const gate = this._connectOptions && this._connectOptions.type == NetNodeType.GateServer;
+            const relogin = this._relogin || gate;
             this._relogin = false;
             this._state = NetNodeState.Closed;
             if (relogin) {
@@ -290,18 +318,36 @@ export class NetNode {
         }
     }
 
-    // 只是关闭Socket套接字（仍然重用缓存与当前状态）
+    // 主动关闭。取消正在进行的重连，不再自动重连网关
     public closeSocket(code?: number, reason?: string) {
         console.log("closeSocket", code, reason);
+        this._manualClose = true;
+        this._relogin = false;
+        this._autoReconnect = 0;
         this.clearTimer();
         this._requests.length = 0;
         this._seqId = 1;
-        this._autoReconnect = 0;
+
+        if (this._state == NetNodeState.Closed) {
+            this._manualClose = false;
+            this.openPending();
+            return;
+        }
 
         if (this._socket) {
             this._socket.close(code, reason);
         } else {
+            this._manualClose = false;
             this._state = NetNodeState.Closed;
+            this.openPending();
+        }
+    }
+
+    protected openPending(): void {
+        const options = this._pendingConnect;
+        this._pendingConnect = null;
+        if (options) {
+            this.openSocket(options);
         }
     }
 
@@ -339,7 +385,9 @@ export class NetNode {
 
     // 发起请求，如果当前处于重连中，进入缓存列表等待重连完成后发送
     public sendPack(obj: RequestObject, force: boolean = false): boolean {
-        console.log("this._state", this._state);
+        if (!this.isHeartbeat(obj && obj.name)) {
+            console.log("this._state", this._state);
+        }
         if (this._state == NetNodeState.Working || force) {
             this.socketSend(obj);
         }

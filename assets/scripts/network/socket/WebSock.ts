@@ -25,39 +25,38 @@ export class WebSock implements ISocket {
 
 
     onMessage(msg): void {
-        console.log("websocket onMessage raw:", msg, "type:", typeof msg, "isBuffer:", msg instanceof ArrayBuffer);
-
         let view: Uint8Array;
         if (msg instanceof ArrayBuffer) {
             view = new Uint8Array(msg);
-            console.log("Received bytes:", view.slice(0, 20)); // 打印前20字节
         } else {
             // 如果是 Blob (某些浏览器默认)，需要转 ArrayBuffer，这里先略过
             return;
         }
 
-        // 如果是原始二进制数据，我们需要解析它
-        // 假设格式: [Length(2)][ProtocolID(2)][Protobuf]
-        // 解析包头
+        // 格式: [Length(2)][ProtocolID(2)][Protobuf]
         const dv = new DataView(view.buffer);
         const len = dv.getUint16(0, false); // Big Endian
         const protocolId = dv.getUint16(2, false);
-
-        console.log(`Packet Header: Len=${len}, ProtocolID=${protocolId}`);
-
-        // 提取 Protobuf 数据 (跳过前4字节)
         const protoData = view.slice(4);
-
-        // 动态查找消息类型
         const typeName = ProtoManager.getInstance().getMsgTypeById(protocolId);
+        const quiet = !!typeName && typeName.indexOf("heart_beat") >= 0;
+
+        if (!quiet) {
+            console.log("websocket onMessage raw:", msg, "type:", typeof msg, "isBuffer:", msg instanceof ArrayBuffer);
+            console.log("Received bytes:", view.slice(0, 20));
+            console.log(`Packet Header: Len=${len}, ProtocolID=${protocolId}`);
+        }
 
         if (typeName) {
-            console.log(`Resolving ID ${protocolId} to ${typeName}`);
+            if (!quiet) {
+                console.log(`Resolving ID ${protocolId} to ${typeName}`);
+            }
             const decoded = ProtoManager.getInstance().decode(typeName, protoData);
 
             if (decoded) {
-                console.log(`Decoded ${typeName}:`, decoded);
-                // 分发消息
+                if (!quiet) {
+                    console.log(`Decoded ${typeName}:`, decoded);
+                }
                 this.onUnpackMessage(typeName, decoded);
             } else {
                 console.error(`Failed to decode ${typeName}`);
@@ -171,12 +170,13 @@ export class WebSock implements ISocket {
         view.setUint16(0, 2 + protoLen, false); // false = Big Endian (网络字节序)
 
         // 2. 写入 Protocol ID (2字节)
+        const quiet = !!msgName && msgName.indexOf("heart_beat") >= 0;
         let protocolId = 0;
         if (msgName) {
             protocolId = ProtoManager.getInstance().getIdByMsgType(msgName);
             if (!protocolId) {
                 console.warn(`packAndSend: No Protocol ID found for ${msgName}, using 0`);
-            } else {
+            } else if (!quiet) {
                 console.log(`packAndSend: Mapped ${msgName} to ID ${protocolId}`);
             }
         } else {
@@ -189,7 +189,9 @@ export class WebSock implements ISocket {
         // 3. 写入 Protobuf 数据
         const uint8View = new Uint8Array(buffer);
         uint8View.set(protoData, 4);
-        console.log("packAndSend buffer:", buffer);
+        if (!quiet) {
+            console.log("packAndSend buffer:", buffer);
+        }
         // 发送
         this.send(buffer);
     }
