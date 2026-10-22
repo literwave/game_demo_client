@@ -5515,8 +5515,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 120,
-      "height": 22.68
+      "width": 360,
+      "height": 24
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -5558,7 +5558,7 @@
     "_fontSize": 12,
     "_fontFamily": "Arial",
     "_lineHeight": 18,
-    "_overflow": 0,
+    "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
     "_isSystemFontUsed": true,
@@ -5706,7 +5706,16 @@
     "manToggle": {
       "__id__": 163
     },
-    "_id": "1aIaSONb9PpYnXRgtIqcjg"
+    "_id": "1aIaSONb9PpYnXRgtIqcjg",
+    "createButton": {
+      "__id__": 102
+    },
+    "createButtonLabel": {
+      "__id__": 86
+    },
+    "statusLabel": {
+      "__id__": 235
+    }
   },
   {
     "__type__": "cc.CompPrefabInfo",

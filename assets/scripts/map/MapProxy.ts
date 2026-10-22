@@ -142,23 +142,44 @@ export default class MapProxy {
     }
 
     public initMapResConfig(jsonData: any): void {
-        let w: number = jsonData.w;
-        let list: Array<Array<number>> = jsonData.list;
-        this._mapResDatas = [];
-        this._mapSysCityResDatas = [];
-        for (let i: number = 0; i < jsonData.list.length; i++) {
+        // 保留同步入口给已有调用方，进图流程使用下面的分批入口。
+        for (const _progress of this.initMapResConfigBatched(jsonData)) { /* drain */ }
+    }
+
+    /** 每批最多 2048 格 / 4ms；全部完成后才发布，取消加载不会留下半张地图。 */
+    public *initMapResConfigBatched(jsonData: any): Generator<number, void, unknown> {
+        if (!jsonData || !Number.isInteger(jsonData.w) || jsonData.w <= 0 || !Array.isArray(jsonData.list)) {
+            throw new Error('地图资源数据格式无效');
+        }
+        const w: number = jsonData.w;
+        const list: Array<Array<number>> = jsonData.list;
+        const resDatas: MapResData[] = [];
+        const sysCityDatas: MapResData[] = [];
+        let batchStart = Date.now();
+        let batchCount = 0;
+        for (let i = 0; i < list.length; i++) {
+            if (!Array.isArray(list[i]) || list[i].length < 2) throw new Error(`地图格 ${i} 数据缺失`);
             let data: MapResData = new MapResData();
             data.id = i;
             data.type = list[i][0];
             data.level = list[i][1];
             data.x = i % w;
             data.y = Math.floor(i / w);
-            this._mapResDatas.push(data);
+            resDatas.push(data);
 
             if (data.type == MapResType.SYS_CITY) {
-                this._mapSysCityResDatas.push(data)
+                sysCityDatas.push(data);
+            }
+            batchCount++;
+            if (i + 1 < list.length && (batchCount >= 2048 || (batchCount % 128 === 0 && Date.now() - batchStart >= 4))) {
+                yield (i + 1) / list.length;
+                batchStart = Date.now();
+                batchCount = 0;
             }
         }
+        this._mapResDatas = resDatas;
+        this._mapSysCityResDatas = sysCityDatas;
+        yield 1;
     }
 
 

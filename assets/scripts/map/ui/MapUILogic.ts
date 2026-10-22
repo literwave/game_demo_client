@@ -220,6 +220,9 @@ export default class MapUILogic extends Component {
 
         this.initMoreMenu();
         this.initAvatarEntry();
+        this.node.on(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
+        this.layoutHud();
+        this.scheduleOnce(this.layoutHud, 0);
         SystemOpenCommand.getInstance().requestSystemOpen();
         TroopCommand.getInstance().requestTroops();
 
@@ -253,6 +256,7 @@ export default class MapUILogic extends Component {
 
 
     protected onDestroy(): void {
+        this.node.off(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
         EventMgr.targetOff(this);
@@ -278,6 +282,52 @@ export default class MapUILogic extends Component {
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
 
         console.log("MapUILogic onDestroy")
+    }
+
+    /** 按可视区域布局常驻 HUD；弹窗和地图不参与此布局。 */
+    private layoutHud(): void {
+        const rootUi = this.node.getComponent(UITransform);
+        const hud = this.node.getChildByName("HudRoot");
+        if (!rootUi || !hud) {
+            return;
+        }
+        const width = rootUi.width;
+        const height = rootUi.height;
+        const margin = 24;
+        const left = -width * 0.5 + margin;
+        const top = height * 0.5 - margin;
+        const bottom = -height * 0.5 + margin;
+        const player = this.node.getChildByName("PlayerCard");
+        if (player) {
+            player.setPosition(left + 142, top - 44, 0);
+        }
+        const resources = this.node.getChildByName("ResourceBar");
+        const resourcesUi = resources ? resources.getComponent(UITransform) : null;
+        if (resources && resourcesUi) {
+            const barWidth = Math.min(580, Math.max(320, width - 284 - margin * 3));
+            resourcesUi.setContentSize(barWidth, 64);
+            resources.setPosition(Math.max(0, left + 284 + margin + barWidth * 0.5), top - 44, 0);
+            const step = (barWidth - 36) / 4;
+            resources.children.forEach((slot, index) => {
+                slot.setPosition((index - 1.5) * step, 0, 0);
+                const text = slot.getChildByName("New Label");
+                const textUi = text ? text.getComponent(UITransform) : null;
+                if (textUi) {
+                    textUi.setContentSize(Math.min(94, step - 36), 32);
+                }
+            });
+        }
+        const dock = hud.getChildByName("BottomNavBar");
+        const navigation = hud.getChildByName("BottomNav");
+        const more = hud.getChildByName("MorePanel");
+        if (dock) dock.setPosition(0, bottom + 48, 0);
+        if (navigation) navigation.setPosition(0, bottom + 50, 0);
+        if (more) more.setPosition(0, bottom + 160, 0);
+        const utilityY = width < 1040 ? bottom + 132 : bottom + 28;
+        const settings = hud.getChildByName("SettingButton");
+        const exit = hud.getChildByName("ExitButton");
+        if (settings) settings.setPosition(width * 0.5 - margin - 134, utilityY, 0);
+        if (exit) exit.setPosition(width * 0.5 - margin - 40, utilityY, 0);
     }
 
     protected initAvatarEntry(): void {
@@ -577,7 +627,7 @@ export default class MapUILogic extends Component {
         if (!label) {
             return;
         }
-        label.string = name + Tools.numberToShow(this.getResCount(itemId, resMap));
+        label.string = name + "  " + Tools.numberToShow(this.getResCount(itemId, resMap));
     }
 
     private getResCount(itemId: number, resMap: { [key: number]: number }): number {

@@ -161,6 +161,7 @@ export default class LoginCommand {
     /**创建玩家*/
     private onUserCreate(data: any): void {
         console.log("LoginProxy  onUserCreate:", data);
+        if (!data || !data.name) return;
         this._proxy.saveEnterData(data);
         this.makeSureAllDataReady()
     }
@@ -355,17 +356,19 @@ export default class LoginCommand {
      * @param sid 
      * @param headId 
      */
-    public role_create(uid: number, nickName: string, sex: number = 0, sid: number = 0, headId: number = 0) {
+    public role_create(uid: number, nickName: string, sex: number = 0, sid: number = 0, headId: number = 0): boolean {
         var msgName = ServerConfig.c2s_user_create;
         var protoData = ProtoManager.getInstance().encode(msgName, {
             sex: sex,
             name: nickName,
         });
+        if (!protoData) return false;
         var send_data = {
             name: msgName,
             msg: protoData, // 这里直接传 Uint8Array
         };
         NetManager.getInstance().send(send_data);
+        return true;
     }
 
 

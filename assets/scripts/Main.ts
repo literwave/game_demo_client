@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, SpriteFrame, sys, AudioSource, assert, resources } from 'cc';
+import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, SpriteFrame, sys, AudioSource, assert, resources, Camera, screen, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { GameConfig } from "./config/GameConfig";
@@ -60,11 +60,20 @@ export default class Main extends Component {
     private _retryTimes: number = 0;
     private _h5GeneralPicIndex: number = 0;
     private _h5GeneralPic = [];
+    private _loadGeneration = 0;
+    private _enteringMap = false;
+    private _mapReady = false;
+    private _mapUiReady = false;
+    private _mapPreparation: Generator<void, void, unknown> | null = null;
 
 
     protected onLoad(): void {
 
         console.log("main load");
+
+        this.node.on(Node.EventType.SIZE_CHANGED, this.alignUiCamera, this);
+        view.on('design-resolution-changed', this.alignUiCamera, this);
+        this.alignUiCamera();
 
         const audioSource = this.getComponent(AudioSource)!;
         assert(!!audioSource);
@@ -74,6 +83,7 @@ export default class Main extends Component {
 
         EventMgr.on(LogicEvent.enterMap, this.onEnterMap, this);
         EventMgr.on(CoreEvent.mapReady, this.onMapReady, this);
+        EventMgr.on(CoreEvent.mapLoadFailed, this.onMapLoadFailed, this);
         EventMgr.on(LogicEvent.enterLogin, this.enterLogin, this);
         EventMgr.on(LogicEvent.showToast, this.onShowToast, this);
         EventMgr.on(LogicEvent.showWaiting, this.showWaitNode, this);
@@ -108,8 +118,21 @@ export default class Main extends Component {
 
     protected onDestroy(): void {
         console.log("main onDestroy");
-
+        this.node.off(Node.EventType.SIZE_CHANGED, this.alignUiCamera, this);
+        view.off('design-resolution-changed', this.alignUiCamera, this);
+        this._loadGeneration++;
+        this._mapPreparation = null;
         EventMgr.targetOff(this);
+    }
+
+    private alignUiCamera(): void {
+        const cameraNode = this.node.getChildByName('UI Camera');
+        const camera = cameraNode ? cameraNode.getComponent(Camera) : null;
+        const scaleY = view.getScaleY();
+        // 与 Creator 3.8 Canvas 的屏幕适配公式一致，独立 UI 相机也需要跟随窗口。
+        if (camera && scaleY > 0 && screen.windowSize.height > 0) {
+            camera.orthoHeight = screen.windowSize.height / scaleY / 2;
+        }
     }
 
     protected clearData(): void {
@@ -191,7 +214,7 @@ export default class Main extends Component {
     }
 
     protected onEnterMap(): void {
-        if (this._loadingNode || this._mapScene) {
+        if (this._enteringMap || this._loadingNode || this._mapScene) {
             return;
         }
         let dataList: LoadData[] = [];
@@ -201,87 +224,124 @@ export default class Main extends Component {
         dataList.push(new LoadData("config", LoadDataType.DIR, JsonAsset));
 
         this.addLoadingNode();
+        this._enteringMap = true;
+        this._mapReady = false;
+        this._mapUiReady = false;
+        const generation = ++this._loadGeneration;
+        // 先给加载页一帧显示机会，缓存命中也不会在点击回调里直接建整张地图。
+        this.scheduleOnce(() => {
+            if (!this.isValid || generation !== this._loadGeneration) return;
+            LoaderManager.getInstance().startLoadList(dataList, null,
+                (error: Error, paths: string[], datas: any[]) => {
+                    if (!this.isValid || generation !== this._loadGeneration) return;
+                    if (error != null) {
+                        this.failMapLoading(error);
+                        return;
+                    }
+                    this._mapPreparation = this.prepareMap(datas[0] as TiledMapAsset, datas[1] as JsonAsset[]);
+                },
+                this
+            );
+        }, 0);
+    }
 
-        LoaderManager.getInstance().startLoadList(dataList,
-            (percent) => {
-                // 进度更新
-            },
-            (error: Error, paths: string[], datas: any[]) => {
-                if (error != null) {
-                    console.error("启动资源加载失败:", error);
-                    this.disposeLoadingNow();
-                    EventMgr.emit(LogicEvent.showToast, "战场资源加载失败，请重试");
-                    return;
-                }
+    protected update(): void {
+        if (!this._mapPreparation) return;
+        try {
+            // 每个渲染帧只推进一次，让进度条和骑将始终有刷新机会。
+            if (this._mapPreparation.next().done) this._mapPreparation = null;
+        } catch (error) {
+            this.failMapLoading(error);
+        }
+    }
 
-                const tiledMap = datas[0] as TiledMapAsset;
-                const configAssets = datas[1] as JsonAsset[];
+    private *prepareMap(tiledMap: TiledMapAsset, configAssets: JsonAsset[]): Generator<void, void, unknown> {
+        if (!tiledMap || !Array.isArray(configAssets)) throw new Error('战场启动资源不完整');
+        const configs = ConfigManager.getInstance();
+        configs.loadConfigs(configAssets);
+        EventMgr.emit(CoreEvent.mapLoadProgress, 0.72, '正在整理山河地形…');
+        yield;
 
-                // 1. 初始化 ConfigManager
-                ConfigManager.getInstance().loadConfigs(configAssets);
+        const mapProxy = MapCommand.getInstance().proxy;
+        mapProxy.tiledMapAsset = tiledMap;
+        for (const progress of mapProxy.initMapResConfigBatched(configs.getConfig('mapRes_0'))) {
+            EventMgr.emit(CoreEvent.mapLoadProgress, 0.72 + progress * 0.1, '正在整理山河地形…');
+            yield;
+        }
+        const heroJson = configs.getConfig('Hero');
+        const basicCfg = configs.getConfig('Global');
+        MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
+        if (heroJson) GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
+        const globalWarFree = configs.getConfigItem('Global', '3');
+        if (globalWarFree) mapProxy.setWarFree(globalWarFree.value1);
+        GeneralCommand.getInstance().qryMyGenerals();
+        EventMgr.emit(CoreEvent.mapLoadProgress, 0.83, '正在铺展战场…');
+        yield;
 
-                // 2. 从 ConfigManager 获取特定配置
-                const mapResCfg = ConfigManager.getInstance().getConfig("mapRes_0");
-                const heroJson = ConfigManager.getInstance().getConfig("Hero");
-                const basicCfg = ConfigManager.getInstance().getConfig("Global");
+        this.clearAllScene();
+        this._mapScene = instantiate(this.mapScenePrefab);
+        this._mapScene.parent = this.node;
+        if (!this._enteringMap) return;
+        if (this._loadingNode) this._loadingNode.setSiblingIndex(this.topLayer() + 1);
+        EventMgr.emit(CoreEvent.mapLoadProgress, 0.87, '正在布置军令界面…');
+        yield;
 
-                // 3. 初始化地图
-                MapCommand.getInstance().proxy.tiledMapAsset = tiledMap;
-                MapCommand.getInstance().proxy.initMapResConfig(mapResCfg);
+        this._mapUIScene = instantiate(this.mapUIScenePrefab);
+        this._mapUIScene.parent = this.node;
+        this._mapUiReady = true;
+        if (this._loadingNode) this._loadingNode.setSiblingIndex(this.topLayer() + 1);
+        EventMgr.emit(CoreEvent.mapLoadProgress, 0.9, '正在部署城池与资源…');
+        this.tryFinishLoading();
+    }
 
-                // // 4. 初始化核心配置 Proxy
-                // MapUICommand.getInstance().proxy.setAllFacilityCfg(configAssets);
-                MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
+    private failMapLoading(error: unknown): void {
+        console.error('战场初始化失败:', error);
+        // 清除半成品场景并回到可重试的登录页。
+        this.enterLogin();
+        EventMgr.emit(LogicEvent.showToast, '战场准备失败，请重试');
+    }
 
-                if (heroJson) {
-                    GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
-                }
-
-                // 3. 全局设置
-                const globalWarFree = ConfigManager.getInstance().getConfigItem("Global", "3");
-                if (globalWarFree) {
-                    MapCommand.getInstance().proxy.setWarFree(globalWarFree.value1);
-                }
-
-                // 4. 进入场景
-                GeneralCommand.getInstance().qryMyGenerals();
-                this.clearAllScene();
-                this._mapScene = instantiate(this.mapScenePrefab);
-                this._mapScene.parent = this.node;
-
-                this._mapUIScene = instantiate(this.mapUIScenePrefab);
-                this._mapUIScene.parent = this.node;
-
-                // 保持加载页在最上层，等地图首帧真正渲染后再淡出
-                if (this._loadingNode) {
-                    this._loadingNode.setSiblingIndex(this.topLayer() + 1);
-                }
-                // 正常由 mapReady 收起；这里兜底，避免极端情况下加载页卡住
-                this.scheduleOnce(this.finishLoading, 3);
-            },
-            this
-        );
+    private onMapLoadFailed(error: unknown): void {
+        if (this._enteringMap) this.failMapLoading(error);
     }
 
     private onMapReady(): void {
-        this.unschedule(this.finishLoading);
-        this.finishLoading();
+        if (!this._enteringMap) return;
+        this._mapReady = true;
+        this.tryFinishLoading();
+    }
+
+    private tryFinishLoading(): void {
+        if (this._mapReady && this._mapUiReady) this.finishLoading();
     }
 
     private finishLoading(): void {
         if (!this._loadingNode) {
+            this._enteringMap = false;
             return;
         }
-        const logic = this._loadingNode.getComponent(LoadingLogic);
+        const loadingNode = this._loadingNode;
+        const logic = loadingNode.getComponent(LoadingLogic);
         if (logic) {
-            logic.finish();
-        } else if (this._loadingNode.isValid) {
-            this._loadingNode.destroy();
+            logic.finish(() => {
+                if (this._loadingNode === loadingNode) {
+                    this._loadingNode = null;
+                    this._enteringMap = false;
+                }
+            });
+        } else {
+            if (loadingNode.isValid) loadingNode.destroy();
+            this._loadingNode = null;
+            this._enteringMap = false;
         }
-        this._loadingNode = null;
     }
 
     private disposeLoadingNow(): void {
+        this._loadGeneration++;
+        this._mapPreparation = null;
+        this._enteringMap = false;
+        this._mapReady = false;
+        this._mapUiReady = false;
         if (this._loadingNode) {
             if (this._loadingNode.isValid) {
                 this._loadingNode.destroy();

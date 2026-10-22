@@ -1,4 +1,4 @@
-import { _decorator, Component, Toggle, ScrollView, Prefab, Node, instantiate, tween, Tween, Vec3, UITransform, Label } from 'cc';
+import { _decorator, Component, Toggle, ScrollView, Prefab, Node, instantiate, tween, Tween, Vec3, UITransform, Label, Layout } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyData } from "../../general/ArmyProxy";
@@ -52,18 +52,27 @@ export default class RightInfoNodeLogic extends Component {
         EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
         EventMgr.on(LogicEvent.updateTag, this.onUpdateTag, this);
 
-        this.initCollapseState();
+        this.layoutPanel();
+        this.scheduleOnce(this.layoutPanel, 0);
+        if (this.node.parent) {
+            this.node.parent.on(Node.EventType.SIZE_CHANGED, this.layoutPanel, this);
+        }
         this.initToggleEvents();
         this.armyScrollView.node.active = true;
         this.cityScrollView.node.active = false;
         this.tagsScrollView.node.active = false;
         this.initArmys();
-        TroopCommand.getInstance().requestTroops();
-        // this.initCitys();
-        // this.initTags();
+        // MapUILogic 统一请求部队数据，避免首屏重复请求和重建列表。
     }
 
     protected onDestroy(): void {
+        if (this.node.parent) {
+            this.node.parent.off(Node.EventType.SIZE_CHANGED, this.layoutPanel, this);
+        }
+        Tween.stopAllByTarget(this.node);
+        if (this._tabNode) {
+            Tween.stopAllByTarget(this._tabNode);
+        }
         EventMgr.targetOff(this);
         if (this._arrowNode) {
             Tween.stopAllByTarget(this._arrowNode);
@@ -78,38 +87,39 @@ export default class RightInfoNodeLogic extends Component {
     }
 
     protected initArmys(): void {
-        const oldItems = this.armyScrollView.content.children.slice();
-        this.armyScrollView.content.removeAllChildren();
-        oldItems.forEach((item) => {
-            if (item && item.isValid) {
-                item.destroy();
-            }
-        });
         const troops: TroopData[] = TroopCommand.getInstance().proxy.getTroops();
         const troopMap: Map<number, TroopData> = new Map<number, TroopData>();
         troops.forEach((troop) => troopMap.set(troop.troopIdx, troop));
 
         const troopCount = Math.max(3, troops.length > 0 ? troops[troops.length - 1].troopIdx : 0);
-        this._armys.length = 0;
+        while (this._armys.length > troopCount) {
+            const item = this._armys.pop();
+            item.removeFromParent();
+            item.destroy();
+        }
         for (let troopIdx: number = 1; troopIdx <= troopCount; troopIdx++) {
             let troop = troopMap.get(troopIdx);
             if (!troop) {
                 troop = new TroopData();
                 troop.troopIdx = troopIdx;
             }
-            let item: Node = instantiate(this.armyItemPrefabs);
-            item.parent = this.armyScrollView.content;
+            let item = this._armys[troopIdx - 1];
+            if (!item || !item.isValid) {
+                item = instantiate(this.armyItemPrefabs);
+                item.parent = this.armyScrollView.content;
+                this._armys[troopIdx - 1] = item;
+            }
             const itemLogic = item.getComponent(RightArmyItemLogic);
             if (itemLogic) {
                 itemLogic.setTroopData(troop, troopIdx);
             }
-            this._armys.push(item);
         }
+        this.armyScrollView.content.getComponent(Layout)?.updateLayout();
     }
 
     protected initCitys(): void {
         let citys: MapCityData[] = MapCommand.getInstance().cityProxy.getMyCitys();
-        this.cityScrollView.content.removeAllChildren();
+        this.clearList(this.cityScrollView);
         if (citys && citys.length > 0) {
             for (let i: number = 0; i < citys.length; i++) {
                 let item: Node = instantiate(this.cityItemPrefabs);
@@ -121,7 +131,7 @@ export default class RightInfoNodeLogic extends Component {
 
     protected initTags(): void {
         let tags = MapCommand.getInstance().proxy.getPosTags();
-        this.tagsScrollView.content.removeAllChildren();
+        this.clearList(this.tagsScrollView);
         for (let i: number = 0; i < tags.length; i++) {
             var tag = tags[i];
 
@@ -163,7 +173,13 @@ export default class RightInfoNodeLogic extends Component {
     }
 
     protected onUpdateTag(): void {
-        this.initTags();
+        if (this.tagsScrollView.node.active) this.initTags();
+    }
+
+    private clearList(scrollView: ScrollView): void {
+        const items = scrollView.content.children.slice();
+        scrollView.content.removeAllChildren();
+        items.forEach(item => item.destroy());
     }
 
     private initToggleEvents(): void {
@@ -173,6 +189,33 @@ export default class RightInfoNodeLogic extends Component {
                 toggle.node.on(Toggle.EventType.TOGGLE, this.onClockToggle, this);
             }
         });
+    }
+
+    private layoutPanel(): void {
+        const parentUi = this.node.parent ? this.node.parent.getComponent(UITransform) : null;
+        const panelUi = this.getComponent(UITransform);
+        if (!parentUi || !panelUi) {
+            return;
+        }
+        Tween.stopAllByTarget(this.node);
+        if (this._tabNode) {
+            Tween.stopAllByTarget(this._tabNode);
+        }
+        this._animating = false;
+        if (this._arrowNode) {
+            Tween.stopAllByTarget(this._arrowNode);
+            this._arrowNode.setPosition(this._arrowBasePos);
+        }
+        this.node.setPosition(parentUi.width * 0.5 - 24 - panelUi.width * 0.5, parentUi.height * 0.5 - 116 - panelUi.height * 0.5, 0);
+        this.initCollapseState();
+        if (this._collapsed) {
+            this.node.setPosition(this._collapsedX, this._expandedPos.y, this._expandedPos.z);
+            if (this._tabNode) {
+                this._tabNode.setPosition(this._tabCollapsedPos);
+            }
+        } else if (this._tabNode) {
+            this._tabNode.setPosition(this._tabExpandedPos);
+        }
     }
 
     private initCollapseState(): void {
@@ -274,6 +317,7 @@ export default class RightInfoNodeLogic extends Component {
             this.armyScrollView.node.active = false;
             this.cityScrollView.node.active = true;
             this.tagsScrollView.node.active = false;
+            this.initCitys();
         } else if (index == 0) {
             this.armyScrollView.node.active = true;
             this.cityScrollView.node.active = false;
@@ -282,6 +326,7 @@ export default class RightInfoNodeLogic extends Component {
             this.armyScrollView.node.active = false;
             this.cityScrollView.node.active = false;
             this.tagsScrollView.node.active = true;
+            this.initTags();
         }
     }
 }
