@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, Sprite, Color, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, Sprite, Color, Graphics, instantiate, UITransform, Vec2, input, Input, EventKeyboard, KeyCode } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -172,6 +172,7 @@ export default class MapUILogic extends Component {
 
     protected _resArray: any = [];
     private _uiListenersReady = false;
+    private _hudTopShade: Graphics | null = null;
 
     protected onLoad(): void {
 
@@ -306,41 +307,91 @@ export default class MapUILogic extends Component {
         }
         const width = rootUi.width;
         const height = rootUi.height;
-        const margin = 24;
-        const left = -width * 0.5 + margin;
-        const top = height * 0.5 - margin;
+        this.drawHudTopShade(width, height);
+        const margin = 12;
+        const top = height * 0.5;
         const bottom = -height * 0.5 + margin;
+        const headerY = top - 32;
+        const playerWidth = 224;
         const player = this.node.getChildByName("PlayerCard");
         if (player) {
-            player.setPosition(left + 142, top - 44, 0);
+            player.getComponent(UITransform)?.setContentSize(playerWidth, 60);
+            player.setPosition(-width * 0.5 + margin + playerWidth * 0.5, top - margin - 30, 0);
         }
         const resources = this.node.getChildByName("ResourceBar");
         const resourcesUi = resources ? resources.getComponent(UITransform) : null;
         if (resources && resourcesUi) {
-            const barWidth = Math.min(580, Math.max(320, width - 284 - margin * 3));
-            resourcesUi.setContentSize(barWidth, 64);
-            resources.setPosition(Math.max(0, left + 284 + margin + barWidth * 0.5), top - 44, 0);
-            const step = (barWidth - 36) / 4;
+            // 资源栏紧凑贴右；窄屏时压缩宽度避让头像。
+            const safeLeft = -width * 0.5 + margin * 2 + playerWidth;
+            const safeRight = width * 0.5 - margin;
+            const barWidth = Math.min(400, safeRight - safeLeft);
+            const barX = safeRight - barWidth * 0.5;
+            resourcesUi.setContentSize(barWidth, 40);
+            resources.setPosition(barX, headerY, 0);
+            const step = barWidth / 4;
             resources.children.forEach((slot, index) => {
                 slot.setPosition((index - 1.5) * step, 0, 0);
+                slot.getComponent(UITransform)?.setContentSize(step, 44);
+                const icon = slot.getChildByName("Dot");
+                if (icon) {
+                    icon.setPosition(-step * 0.5 + 12, 0, 0);
+                    icon.getComponent(UITransform)?.setContentSize(22, 22);
+                }
                 const text = slot.getChildByName("New Label");
                 const textUi = text ? text.getComponent(UITransform) : null;
                 if (textUi) {
-                    textUi.setContentSize(Math.min(94, step - 36), 32);
+                    text.setPosition(14, 0, 0);
+                    textUi.setContentSize(step - 28, 32);
                 }
             });
         }
         const dock = hud.getChildByName("BottomNavBar");
         const navigation = hud.getChildByName("BottomNav");
         const more = hud.getChildByName("MorePanel");
-        if (dock) dock.setPosition(0, bottom + 48, 0);
-        if (navigation) navigation.setPosition(0, bottom + 50, 0);
-        if (more) more.setPosition(0, bottom + 160, 0);
-        const utilityY = width < 1040 ? bottom + 132 : bottom + 28;
-        const settings = hud.getChildByName("SettingButton");
-        const exit = hud.getChildByName("ExitButton");
-        if (settings) settings.setPosition(width * 0.5 - margin - 134, utilityY, 0);
-        if (exit) exit.setPosition(width * 0.5 - margin - 40, utilityY, 0);
+        const dockWidth = Math.min(400, width - margin * 2);
+        const dockX = width * 0.5 - margin - dockWidth * 0.5;
+        if (dock) {
+            dock.getComponent(UITransform)?.setContentSize(dockWidth, 80);
+            dock.setPosition(dockX, bottom + 40, 0);
+        }
+        if (navigation) {
+            navigation.getComponent(UITransform)?.setContentSize(dockWidth, 80);
+            navigation.setPosition(dockX, bottom + 40, 0);
+            const step = dockWidth / Math.max(1, navigation.children.length);
+            navigation.children.forEach((button, index) => {
+                button.setPosition((index - (navigation.children.length - 1) * 0.5) * step, 0, 0);
+                button.getComponent(UITransform)?.setContentSize(step - 8, 80);
+            });
+        }
+        if (more) {
+            const moreUi = more.getComponent(UITransform);
+            const moreWidth = moreUi ? moreUi.width : dockWidth;
+            more.setPosition(width * 0.5 - margin - moreWidth * 0.5, bottom + 92 + (moreUi ? moreUi.height * 0.5 : 56), 0);
+        }
+    }
+
+    /** 只在初始化和尺寸变化时重绘，让顶部文字融入地图边缘。 */
+    private drawHudTopShade(width: number, height: number): void {
+        if (!this._hudTopShade) {
+            const shade = new Node('HudTopShade');
+            shade.layer = this.node.layer;
+            shade.addComponent(UITransform);
+            this._hudTopShade = shade.addComponent(Graphics);
+            this.node.addChild(shade);
+            shade.setSiblingIndex(0);
+        }
+        const graphics = this._hudTopShade;
+        const shadeHeight = 92;
+        graphics.node.getComponent(UITransform).setContentSize(width, shadeHeight);
+        graphics.node.setPosition(0, height * 0.5 - shadeHeight * 0.5, 0);
+        graphics.clear();
+        const bands = 32;
+        const bandHeight = shadeHeight / bands;
+        for (let i = 0; i < bands; i++) {
+            graphics.fillColor = new Color(27, 29, 23, Math.round(220 * (1 - i / (bands - 1))));
+            graphics.rect(-width * 0.5, shadeHeight * 0.5 - (i + 1) * bandHeight, width, bandHeight);
+            graphics.fill();
+        }
     }
 
     protected initAvatarEntry(): void {
@@ -640,7 +691,7 @@ export default class MapUILogic extends Component {
         if (!label) {
             return;
         }
-        label.string = name + "  " + Tools.numberToShow(this.getResCount(itemId, resMap));
+        label.string = name + " " + Tools.numberToShow(this.getResCount(itemId, resMap));
     }
 
     private getResCount(itemId: number, resMap: { [key: number]: number }): number {

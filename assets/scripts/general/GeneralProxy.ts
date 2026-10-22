@@ -1,7 +1,7 @@
 
 import { SpriteFrame, resources, isValid } from "cc";
 import GeneralCommand from "./GeneralCommand";
-import { getGeneralPortraitPath } from './GeneralPortrait';
+import { GENERAL_PORTRAIT_DIRECTORY, getGeneralPortraitPath } from './GeneralPortrait';
 
 /**武将(配置)*/
 export class GeneralConfig {
@@ -41,6 +41,7 @@ export class GeneralConfig {
     arms: number[] = [];
     camp: number = 0;
     resource: string = "";
+    icon: string = "";
 }
 
 /**武将等级配置*/
@@ -181,6 +182,7 @@ export default class GeneralProxy {
             cfg.hero_type = cfg.id;
             cfg.name = data.name;
             cfg.resource = data.Resources;
+            cfg.icon = typeof data.Icon === 'string' ? data.Icon.trim() : '';
             cfg.sort = Number(data.Sort || 0);
             cfg.desc = data.Desc || "";
             cfg.quality = Number(data.Quality || 0);
@@ -247,8 +249,10 @@ export default class GeneralProxy {
         }
 
         this._heroConfigs.forEach((cfg) => {
-            if (cfg.resource) {
-                const resName = cfg.resource.split('.')[0];
+            const path = getGeneralPortraitPath(cfg.icon);
+            const prefix = `${GENERAL_PORTRAIT_DIRECTORY}/`;
+            if (path.startsWith(prefix)) {
+                const resName = path.slice(prefix.length).replace(/\/spriteFrame$/, '');
                 if (nameMap.has(resName)) {
                     this._heroTexs.set(String(cfg.hero_type), nameMap.get(resName));
                 }
@@ -361,7 +365,11 @@ export default class GeneralProxy {
         const cached = this.getGeneralTex(heroType);
         if (cached && isValid(cached)) return Promise.resolve(cached);
         const config = this.getGeneralCfg(heroType);
-        const path = getGeneralPortraitPath(heroType, config && config.resource);
+        const path = getGeneralPortraitPath(config && config.icon);
+        if (!path) {
+            console.warn('武将未配置 Icon:', heroType);
+            return Promise.resolve(null);
+        }
         const pending = this._heroTexLoads.get(path);
         if (pending) return pending;
         const request = new Promise<SpriteFrame | null>((resolve) => {

@@ -5,6 +5,7 @@ import { MapCityData } from "../MapCityProxy";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { drawCommandRow, setCommandLabel } from './RightHudSkin';
 
 @ccclass('RightTagItemLogic')
 export default class RightTagItemLogic extends Component {
@@ -17,7 +18,10 @@ export default class RightTagItemLogic extends Component {
 
 
     protected onLoad(): void {
-        
+        const background = this.node.getChildByName('bg');
+        if (!background) return;
+        drawCommandRow(background);
+        setCommandLabel(background, 'EntryBadge', '标', -102, 1, 28, 13);
     }
 
     protected onDestroy(): void {

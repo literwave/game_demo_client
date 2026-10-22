@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, Sprite, UITransform } from 'cc';
+import { _decorator, Component, Label, Node, Sprite, UITransform, Layout } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyCmd, ArmyData } from "../../general/ArmyProxy";
@@ -13,6 +13,7 @@ import GeneralHeadLogic from "./GeneralHeadLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { drawCommandRow, setCommandLabel } from './RightHudSkin';
 
 @ccclass('RightArmyItemLogic')
 export default class RightArmyItemLogic extends Component {
@@ -44,8 +45,8 @@ export default class RightArmyItemLogic extends Component {
     protected onLoad(): void {
         EventMgr.on(LogicEvent.updateGeneral, this.onUpdateGeneral, this);
         EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
-        this.node.getComponent(UITransform).height -= this.bottomNode.getComponent(UITransform).height;
         this.bottomNode.active = false;
+        this.layoutItem();
     }
 
     protected onDestroy(): void {
@@ -90,11 +91,32 @@ export default class RightArmyItemLogic extends Component {
     protected onClickTop(): void {
         AudioManager.instance.playClick();
         this.bottomNode.active = !this.bottomNode.active;
-        if(this.bottomNode.active){
-            this.node.getComponent(UITransform).height += this.bottomNode.getComponent(UITransform).height;
-        }else{
-            this.node.getComponent(UITransform).height -= this.bottomNode.getComponent(UITransform).height;
-        }
+        this.layoutItem();
+    }
+
+    private layoutItem(): void {
+        const top = this.node.getChildByName('topNode');
+        const topUi = top?.getComponent(UITransform);
+        const bottomUi = this.bottomNode?.getComponent(UITransform);
+        const rootUi = this.node.getComponent(UITransform);
+        if (!top || !topUi || !bottomUi || !rootUi) return;
+        const detailHeight = this.bottomNode.active ? bottomUi.height : 0;
+        rootUi.height = topUi.height + detailHeight;
+        top.setPosition(0, detailHeight * 0.5, 0);
+        this.bottomNode.setPosition(0, -topUi.height * 0.5, 0);
+        this.refreshHeaderSkin();
+        this.node.parent?.getComponent(Layout)?.updateLayout();
+    }
+
+    private refreshHeaderSkin(): void {
+        const top = this.node.getChildByName('topNode');
+        if (!top) return;
+        const order = this.order || this._data?.order || 0;
+        const hasHeroes = this._troop ? this._troop.getSortedHeroes().length > 0 : !!this._firstGeneral;
+        const state = this._data ? ArmyCommand.getInstance().getArmyStateDes(this._data).replace(/[\[\]【】]/g, '') : (hasHeroes ? '已编队' : '待配置');
+        drawCommandRow(top, !!this.bottomNode?.active, true);
+        setCommandLabel(top, 'OrderBadge', order > 0 ? String(order).padStart(2, '0') : '军', -102, 1, 28, 13);
+        setCommandLabel(top, 'StateBadge', state, 93, 12, 44, 10, !hasHeroes);
     }
 
     protected onClickBack(): void {
@@ -118,7 +140,6 @@ export default class RightArmyItemLogic extends Component {
     }
 
     protected updateGeneralByData(): void {
-        let stateStr: string = ArmyCommand.getInstance().getArmyStateDes(this._data);
         var teamName = "";
         if (this._firstGeneral) {
             let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._firstGeneral.cfgId);
@@ -126,7 +147,8 @@ export default class RightArmyItemLogic extends Component {
             this.headIcon.getComponent(GeneralHeadLogic).setHeadId(this._firstGeneral.cfgId);
             this.labelStrength.string = "体力 " + this._firstGeneral.physical_power + "/" + cfg.physical_power_limit;
         }
-        this.labelInfo.string = stateStr + " " + teamName + "队";
+        this.labelInfo.string = teamName + "队";
+        this.refreshHeaderSkin();
 
     }
 
@@ -189,7 +211,7 @@ export default class RightArmyItemLogic extends Component {
                 headLogic.setHeadId(firstHeroIdx);
             }
         }
-        if (this.labelInfo) this.labelInfo.string = "第" + this.order + "部队 · " + teamName;
+        if (this.labelInfo) this.labelInfo.string = firstCfg ? teamName + "队" : "第" + this.order + "部队";
         if (this.labelPos) this.labelPos.string = "武将 " + heroes.length + "/3";
         if (this.labelSoldierCnt) this.labelSoldierCnt.string = "上阵 " + heroes.length + "/3";
         if (this.labelStrength) {
@@ -208,6 +230,7 @@ export default class RightArmyItemLogic extends Component {
         }
         if (this.btnBack) this.btnBack.active = false;
         if (this.btnSetting) this.btnSetting.active = true;
+        this.refreshHeaderSkin();
     }
 
     public setArmyData(data: ArmyData): void {

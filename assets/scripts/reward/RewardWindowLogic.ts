@@ -665,7 +665,8 @@ export default class RewardWindowLogic extends Component {
             }
         }
         if (info.rewardType === REWARD_TYPE_HERO) {
-            return getGeneralPortraitPath(info.itemId, this.getHeroResource(info.itemId));
+            const hero = this.getHeroConfig(info.itemId);
+            return getGeneralPortraitPath(hero && hero.Icon);
         }
         return '';
     }
@@ -692,14 +693,6 @@ export default class RewardWindowLogic extends Component {
             return null;
         }
         return items.find((cfg: any) => cfg && cfg.Id === itemId) || null;
-    }
-
-    private getHeroResource(heroId: number): string {
-        const hero = this.getHeroConfig(heroId);
-        if (hero && hero.Resources) {
-            return String(hero.Resources).split('.')[0];
-        }
-        return `card_${heroId}`;
     }
 
     private getHeroConfig(heroId: number): any {

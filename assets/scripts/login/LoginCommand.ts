@@ -402,14 +402,10 @@ export default class LoginCommand {
      * logout
      */
     public account_logout(): void {
-        var api_name = ServerConfig.account_logout;
-        var send_data = {
-            name: api_name,
-            msg: {
-
-            }
-        };
-        NetManager.getInstance().send(send_data);
+        // 主动退出必须在断网或服务器未回包时也能完成；关闭连接同时取消自动重连。
+        NetManager.getInstance().close();
+        this._proxy.clear();
+        EventMgr.emit(LogicEvent.enterLogin);
     }
 
 

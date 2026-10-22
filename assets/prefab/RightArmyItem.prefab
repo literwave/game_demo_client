@@ -157,8 +157,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": -118,
-      "y": 11,
+      "x": -76,
+      "y": 10,
       "z": 0
     },
     "_lrot": {
@@ -200,18 +200,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 238,
-      "g": 222,
-      "b": 184,
+      "r": 237,
+      "g": 230,
+      "b": 207,
       "a": 255
     },
     "_string": "[停留]赵云队",
     "_horizontalAlign": 0,
     "_verticalAlign": 1,
-    "_actualFontSize": 16,
-    "_fontSize": 16,
+    "_actualFontSize": 14,
+    "_fontSize": 14,
     "_fontFamily": "Arial",
-    "_lineHeight": 24,
+    "_lineHeight": 20,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -258,8 +258,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 236,
-      "height": 24
+      "width": 140,
+      "height": 22
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -307,8 +307,8 @@
     },
     "_lpos": {
       "__type__": "cc.Vec3",
-      "x": -118,
-      "y": -14,
+      "x": -76,
+      "y": -13,
       "z": 0
     },
     "_lrot": {
@@ -350,18 +350,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 185,
-      "g": 171,
-      "b": 135,
+      "r": 168,
+      "g": 172,
+      "b": 149,
       "a": 255
     },
     "_string": "(0,0)",
     "_horizontalAlign": 0,
     "_verticalAlign": 1,
-    "_actualFontSize": 13,
-    "_fontSize": 13,
+    "_actualFontSize": 11,
+    "_fontSize": 11,
     "_fontFamily": "Arial",
-    "_lineHeight": 20,
+    "_lineHeight": 16,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -408,8 +408,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 236,
-      "height": 20
+      "width": 170,
+      "height": 18
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -439,7 +439,7 @@
     "node": {
       "__id__": 2
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": {
       "__id__": 20
     },
@@ -449,16 +449,16 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
+      "r": 51,
+      "g": 52,
+      "b": 42,
+      "a": 218
     },
     "_spriteFrame": {
-      "__uuid__": "3d035d0f-4399-442a-9018-54eefd8da25f@f9941",
+      "__uuid__": "6b83118b-7b1b-46a6-9ccf-08a1a2ed0f68@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_type": 1,
+    "_type": 0,
     "_fillType": 0,
     "_sizeMode": 0,
     "_fillCenter": {
@@ -494,44 +494,44 @@
       }
     ],
     "_interactable": true,
-    "_transition": 1,
+    "_transition": 3,
     "_normalColor": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
+      "r": 51,
+      "g": 52,
+      "b": 42,
+      "a": 218
     },
     "_hoverColor": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
+      "r": 69,
+      "g": 70,
+      "b": 55,
+      "a": 235
     },
     "_pressedColor": {
       "__type__": "cc.Color",
-      "r": 211,
-      "g": 211,
-      "b": 211,
-      "a": 255
+      "r": 35,
+      "g": 37,
+      "b": 29,
+      "a": 238
     },
     "_disabledColor": {
       "__type__": "cc.Color",
-      "r": 124,
-      "g": 124,
-      "b": 124,
-      "a": 255
+      "r": 42,
+      "g": 43,
+      "b": 37,
+      "a": 180
     },
     "_normalSprite": {
-      "__uuid__": "3d035d0f-4399-442a-9018-54eefd8da25f@f9941",
+      "__uuid__": "0d843544-701a-48bc-ac24-65096596df6b@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_hoverSprite": null,
     "_pressedSprite": null,
     "_disabledSprite": null,
-    "_duration": 0.1,
-    "_zoomScale": 1.2,
+    "_duration": 0.08,
+    "_zoomScale": 0.985,
     "_target": {
       "__id__": 2
     },
@@ -582,8 +582,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 264,
-      "height": 64
+      "width": 248,
+      "height": 56
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -651,7 +651,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": -32,
+      "y": -28,
       "z": 0
     },
     "_lrot": {
@@ -921,18 +921,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 185,
+      "g": 185,
+      "b": 157,
       "a": 255
     },
     "_string": "骑兵 1000",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 14,
-    "_fontSize": 14,
+    "_actualFontSize": 12,
+    "_fontSize": 12,
     "_fontFamily": "Arial",
-    "_lineHeight": 22,
+    "_lineHeight": 18,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -1074,18 +1074,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 185,
+      "g": 185,
+      "b": 157,
       "a": 255
     },
     "_string": "体力 100/100",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 14,
-    "_fontSize": 14,
+    "_actualFontSize": 12,
+    "_fontSize": 12,
     "_fontFamily": "Arial",
-    "_lineHeight": 22,
+    "_lineHeight": 18,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -1227,18 +1227,18 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 185,
+      "g": 185,
+      "b": 157,
       "a": 255
     },
     "_string": "士气 100/100",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 14,
-    "_fontSize": 14,
+    "_actualFontSize": 12,
+    "_fontSize": 12,
     "_fontFamily": "Arial",
-    "_lineHeight": 22,
+    "_lineHeight": 18,
     "_overflow": 2,
     "_enableWrapText": false,
     "_font": null,
@@ -2386,16 +2386,16 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
-      "a": 255
+      "r": 55,
+      "g": 63,
+      "b": 48,
+      "a": 228
     },
     "_spriteFrame": {
-      "__uuid__": "3d035d0f-4399-442a-9018-54eefd8da25f@f9941",
+      "__uuid__": "6b83118b-7b1b-46a6-9ccf-08a1a2ed0f68@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_type": 1,
+    "_type": 0,
     "_fillType": 0,
     "_sizeMode": 0,
     "_fillCenter": {
@@ -2445,7 +2445,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 264,
+      "width": 248,
       "height": 120
     },
     "_anchorPoint": {
@@ -2476,7 +2476,7 @@
     "node": {
       "__id__": 1
     },
-    "_enabled": true,
+    "_enabled": false,
     "__prefab": {
       "__id__": 126
     },
@@ -2581,8 +2581,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 264,
-      "height": 184
+      "width": 248,
+      "height": 176
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",

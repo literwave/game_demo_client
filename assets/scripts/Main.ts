@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, AudioSource, assert, Camera, screen, view } from 'cc';
+import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, AudioSource, assert, Camera, screen, view, director, Director } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { GameConfig } from "./config/GameConfig";
@@ -67,6 +67,7 @@ export default class Main extends Component {
     private _heroRequest: Promise<boolean> | null = null;
     private _heroWarmupTimer: ReturnType<typeof setTimeout> | null = null;
     private _mapPreparation: Generator<void, void, unknown> | null = null;
+    private _afterLoadingDraw: (() => void) | null = null;
 
 
     protected onLoad(): void {
@@ -121,9 +122,7 @@ export default class Main extends Component {
         console.log("main onDestroy");
         this.node.off(Node.EventType.SIZE_CHANGED, this.alignUiCamera, this);
         view.off('design-resolution-changed', this.alignUiCamera, this);
-        this._loadGeneration++;
-        this._mapPreparation = null;
-        if (this._heroWarmupTimer !== null) clearTimeout(this._heroWarmupTimer);
+        this.disposeLoadingNow();
         GeneralCommand.getInstance().clearData();
         EventMgr.targetOff(this);
     }
@@ -226,31 +225,46 @@ export default class Main extends Component {
         // INDEX 1: 配置目录 (包含 Hero.json, mapRes_0.json 等)
         dataList.push(new LoadData("config", LoadDataType.DIR, JsonAsset));
 
-        this.addLoadingNode();
         this._enteringMap = true;
         this._mapReady = false;
         this._mapUiReady = false;
         this._heroAssetsReady = false;
         this._finishingLoading = false;
         const generation = ++this._loadGeneration;
-        this.hideWaitNode();
-        // 此时已经通过登录验证，武将协议与地图/配置加载并行。
-        this._heroRequest = GeneralCommand.getInstance().beginLoading();
-        // 先给加载页一帧显示机会，缓存命中也不会在点击回调里直接建整张地图。
-        this.scheduleOnce(() => {
-            if (!this.isValid || generation !== this._loadGeneration) return;
-            LoaderManager.getInstance().startLoadList(dataList, null,
-                (error: Error, paths: string[], datas: any[]) => {
+        const startedAt = Date.now();
+        try {
+            this.addLoadingNode();
+            this.hideWaitNode();
+            // 成功回包后立即离开创建页；加载遮罩接管输入和显示。
+            if (this._loginScene) this._loginScene.active = false;
+            // scheduleOnce(0) 本身不保证已经渲染。先等加载页提交一帧，
+            // 再在下一轮 update 启动资源解析，避免创建页停在上一帧。
+            this._afterLoadingDraw = () => {
+                this._afterLoadingDraw = null;
+                console.info(`[MapEntry] 加载页首帧 ${Date.now() - startedAt}ms`);
+                this.scheduleOnce(() => {
                     if (!this.isValid || generation !== this._loadGeneration) return;
-                    if (error != null) {
+                    try {
+                        this._heroRequest = GeneralCommand.getInstance().beginLoading();
+                        LoaderManager.getInstance().startLoadList(dataList, null,
+                            (error: Error, paths: string[], datas: any[]) => {
+                                if (!this.isValid || generation !== this._loadGeneration) return;
+                                if (error != null) {
+                                    this.failMapLoading(error);
+                                    return;
+                                }
+                                console.info(`[MapEntry] 资源就绪 ${Date.now() - startedAt}ms`);
+                                this._mapPreparation = this.prepareMap(datas[0] as TiledMapAsset, datas[1] as JsonAsset[]);
+                            }, this);
+                    } catch (error) {
                         this.failMapLoading(error);
-                        return;
                     }
-                    this._mapPreparation = this.prepareMap(datas[0] as TiledMapAsset, datas[1] as JsonAsset[]);
-                },
-                this
-            );
-        }, 0);
+                }, 0);
+            };
+            director.once(Director.EVENT_AFTER_DRAW, this._afterLoadingDraw, this);
+        } catch (error) {
+            this.failMapLoading(error);
+        }
     }
 
     protected update(): void {
@@ -394,6 +408,10 @@ export default class Main extends Component {
     }
 
     private disposeLoadingNow(): void {
+        if (this._afterLoadingDraw) {
+            director.off(Director.EVENT_AFTER_DRAW, this._afterLoadingDraw, this);
+            this._afterLoadingDraw = null;
+        }
         this._loadGeneration++;
         this._mapPreparation = null;
         this._enteringMap = false;
@@ -413,14 +431,13 @@ export default class Main extends Component {
     }
 
     protected addLoadingNode(): void {
-        if (this.loadingPrefab) {
-            if (this._loadingNode == null) {
-                this._loadingNode = instantiate(this.loadingPrefab);
-            }
-
-            this._loadingNode.parent = this.node;
-            this._loadingNode.setSiblingIndex(this.topLayer() + 1);
+        if (!this.loadingPrefab) throw new Error('未配置战场加载页');
+        if (!this._loadingNode || !this._loadingNode.isValid) {
+            this._loadingNode = instantiate(this.loadingPrefab);
         }
+        this._loadingNode.parent = this.node;
+        this._loadingNode.active = true;
+        this._loadingNode.setSiblingIndex(this.topLayer() + 1);
     }
 
 

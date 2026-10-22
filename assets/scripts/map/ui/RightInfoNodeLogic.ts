@@ -1,4 +1,4 @@
-import { _decorator, Component, Toggle, ScrollView, Prefab, Node, instantiate, tween, Tween, Vec3, UITransform, Label, Layout } from 'cc';
+import { _decorator, Component, Toggle, ScrollView, Prefab, Node, instantiate, tween, Tween, Vec3, UITransform, Label, Layout, Color } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyData } from "../../general/ArmyProxy";
@@ -12,6 +12,7 @@ import RightTagItemLogic from "./RightTagItemLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { drawCommandPanel, drawCommandHandle } from './RightHudSkin';
 
 @ccclass('RightInfoNodeLogic')
 export default class RightInfoNodeLogic extends Component {
@@ -206,8 +207,9 @@ export default class RightInfoNodeLogic extends Component {
             Tween.stopAllByTarget(this._arrowNode);
             this._arrowNode.setPosition(this._arrowBasePos);
         }
-        this.node.setPosition(parentUi.width * 0.5 - 24 - panelUi.width * 0.5, parentUi.height * 0.5 - 116 - panelUi.height * 0.5, 0);
+        this.node.setPosition(parentUi.width * 0.5 - 12 - panelUi.width * 0.5, parentUi.height * 0.5 - 96 - panelUi.height * 0.5, 0);
         this.initCollapseState();
+        this.refreshTabStyle();
         if (this._collapsed) {
             this.node.setPosition(this._collapsedX, this._expandedPos.y, this._expandedPos.z);
             if (this._tabNode) {
@@ -241,7 +243,7 @@ export default class RightInfoNodeLogic extends Component {
                 );
                 this._tabCollapsedPos.set(
                     this._tabExpandedPos.x + (this._collapsedX - this._expandedPos.x),
-                    this._expandedPos.y,
+                    this._tabExpandedPos.y,
                     this._expandedPos.z
                 );
             }
@@ -259,24 +261,20 @@ export default class RightInfoNodeLogic extends Component {
         const hint: Node = this._tabNode.getChildByName('Hint');
         const label: Label = hint ? hint.getComponent(Label) : null;
         if (label) {
-            label.string = this._collapsed ? '展\n开' : '收\n起';
+            label.string = this._collapsed ? '展开' : '收起';
         }
-        this.startArrowIdle();
+        drawCommandHandle(this._tabNode);
     }
 
-    private startArrowIdle(): void {
-        if (!this._arrowNode) {
-            return;
-        }
-        Tween.stopAllByTarget(this._arrowNode);
-        this._arrowNode.setPosition(this._arrowBasePos);
-        const drift: number = this._collapsed ? -2 : 2;
-        tween(this._arrowNode)
-            .to(1.1, { position: new Vec3(this._arrowBasePos.x + drift, this._arrowBasePos.y, this._arrowBasePos.z) }, { easing: 'sineInOut' })
-            .to(1.1, { position: new Vec3(this._arrowBasePos) }, { easing: 'sineInOut' })
-            .union()
-            .repeatForever()
-            .start();
+    private refreshTabStyle(): void {
+        const panelUi = this.getComponent(UITransform);
+        if (!panelUi) return;
+        const selected = this.toggles.findIndex(toggle => toggle && toggle.isChecked);
+        drawCommandPanel(this.node, panelUi.width, panelUi.height, selected);
+        this.toggles.forEach(toggle => {
+            const label = toggle?.node.getComponentInChildren(Label);
+            if (label) label.color = toggle.isChecked ? new Color(243, 228, 190, 255) : new Color(173, 173, 150, 255);
+        });
     }
 
     onToggleCollapse(): void {
@@ -313,6 +311,7 @@ export default class RightInfoNodeLogic extends Component {
         }
         AudioManager.instance.playClick();
         let index: number = this.toggles.indexOf(toggle);
+        this.refreshTabStyle();
         if (index == 1) {
             this.armyScrollView.node.active = false;
             this.cityScrollView.node.active = true;
