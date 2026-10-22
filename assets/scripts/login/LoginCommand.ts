@@ -41,12 +41,15 @@ export default class LoginCommand {
     private _heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     /** 最近一次收到 s2c_heart_beat 的单调钟 */
     private _lastHeartbeatMono: number = 0;
+    /** 本次断线是否正在自动重连，登录验证完成后恢复主界面 */
+    private _reconnecting: boolean = false;
 
     constructor() {
         EventMgr.on(NetEvent.ServerCheckLogin, this.onServerConneted, this);
         EventMgr.on(NetEvent.ServerDisconnected, this.stopHeartbeat, this);
+        EventMgr.on(NetEvent.ServerReconnecting, this.onServerReconnecting, this);
         EventMgr.on(NetEvent.ServerReconnectFailed, this.onReconnectFailed, this);
-        EventMgr.on(LogicEvent.enterLogin, this.stopHeartbeat, this);
+        EventMgr.on(LogicEvent.enterLogin, this.onEnterLogin, this);
         EventMgr.on(ServerConfig.s2c_user_login, this.onAccountLogin, this);
         EventMgr.on(ServerConfig.s2c_heart_beat, this.setServerTime, this);
         EventMgr.on(ServerConfig.s2c_user_login_ok, this.onEnterServer, this);
@@ -244,6 +247,10 @@ export default class LoginCommand {
         };
         NetManager.getInstance().send(sendData);
         this.startHeartbeat();
+        if (this._reconnecting) {
+            this._reconnecting = false;
+            EventMgr.emit(NetEvent.ServerReconnectSuccess);
+        }
     }
 
     /** 网关重连成功后重新验证，不走旧的 account.reLogin */
@@ -252,17 +259,25 @@ export default class LoginCommand {
         console.log("LoginProxy  conneted:", loginData);
 
         if (loginData && loginData.token) {
-            EventMgr.emit(LogicEvent.showToast, "正在重新连接");
             this.role_enterServer(loginData);
             return;
         }
+        this._reconnecting = false;
         EventMgr.emit(NetEvent.ServerHandShake);
     }
 
     private onReconnectFailed(): void {
         this.stopHeartbeat();
-        EventMgr.emit(LogicEvent.showToast, "连接已断开，请重新登录");
-        EventMgr.emit(LogicEvent.enterLogin);
+        this._reconnecting = false;
+    }
+
+    private onServerReconnecting(): void {
+        this._reconnecting = true;
+    }
+
+    private onEnterLogin(): void {
+        this.stopHeartbeat();
+        this._reconnecting = false;
     }
 
     /**重新登录回调回调*/

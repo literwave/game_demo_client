@@ -39,7 +39,7 @@ export interface NetConnectOptions {
 export class NetNode {
     protected _connectOptions: NetConnectOptions = null;
     protected _autoReconnect: number = 0;
-    protected _autoReconnectMax: number = 3;
+    protected _autoReconnectMax: number = 5;
     protected _state: NetNodeState = NetNodeState.Closed;                   // 节点当前状态
     protected _socket: WebSock = null;                                      // Socket对象（可能是原生socket、websocket、wx.socket...)
     protected _timer: NetTimer = null;
@@ -47,6 +47,7 @@ export class NetNode {
 
     protected _keepAliveTimer: any = null;                                  // 心跳定时器
     protected _reconnectTimer: any = null;                                  // 重连定时器
+    protected _reconnectAttempt: number = 0;                                // 当前第几次重连
     /** 这次断开后要重新走网关登录 */
     protected _relogin: boolean = false;
     /** 主动关掉，不要接着重连。回到登录页走这条 */
@@ -180,6 +181,7 @@ export class NetNode {
     protected onConnected(event) {
         console.log("NetNode onConnected!")
         this._autoReconnect = this._autoReconnectMax;
+        this._reconnectAttempt = 0;
 
         // 不需要握手包，连接成功直接视为验证通过
         this._state = NetNodeState.Working;
@@ -278,7 +280,17 @@ export class NetNode {
         }
         console.log("tryConnet", this._autoReconnect)
         if (this.isAutoReconnect()) {
+            if (this._autoReconnect > 0) {
+                this._reconnectAttempt = this._autoReconnectMax - this._autoReconnect + 1;
+            } else {
+                this._reconnectAttempt += 1;
+            }
             this.updateNetTips(NetTipsType.ReConnecting, true);
+            EventMgr.emit(NetEvent.ServerReconnecting, {
+                attempt: this._reconnectAttempt,
+                maxAttempts: this._autoReconnectMax,
+                retryDelayMs: this._reconnetTimeOut,
+            });
             if (this._connectOptions && this._connectOptions.type == NetNodeType.GateServer) {
                 this._relogin = true;
             }
@@ -301,7 +313,10 @@ export class NetNode {
             this._relogin = false;
             this._state = NetNodeState.Closed;
             if (relogin) {
-                EventMgr.emit(NetEvent.ServerReconnectFailed);
+                EventMgr.emit(NetEvent.ServerReconnectFailed, {
+                    attempt: this._reconnectAttempt,
+                    maxAttempts: this._autoReconnectMax,
+                });
             }
         }
 
@@ -324,6 +339,7 @@ export class NetNode {
         this._manualClose = true;
         this._relogin = false;
         this._autoReconnect = 0;
+        this._reconnectAttempt = 0;
         this.clearTimer();
         this._requests.length = 0;
         this._seqId = 1;

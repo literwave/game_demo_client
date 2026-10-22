@@ -22,6 +22,7 @@ import { LogicEvent } from './common/LogicEvent';
 import { ProtoManager } from './network/pto/ProtoManager';
 import { CoreEvent } from './core/CoreEvent';
 import LoadingLogic from './common/LoadingLogic';
+import ReconnectLogic, { ReconnectState } from './common/ReconnectLogic';
 import RewardCommand from './reward/RewardCommand';
 import RewardWindowLogic from './reward/RewardWindowLogic';
 import SystemOpenCommand from './systemopen/SystemOpenCommand';
@@ -54,6 +55,8 @@ export default class Main extends Component {
     protected _mapUIScene: Node = null;
     protected _loadingNode: Node = null;
     protected _waitNode: Node = null;
+    private _reconnectNode: Node = null;
+    private _reconnectLogic: ReconnectLogic = null;
     private _retryTimes: number = 0;
     private _h5GeneralPicIndex: number = 0;
     private _h5GeneralPic = [];
@@ -78,6 +81,9 @@ export default class Main extends Component {
 
         EventMgr.on(NetEvent.ServerRequesting, this.showWaitNode, this);
         EventMgr.on(NetEvent.ServerRequestSucess, this.onServerRequest, this);
+        EventMgr.on(NetEvent.ServerReconnecting, this.onServerReconnecting, this);
+        EventMgr.on(NetEvent.ServerReconnectSuccess, this.onServerReconnectSuccess, this);
+        EventMgr.on(NetEvent.ServerReconnectFailed, this.onServerReconnectFailed, this);
 
         RewardCommand.getInstance();
         RewardWindowLogic.init();
@@ -116,6 +122,7 @@ export default class Main extends Component {
     }
 
     private enterLogin(): void {
+        this.disposeReconnectNow();
         this.disposeLoadingNow();
         this.clearAllScene();
         this.clearData();
@@ -125,6 +132,62 @@ export default class Main extends Component {
         this.node.addChild(this._loginScene);
 
         //this.h5LoadGeneralTex();
+    }
+
+    private onServerReconnecting(state: ReconnectState): void {
+        if (!this._mapScene && !this._mapUIScene) {
+            return;
+        }
+        const logic = this.ensureReconnectLogic();
+        if (!logic) {
+            this.showTopToast('网络连接已断开，正在尝试重连');
+            return;
+        }
+        this._reconnectNode.setSiblingIndex(this.topLayer() + 20);
+        logic.showReconnecting(state);
+    }
+
+    private onServerReconnectSuccess(): void {
+        if (this._reconnectLogic && this._reconnectNode && this._reconnectNode.active) {
+            this._reconnectLogic.showSuccess();
+        }
+    }
+
+    private onServerReconnectFailed(): void {
+        if (!this._mapScene && !this._mapUIScene) {
+            this.enterLogin();
+            return;
+        }
+        const logic = this.ensureReconnectLogic();
+        if (!logic) {
+            this.enterLogin();
+            return;
+        }
+        this._reconnectNode.setSiblingIndex(this.topLayer() + 20);
+        logic.showFailed();
+    }
+
+    private ensureReconnectLogic(): ReconnectLogic | null {
+        if (this._reconnectNode && this._reconnectNode.isValid) {
+            return this._reconnectLogic;
+        }
+        this._reconnectNode = new Node('Reconnect');
+        this._reconnectNode.layer = this.node.layer;
+        this._reconnectNode.setParent(this.node);
+        this._reconnectNode.setSiblingIndex(this.topLayer() + 20);
+        this._reconnectLogic = this._reconnectNode.addComponent(ReconnectLogic);
+        this._reconnectNode.active = false;
+        return this._reconnectLogic;
+    }
+
+    private disposeReconnectNow(): void {
+        if (this._reconnectNode) {
+            if (this._reconnectNode.isValid) {
+                this._reconnectNode.destroy();
+            }
+            this._reconnectNode = null;
+        }
+        this._reconnectLogic = null;
     }
 
     protected onEnterMap(): void {

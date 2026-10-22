@@ -44,6 +44,8 @@ export class NetEvent {
     public static ServerHandShake: string = "ServerHandShake";
     public static ServerCheckLogin: string = "ServerCheckLogin";
     public static ServerDisconnected: string = "ServerDisconnected";
+    public static ServerReconnecting: string = "ServerReconnecting";
+    public static ServerReconnectSuccess: string = "ServerReconnectSuccess";
     public static ServerReconnectFailed: string = "ServerReconnectFailed";
     public static ServerRequesting: string = "ServerRequesting";
     public static ServerRequestSucess: string = "ServerRequestSucess";
