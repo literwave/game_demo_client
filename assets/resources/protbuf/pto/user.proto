@@ -58,3 +58,10 @@ message c2s_change_head_icon {
 message s2c_change_head_icon {
     int32 headIcon = 1;
 }
+
+message c2s_client_load_ok {
+    int32 headIcon = 1;
+}
+message s2c_client_load_ok {
+    int32 headIcon = 1;
+}
