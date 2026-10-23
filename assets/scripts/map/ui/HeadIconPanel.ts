@@ -2,7 +2,7 @@ import { _decorator, BlockInputEvents, Button, Color, Component, Graphics, Label
     Node, SafeArea, ScrollView, Sprite, UITransform, Widget } from 'cc';
 import LoginCommand from '../../login/LoginCommand';
 import { HeadIconConfig } from '../../login/HeadIconProxy';
-import { LogicEvent } from '../../common/LogicEvent';
+import { HeadIconFeedback, LogicEvent } from '../../common/LogicEvent';
 import { AudioManager } from '../../common/AudioManager';
 import { EventMgr } from '../../utils/EventMgr';
 
@@ -41,9 +41,11 @@ export default class HeadIconPanel extends Component {
     private _tiles: HeadTile[] = [];
     private _selectedId = 0;
     private _itemWidth = 102;
+    private _feedbackMessage = '';
 
     public show(): void {
         if (!this._panel) this.build();
+        this._feedbackMessage = '';
         this.node.active = true;
         const command = LoginCommand.getInstance();
         const current = command.proxy.getRoleData()?.headIcon || 0;
@@ -67,6 +69,7 @@ export default class HeadIconPanel extends Component {
         this._title = this.makeLabel('Title', this._panel, '更换头像', 26, PAPER);
         this._subtitle = this.makeLabel('Subtitle', this._panel, '选择心仪的武将头像', 15, MUTED);
         this._status = this.makeLabel('Status', this._panel, '', 16, PAPER);
+        this._status.overflow = Label.Overflow.SHRINK;
 
         this._close = this.makeNode('Close', this._panel, 48, 48);
         const closeButton = this._close.addComponent(Button);
@@ -107,6 +110,7 @@ export default class HeadIconPanel extends Component {
         this._safeArea.on(Node.EventType.SIZE_CHANGED, this.layout, this);
         EventMgr.on(LogicEvent.updateMyRole, this.refresh, this);
         EventMgr.on(LogicEvent.headIconChangeState, this.refresh, this);
+        EventMgr.on(LogicEvent.headIconFeedback, this.onHeadIconFeedback, this);
         EventMgr.on(LogicEvent.systemOpenUpdated, this.refresh, this);
     }
 
@@ -128,6 +132,7 @@ export default class HeadIconPanel extends Component {
         node.on(Button.EventType.CLICK, () => {
             if (LoginCommand.getInstance().changingHeadIcon) return;
             AudioManager.instance.playClick();
+            this._feedbackMessage = '';
             this._selectedId = config.id;
             this.refresh();
         }, this);
@@ -202,12 +207,22 @@ export default class HeadIconPanel extends Component {
         this._confirm.interactable = !busy && !alreadyUsed && !!selected && ready && command.isHeadIconOpen();
         this._confirmLabel.string = busy ? '正在保存…' : alreadyUsed ? '当前头像' : '使用头像';
         this.drawRect(this._confirmArt, 176, 44, this._confirm.interactable ? GOLD : new Color(116, 106, 84, 255));
-        this._status.string = busy ? '正在等待服务器确认' : !ready ? '头像图片未就绪，请稍后重试' :
-            selected ? `已选择：${selected.name}` : '请选择一个头像';
+        this._status.string = busy ? '正在等待服务器确认' : this._feedbackMessage ||
+            (!ready ? '头像图片未就绪，请稍后重试' : selected ? `已选择：${selected.name}` : '请选择一个头像');
+        this._status.color = this._feedbackMessage && !busy ? GOLD : PAPER;
+    }
+
+    private onHeadIconFeedback(feedback: HeadIconFeedback): void {
+        if (!this.node.activeInHierarchy || !this._status) return;
+        this._feedbackMessage = feedback.message;
+        this._status.string = feedback.message;
+        this._status.color = GOLD;
+        feedback.handled = true;
     }
 
     private confirm(): void {
         AudioManager.instance.playClick();
+        this._feedbackMessage = '';
         LoginCommand.getInstance().changeHeadIcon(this._selectedId);
     }
 
@@ -217,9 +232,9 @@ export default class HeadIconPanel extends Component {
     }
 
     protected onDestroy(): void {
-        this.node.off(Node.EventType.SIZE_CHANGED, this.layout, this);
-        this._safeArea?.off(Node.EventType.SIZE_CHANGED, this.layout, this);
         EventMgr.targetOff(this);
+        if (this.node?.isValid) this.node.off(Node.EventType.SIZE_CHANGED, this.layout, this);
+        if (this._safeArea?.isValid) this._safeArea.off(Node.EventType.SIZE_CHANGED, this.layout, this);
     }
 
     private makeNode(name: string, parent: Node, width: number, height: number): Node {

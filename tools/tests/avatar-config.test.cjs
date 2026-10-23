@@ -98,6 +98,7 @@ function harness() {
         command.proxy.saveLoginData({ userId: 99, serverId: 1 });
         events.emit(server.s2c_user_login_ok, { userId: 99, serverId: 1 });
         events.emit(server.s2c_user_base_info, { name: hasRole ? '测试主公' : '', sex: 1, headIcon: 1001, birthTime: 123 });
+        if (hasRole) command.beginMapLoading();
         events.emit(server.s2c_req_system_open, { systemIdList: [1] });
         command.headIcons.initConfig(json('HeadIcon'), json('Hero'));
     }

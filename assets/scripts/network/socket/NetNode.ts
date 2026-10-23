@@ -200,13 +200,8 @@ export class NetNode {
 
     // 接收到一个完整的消息包
     protected onMessage(typeName: string, msg): void {
-        // console.log(`NetNode onMessage msg ` ,msg);
-
         if (msg) {
             EventMgr.emit(typeName, msg);
-        }
-        if (!this.isHeartbeat(typeName)) {
-            console.log("NetNode onMessage!", typeName, msg);
         }
     }
 

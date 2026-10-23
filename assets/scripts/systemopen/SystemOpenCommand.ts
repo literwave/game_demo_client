@@ -37,7 +37,6 @@ export default class SystemOpenCommand {
     constructor() {
         EventMgr.on(ServerConfig.s2c_req_system_open, this.onSystemOpenList, this);
         EventMgr.on(ServerConfig.s2c_sync_system_open, this.onSystemOpenSync, this);
-        this.loadConfig();
     }
 
     public onDestory(): void {
@@ -81,6 +80,7 @@ export default class SystemOpenCommand {
             return;
         }
         this._configWaiters.push(callback);
+        this.loadConfig();
     }
 
     public getConfig(id: number): SystemOpenConfig | null {
@@ -92,6 +92,7 @@ export default class SystemOpenCommand {
     }
 
     public requestSystemOpen(): void {
+        this.loadConfig();
         const msgName = ServerConfig.c2s_req_system_open;
         if (!ProtoManager.getInstance().isReady()) {
             console.warn("SystemOpen request skipped: ProtoManager not ready");

@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, Prefab, EditBox, Slider, instantiate } from 'cc';
+import { _decorator, Component, Label, Node, Prefab, EditBox, Slider, instantiate, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyCmd, ArmyData } from "../../general/ArmyProxy";
@@ -6,7 +6,6 @@ import GeneralCommand from "../../general/GeneralCommand";
 import ArmyCommand from "../../general/ArmyCommand";
 import { GeneralCampType, GeneralConfig, GeneralData } from "../../general/GeneralProxy";
 import TroopCommand from "../../general/TroopCommand";
-import { TroopData } from "../../general/TroopProxy";
 import MapUICommand from "./MapUICommand";
 import MapCommand from "../MapCommand";
 import { MapCityData } from "../MapCityProxy";
@@ -18,6 +17,7 @@ import { ServerConfig } from "../../config/ServerConfig";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { styleTroopPanel } from './TroopPanelSkin';
 
 @ccclass('CityArmySettingLogic')
 export default class CityArmySettingLogic extends Component {
@@ -73,6 +73,7 @@ export default class CityArmySettingLogic extends Component {
         this.additionTouchNode.on(Node.EventType.TOUCH_START, this.onShowAdditionTip, this);
         this.additionTouchNode.on(Node.EventType.TOUCH_END, this.onHideAdditionTip, this);
         this.additionTouchNode.on(Node.EventType.TOUCH_CANCEL, this.onHideAdditionTip, this);
+        this.refreshVisualLayout();
     }
 
     protected onDestroy(): void {
@@ -89,14 +90,24 @@ export default class CityArmySettingLogic extends Component {
         EventMgr.on(LogicEvent.updateArmy, this.onUpdateArmy, this);
         EventMgr.on(LogicEvent.chosedGeneral, this.onChooseGeneral, this);
         EventMgr.on(LogicEvent.updateCityAddition, this.onUpdateAddition, this);
-        EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
+        EventMgr.on(LogicEvent.updateTroopList, this.updateView, this);
+        EventMgr.on(LogicEvent.troopEditState, this.updateEditState, this);
+        view.on('canvas-resize', this.refreshVisualLayout, this);
+        view.on('design-resolution-changed', this.refreshVisualLayout, this);
+        this.refreshVisualLayout();
     }
 
     protected onDisable(): void {
         EventMgr.targetOff(this);
+        view.off('canvas-resize', this.refreshVisualLayout, this);
+        view.off('design-resolution-changed', this.refreshVisualLayout, this);
         this._data = null;
         this._addition = null;
         this._cityData = null;
+    }
+
+    public refreshVisualLayout(): void {
+        styleTroopPanel(this);
     }
 
     protected initView(): void {
@@ -138,24 +149,22 @@ export default class CityArmySettingLogic extends Component {
         }
     }
 
-    protected onUpdateTroop(troop: TroopData): void {
-        if (troop && troop.troopIdx == this._order) {
-            this.updateView();
-        }
-    }
-
     protected onChooseGeneral(cfgData: any, curData: any, position: any): void {
         if (!curData) {
             return;
         }
-        const heroIdx = Number(curData.hero_type != null ? curData.hero_type : (curData.cfgId != null ? curData.cfgId : curData.id));
+        const heroIdx = Number(curData.hero_type ?? curData.heroType ?? curData.cfgId ?? curData.id);
         if (!heroIdx) {
             return;
         }
         const troop = TroopCommand.getInstance().proxy.getTroop(this._order);
         const heroMap = troop ? troop.getHeroMap() : {};
         const targetPosition = Number(position);
-        if (!Number.isFinite(targetPosition) || targetPosition < 0) {
+        if (!Number.isInteger(targetPosition) || targetPosition < 0 || targetPosition >= this._generalCnt) {
+            return;
+        }
+        if (!this._isUnlock || (targetPosition === 2 && this._addition && this._addition.vanguardCnt < this._order)) {
+            EventMgr.emit(LogicEvent.showToast, '该上阵位置尚未解锁');
             return;
         }
         Object.keys(heroMap).forEach((key) => {
@@ -239,7 +248,7 @@ export default class CityArmySettingLogic extends Component {
         }
         this.labelId.string = "部队" + this._order;
         this.labelCost.string = "上阵 " + generalCount + "/" + this._generalCnt;
-        this.labelSoldierCnt.string = this._data ? (soldierCnt + "/" + totalSoldierCnt) : "兵力待同步";
+        this.labelSoldierCnt.string = this._data ? (soldierCnt + "/" + totalSoldierCnt) : "待同步";
         this.labelAddition.string = "无";
         let speed: number = 0;
         let attack: number = 0;
@@ -268,6 +277,15 @@ export default class CityArmySettingLogic extends Component {
         this.labelAtkCity.string = attack.toFixed(2);
 
         this.updateResCost();
+        this.updateEditState();
+    }
+
+    private updateEditState(): void {
+        if (!this.labelCost || !this.isValid) return;
+        const command = TroopCommand.getInstance();
+        const count = command.proxy.getTroop(this._order)?.getHeroCount() || 0;
+        this.labelCost.string = command.editingTroopIdx === this._order
+            ? '编队保存中…' : `上阵 ${count}/${this._generalCnt}`;
     }
 
     protected setCurConscriptForIndex(index: number, cnt: number = 0): void {
@@ -321,7 +339,7 @@ export default class CityArmySettingLogic extends Component {
 
     protected onClickQuick(): void {
         AudioManager.instance.playClick();
-        if (this._data && this._data.cmd == ArmyCmd.Idle || this._data.cmd == ArmyCmd.Conscript) {
+        if (this._data && (this._data.cmd == ArmyCmd.Idle || this._data.cmd == ArmyCmd.Conscript)) {
             for (let i: number = 0; i < this._totalSoldiers.length; i++) {
                 if(this._conCnts[i] > 0){
                     //正在征兵的不能重复征兵
@@ -357,7 +375,7 @@ export default class CityArmySettingLogic extends Component {
         this._curConscripts = [0, 0, 0];
         if (this._order == 1) {
             //第一个就跳到最后一个
-            this.setData(this._cityId, this._addition ? this._addition.armyCnt : 1);
+            this.setData(this._cityId, this.getTroopCount());
         } else {
             this.setData(this._cityId, this._order - 1);
         }
@@ -366,12 +384,18 @@ export default class CityArmySettingLogic extends Component {
     protected onClickNext(): void {
         AudioManager.instance.playClick();
         this._curConscripts = [0, 0, 0];
-        if (this._addition && this._order == this._addition.armyCnt) {
+        if (this._order >= this.getTroopCount()) {
             //最后一个就跳到第一个
             this.setData(this._cityId, 1);
         } else {
             this.setData(this._cityId, this._order + 1);
         }
+    }
+
+    private getTroopCount(): number {
+        if (this._addition && this._addition.armyCnt > 0) return this._addition.armyCnt;
+        // 与右侧部队栏一致：默认三队，服务器返回更多部队时跟随扩展。
+        return Math.max(3, ...TroopCommand.getInstance().proxy.getTroops().map(troop => troop.troopIdx));
     }
 
     protected onClickClose(): void {
@@ -385,10 +409,11 @@ export default class CityArmySettingLogic extends Component {
         this._order = order;
         this._cityData = MapCommand.getInstance().cityProxy.getMyCityById(this._cityId);
         this._data = ArmyCommand.getInstance().proxy.getArmyByOrder(order, cityId);
-        this._addition = MapUICommand.getInstance().proxy.getMyCityAddition(cityId);
+        const facility = MapUICommand.getInstance().proxy.getMyFacilitys(this._cityId);
+        // 新部队协议不依赖旧城建设施；未同步设施时不能把默认 armyCnt=0 当成全锁定。
+        this._addition = facility != null ? MapUICommand.getInstance().proxy.getMyCityAddition(cityId) : null;
         this._isUnlock = !this._addition || this._addition.armyCnt >= this._order;
-        let facility: Map<number, Facility> = MapUICommand.getInstance().proxy.getMyFacilitys(this._cityId);
-        if (facility == null) {
+        if (facility == null && this._cityId > 0 && GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.city_facilities)) {
             MapUICommand.getInstance().qryCityFacilities(this._cityId);
         }
         TroopCommand.getInstance().requestTroops();

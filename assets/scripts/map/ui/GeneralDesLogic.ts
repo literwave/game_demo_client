@@ -9,6 +9,7 @@ import SkillIconLogic from "./SkillIconLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { styleGeneralDetail } from './GeneralDetailSkin';
 
 @ccclass('GeneralDesLogic')
 export default class GeneralDesLogic extends Component {
@@ -66,13 +67,20 @@ export default class GeneralDesLogic extends Component {
     private _nameObj: any = {};
     private _addPrObj: any = {};
     private _generalNode: Node = null;
+    private _layoutParent: Node = null;
+    private _arranging = false;
 
     protected onEnable() {
-        EventMgr.on(LogicEvent.updateGeneral, this.updateGeneral, this)
+        EventMgr.on(LogicEvent.updateGeneral, this.updateGeneral, this);
+        this._layoutParent = this.node.parent;
+        this._layoutParent?.on(Node.EventType.SIZE_CHANGED, this.refreshVisualLayout, this);
+        this.refreshVisualLayout();
     }
 
     protected onDisable() {
         EventMgr.targetOff(this);
+        this._layoutParent?.off(Node.EventType.SIZE_CHANGED, this.refreshVisualLayout, this);
+        this._layoutParent = null;
     }
 
     protected onLoad(): void {
@@ -87,6 +95,17 @@ export default class GeneralDesLogic extends Component {
 
         this._generalNode = instantiate(this.generalItemPrefab);
         this._generalNode.parent = this.generalItemParent;
+        this.refreshVisualLayout();
+    }
+
+    public refreshVisualLayout(): void {
+        if (this._arranging) return;
+        this._arranging = true;
+        try {
+            styleGeneralDetail(this);
+        } finally {
+            this._arranging = false;
+        }
     }
 
     protected updateGeneral() {
@@ -131,7 +150,7 @@ export default class GeneralDesLogic extends Component {
 
         var com = this._generalNode ? this._generalNode.getComponent(GeneralItemLogic) : null;
         if (com) {
-            com.updateItem(this._currData);
+            com.updateItem({ ...this._currData, listAppearance: 'roster' }, GeneralItemType.GeneralNoThing);
         }
 
         if (this.powerLabel) this.powerLabel.string = "职业:" + (cfgData.heroClass || "无");
@@ -150,6 +169,7 @@ export default class GeneralDesLogic extends Component {
             const label = this.skillNameLab[index];
             if (label) label.string = conf?.name || '';
         }
+        this.refreshVisualLayout();
     }
 
     private getAttrStr(key: string): string {

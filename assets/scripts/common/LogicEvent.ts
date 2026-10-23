@@ -1,5 +1,11 @@
 
 
+/** 头像弹窗可就地显示反馈；未被接收时由通用提示显示。 */
+export interface HeadIconFeedback {
+    message: string;
+    handled: boolean;
+}
+
 export class LogicEvent {
 
     public static robLoginUI:string = "robLoginUI";
@@ -27,6 +33,8 @@ export class LogicEvent {
     public static updateArmyList:string = "update_army_list";
     public static updateTroopList:string = "update_troop_list";
     public static updateTroop:string = "update_troop";
+    public static troopEditState:string = "troop_edit_state";
+    public static troopEditSubmitted:string = "troop_edit_submitted";
     public static updateTag:string = "update_tag";
     public static updateBuilds:string = "update_builds";
     public static updateBuild:string = "update_build";
@@ -42,6 +50,7 @@ export class LogicEvent {
     public static upateMyRoleRes:string = "upate_my_roleRes";
     public static updateMyRole:string = "update_my_role";
     public static headIconChangeState:string = "head_icon_change_state";
+    public static headIconFeedback:string = "head_icon_feedback";
     public static systemOpenUpdated:string = "system_open_updated";
     public static systemUnlock:string = "system_unlock";
     public static openGeneralDes:string = "open_general_des";

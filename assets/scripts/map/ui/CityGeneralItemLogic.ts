@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Label, Sprite, ProgressBar } from 'cc';
+import { _decorator, Component, Node, Label, Sprite, ProgressBar, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
 
 import GeneralCommand from "../../general/GeneralCommand";
@@ -10,6 +10,7 @@ import MapUICommand from "./MapUICommand";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { styleTroopCard } from './TroopPanelSkin';
 
 @ccclass('CityGeneralItemLogic')
 export default class CityGeneralItemLogic extends Component {
@@ -59,6 +60,8 @@ export default class CityGeneralItemLogic extends Component {
     protected _isUnlock: boolean = false;
 
     protected onLoad(): void {
+        const size = this.node.getComponent(UITransform);
+        if (size) styleTroopCard(this.node, size.width, size.height);
         this.schedule(this.updateCon, 1.0);
     }
 
@@ -88,6 +91,10 @@ export default class CityGeneralItemLogic extends Component {
             let cfg: GeneralConfig = GeneralCommand.getInstance().proxy.getGeneralCfg(this._data.hero_type);
             EventMgr.emit(LogicEvent.openGeneralDes, cfg, this._data);
         } else if (this.addNode.active) {
+            if (TroopCommand.getInstance().editingTroopIdx) {
+                EventMgr.emit(LogicEvent.showToast, '编队正在保存，请稍候');
+                return;
+            }
             //上阵武将
             var generalArr: number[] = this.getAllGenerals();
             EventMgr.emit(LogicEvent.openGeneralChoose, generalArr, this.index);

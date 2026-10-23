@@ -1,6 +1,7 @@
 import { ISocket } from "./NetInterface";
 import * as crypto from "../../libs/crypto/crypto"
 import { ProtoManager } from "../pto/ProtoManager";
+import { GameConfig } from "../../config/GameConfig";
 
 
 
@@ -35,27 +36,17 @@ export class WebSock implements ISocket {
 
         // 格式: [Length(2)][ProtocolID(2)][Protobuf]
         const dv = new DataView(view.buffer);
-        const len = dv.getUint16(0, false); // Big Endian
         const protocolId = dv.getUint16(2, false);
         const protoData = view.slice(4);
         const typeName = ProtoManager.getInstance().getMsgTypeById(protocolId);
         const quiet = !!typeName && typeName.indexOf("heart_beat") >= 0;
 
-        if (!quiet) {
-            console.log("websocket onMessage raw:", msg, "type:", typeof msg, "isBuffer:", msg instanceof ArrayBuffer);
-            console.log("Received bytes:", view.slice(0, 20));
-            console.log(`Packet Header: Len=${len}, ProtocolID=${protocolId}`);
-        }
-
         if (typeName) {
-            if (!quiet) {
-                console.log(`Resolving ID ${protocolId} to ${typeName}`);
-            }
             const decoded = ProtoManager.getInstance().decode(typeName, protoData);
 
             if (decoded) {
-                if (!quiet) {
-                    console.log(`Decoded ${typeName}:`, decoded);
+                if (GameConfig.traceNetworkPackets && !quiet) {
+                    console.debug(`[Network] 收到 ${typeName}，${view.byteLength} 字节`);
                 }
                 this.onUnpackMessage(typeName, decoded);
             } else {
@@ -176,8 +167,6 @@ export class WebSock implements ISocket {
             protocolId = ProtoManager.getInstance().getIdByMsgType(msgName);
             if (!protocolId) {
                 console.warn(`packAndSend: No Protocol ID found for ${msgName}, using 0`);
-            } else if (!quiet) {
-                console.log(`packAndSend: Mapped ${msgName} to ID ${protocolId}`);
             }
         } else {
             console.warn("packAndSend: No msgName provided, using random/0 ID");
@@ -189,8 +178,8 @@ export class WebSock implements ISocket {
         // 3. 写入 Protobuf 数据
         const uint8View = new Uint8Array(buffer);
         uint8View.set(protoData, 4);
-        if (!quiet) {
-            console.log("packAndSend buffer:", buffer);
+        if (GameConfig.traceNetworkPackets && !quiet) {
+            console.debug(`[Network] 发送 ${msgName}，${totalLen} 字节`);
         }
         // 发送
         this.send(buffer);

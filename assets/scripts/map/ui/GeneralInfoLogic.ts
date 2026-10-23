@@ -1,10 +1,11 @@
 
-import { _decorator, Component, Prefab, ToggleContainer, Node, instantiate } from 'cc';
+import { _decorator, Component, Prefab, ToggleContainer, Node, instantiate, view } from 'cc';
 import GeneralCommand from "../../general/GeneralCommand";
 import { ServerConfig } from '../../config/ServerConfig';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
 import { EventMgr } from '../../utils/EventMgr';
+import { styleGeneralHeader } from './GeneralDetailSkin';
 const { ccclass, property } = _decorator;
 
 @ccclass('GeneralInfoLogic')
@@ -32,6 +33,7 @@ export default class GeneralInfoLogic  extends Component {
     private _curIndex:number = 0;
     private _nodeList:Node[] = [];
     private _supportedTabs:boolean[] = [true, false, false];
+    private _arranging = false;
 
     protected onLoad():void{
         EventMgr.on(LogicEvent.updateOneGenerals, this.updateOnce, this); 
@@ -65,6 +67,35 @@ export default class GeneralInfoLogic  extends Component {
                 this._nodeList[i].active = false;
             }
         }
+        this.refreshVisualLayout();
+    }
+
+    protected onEnable(): void {
+        this.node.on(Node.EventType.SIZE_CHANGED, this.refreshVisualLayout, this);
+        view.on('canvas-resize', this.refreshVisualLayout, this);
+        view.on('design-resolution-changed', this.refreshVisualLayout, this);
+        this.refreshVisualLayout();
+    }
+
+    protected onDisable(): void {
+        this.node.off(Node.EventType.SIZE_CHANGED, this.refreshVisualLayout, this);
+        view.off('canvas-resize', this.refreshVisualLayout, this);
+        view.off('design-resolution-changed', this.refreshVisualLayout, this);
+    }
+
+    public refreshVisualLayout(): void {
+        if (this._arranging) return;
+        this._arranging = true;
+        try {
+            styleGeneralHeader(this.node);
+        } finally {
+            this._arranging = false;
+        }
+    }
+
+    protected start(): void {
+        // mask 的旧适配脚本在子节点 onLoad 时仍可能执行，最后统一一次背景尺寸。
+        this.refreshVisualLayout();
     }
 
     protected updateOnce(curData:any):void{

@@ -1539,7 +1539,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "6f937f7e-388f-40c8-a2c5-bcd0f9c669f7@f9941",
+      "__uuid__": "f03df166-8cc7-4863-9141-1e48f3f73d33@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -2027,7 +2027,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "feddc827-ea45-460c-a069-7b20da8df257@f9941",
+      "__uuid__": "bd73a3b1-0c24-4fd9-a9aa-0c5734a834fc@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -2515,7 +2515,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "d176b511-83d7-49c7-9a5e-20242f6a6150@f9941",
+      "__uuid__": "728f6e8e-8f75-4345-a157-46fe94fa7e41@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -3003,7 +3003,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "348cbee6-7888-4763-a22e-d97d4c830c50@f9941",
+      "__uuid__": "989eedb7-5256-4257-b915-028dee8ca976@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -15617,7 +15617,7 @@
         "__id__": 706
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 722
@@ -21923,7 +21923,7 @@
         "__id__": 972
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 986
@@ -22564,6 +22564,9 @@
       },
       {
         "__id__": 971
+      },
+      {
+        "__id__": 705
       }
     ],
     "_active": false,
@@ -28365,7 +28368,35 @@
     "gmTipLabel": {
       "__id__": 947
     },
-    "_id": ""
+    "_id": "",
+    "innerCityIcon": {
+      "__uuid__": "72b717b5-0f63-43f4-8150-55900cc18db4@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "recruitIcon": {
+      "__uuid__": "88080676-f96c-4e33-8f42-d8e6016aed95@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "warReportIcon": {
+      "__uuid__": "d93858e3-a1cd-4f68-a305-0eccf951b495@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "chatMenuIcon": {
+      "__uuid__": "e3f3ee66-50ae-4e31-91f4-1d4228f9bad0@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "skillMenuIcon": {
+      "__uuid__": "183f78e0-9d4e-457f-bf2c-e28197516f05@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "settingPrefab": {
+      "__uuid__": "2627c7e2-3663-4760-bd6b-9b0c85a2a189",
+      "__expectedType__": "cc.Prefab"
+    },
+    "settingsMenuIcon": {
+      "__uuid__": "e8b93e5f-3d85-4886-bf87-59f93896450a@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    }
   },
   {
     "__type__": "cc.CompPrefabInfo",

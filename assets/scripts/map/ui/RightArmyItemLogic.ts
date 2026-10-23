@@ -183,9 +183,7 @@ export default class RightArmyItemLogic extends Component {
             EventMgr.emit(LogicEvent.openArmySetting, this._data.cityId, this.order);
         } else if (this._troop) {
             const mainCity: MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-            if (mainCity) {
-                EventMgr.emit(LogicEvent.openArmySetting, mainCity.cityId, this.order);
-            }
+            EventMgr.emit(LogicEvent.openArmySetting, mainCity ? mainCity.cityId : 0, this.order);
         }
     }
 

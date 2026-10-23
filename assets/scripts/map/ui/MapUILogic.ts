@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, Button, Color, Graphics, instantiate, UITransform, Vec2, Sprite } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, EditBox, Button, Color, Graphics, instantiate, UITransform, Vec2, Sprite, SpriteFrame, input, Input, EventKeyboard, KeyCode, game, Game } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -9,6 +9,7 @@ import MapUICommand from "./MapUICommand";
 import Dialog, { DialogType } from "./Dialog";
 import UnionCommand from "../../union/UnionCommand";
 import MapCommand from "../MapCommand";
+import MapUtil from "../MapUtil";
 import CityAboutLogic from "./CityAboutLogic";
 import GeneralListLogic from "./GeneralListLogic";
 import TransformLogic from "./TransformLogic";
@@ -25,13 +26,42 @@ import { AudioManager } from '../../common/AudioManager';
 import { Skill } from '../../skill/SkillProxy';
 import { LogicEvent } from '../../common/LogicEvent';
 import { ServerConfig } from '../../config/ServerConfig';
+import { NetManager } from '../../network/socket/NetManager';
+import { ProtoManager } from '../../network/pto/ProtoManager';
 import TroopCommand from '../../general/TroopCommand';
 import { CoreEvent } from '../../core/CoreEvent';
 import HeadIconPanel from './HeadIconPanel';
 import SystemOpenCommand from '../../systemopen/SystemOpenCommand';
+import { arrangeHudEntries, styleBottomNavigation, styleMoreMenu, styleWarReportShortcut } from './HudMenuSkin';
+import { Setting } from './Setting';
 
 @ccclass('MapUILogic')
 export default class MapUILogic extends Component {
+
+    @property(SpriteFrame)
+    innerCityIcon: SpriteFrame = null;
+
+    @property(SpriteFrame)
+    recruitIcon: SpriteFrame = null;
+
+    @property(SpriteFrame)
+    warReportIcon: SpriteFrame = null;
+
+    @property(SpriteFrame)
+    chatMenuIcon: SpriteFrame = null;
+
+    @property(SpriteFrame)
+    skillMenuIcon: SpriteFrame = null;
+
+    @property(SpriteFrame)
+    settingsMenuIcon: SpriteFrame = null;
+
+    @property(Prefab)
+    settingPrefab: Prefab = null;
+
+    private _settingNode: Node | null = null;
+
+    private _innerCityButton: Node | null = null;
 
     @property(Node)
     contentNode: Node = null;
@@ -125,6 +155,32 @@ export default class MapUILogic extends Component {
     @property(Label)
     ridLabel: Label = null;
 
+    @property(Node)
+    gmPanel: Node = null;
+
+    @property(EditBox)
+    gmCommandBox: EditBox = null;
+
+    @property(EditBox)
+    gmEditBoxX: EditBox = null;
+
+    @property(EditBox)
+    gmEditBoxY: EditBox = null;
+
+    @property(Label)
+    gmCoordLabel: Label = null;
+
+    @property(Label)
+    gmTipLabel: Label = null;
+
+    private _gmInputBound = false;
+    private _gmCtrlKeys = new Set<KeyCode>();
+    private _gmBDown = false;
+    private _gmHistory: string[] = [];
+    private _gmHistoryIndex = -1;
+    private _gmHistoryDraft = "";
+    private _gmMessages: string[] = [];
+
     protected _morePanel: Node = null;
     protected _moreMask: Node = null;
     protected _moreIndicator: Node = null;
@@ -147,6 +203,10 @@ export default class MapUILogic extends Component {
         // 被顶号需要立即处理，普通界面事件等加载结束再接入。
         EventMgr.on(LogicEvent.robLoginUI, this.robLoginUI, this);
 
+        this.gmCommandBox?.node.on(EditBox.EventType.EDITING_RETURN, this.onClickGMExecute, this);
+        this.gmEditBoxX?.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        this.gmEditBoxY?.node.on(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        this.initHudNavigation();
         this.initMoreMenu();
         this.initHeadIconEntry();
         this.node.on(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
@@ -178,7 +238,10 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.openSkillInfo, this.onOpenSkillInfo, this);
         EventMgr.on(LogicEvent.beforeScrollToMap, this.beforeScrollToMap, this);
         EventMgr.on(LogicEvent.showTip, this.showTip, this);
+        EventMgr.on(LogicEvent.mapEenterChange, this.onMapCenterChange, this);
+        EventMgr.on(ServerConfig.s2c_gm_command_help, this.onGMCommandHelp, this);
         EventMgr.on(ServerConfig.s2c_tell_me, this.onTellMe, this);
+        this.bindGMInput();
         TroopCommand.getInstance().requestTroops();
 
 
@@ -212,12 +275,25 @@ export default class MapUILogic extends Component {
 
 
     protected onDestroy(): void {
+        // 子节点会先于父组件销毁。先释放全局监听，不能因访问已销毁节点而跳过清理。
+        EventMgr.targetOff(this);
+        this._uiListenersReady = false;
+        this.unbindGMInput();
+        const commandNode = this.gmCommandBox?.node;
+        const xNode = this.gmEditBoxX?.node;
+        const yNode = this.gmEditBoxY?.node;
+        if (commandNode?.isValid) commandNode.off(EditBox.EventType.EDITING_RETURN, this.onClickGMExecute, this);
+        if (xNode?.isValid) xNode.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
+        if (yNode?.isValid) yNode.off(EditBox.EventType.EDITING_RETURN, this.onGMCoordReturn, this);
         this._headRequest++;
-        this._playerAvatar?.node.off(Button.EventType.CLICK, this.openHeadIcons, this);
-        this.node.off(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
+        const avatarNode = this._playerAvatar?.node;
+        if (avatarNode?.isValid) avatarNode.off(Button.EventType.CLICK, this.openHeadIcons, this);
+        if (this.node?.isValid) this.node.off(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
+        if (this._innerCityButton?.isValid) this._innerCityButton.off(Button.EventType.CLICK, this.openInnerCity, this);
+        this._innerCityButton = null;
+        this._playerAvatar = null;
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
-        EventMgr.targetOff(this);
 
         console.log("MapUILogic onDestroy")
     }
@@ -281,16 +357,23 @@ export default class MapUILogic extends Component {
         if (navigation) {
             navigation.getComponent(UITransform)?.setContentSize(dockWidth, 80);
             navigation.setPosition(dockX, bottom + 40, 0);
-            const step = dockWidth / Math.max(1, navigation.children.length);
-            navigation.children.forEach((button, index) => {
-                button.setPosition((index - (navigation.children.length - 1) * 0.5) * step, 0, 0);
-                button.getComponent(UITransform)?.setContentSize(step - 8, 80);
-            });
+            styleBottomNavigation(navigation, dockWidth);
         }
+        const shortcutGap = 16;
+        const shortcutY = bottom + 130;
+        const moreButton = navigation?.getChildByName('MoreButton');
+        const shortcutWidth = moreButton?.getComponent(UITransform)?.width ?? 72;
+        // 战报跟随实际底栏入口的中心，避免右边距和列宽分别计算导致错位。
+        const shortcutX = navigation && moreButton
+            ? navigation.position.x + moreButton.position.x
+            : width * 0.5 - margin - dockWidth / 10;
+        styleWarReportShortcut(hud.getChildByName('WarReportButton'), shortcutX, shortcutY, shortcutWidth);
+        const menuRight = shortcutX - shortcutWidth * 0.5 - shortcutGap;
         if (more) {
+            styleMoreMenu(more, Math.min(320, menuRight + width * 0.5 - margin));
             const moreUi = more.getComponent(UITransform);
             const moreWidth = moreUi ? moreUi.width : dockWidth;
-            more.setPosition(width * 0.5 - margin - moreWidth * 0.5, bottom + 92 + (moreUi ? moreUi.height * 0.5 : 56), 0);
+            more.setPosition(menuRight - moreWidth * 0.5, shortcutY, 0);
         }
     }
 
@@ -333,9 +416,79 @@ export default class MapUILogic extends Component {
         }
         if (this._morePanel) {
             this._morePanel.children.forEach((child) => {
-                child.on(Button.EventType.CLICK, this.closeMoreMenu, this);
+                if (child.active && child.getComponent(Button)) child.on(Button.EventType.CLICK, this.closeMoreMenu, this);
             });
         }
+    }
+
+    private initHudNavigation(): void {
+        this.initInnerCityEntry();
+        arrangeHudEntries(this.node.getChildByName('HudRoot'), {
+            recruit: this.recruitIcon, warReport: this.warReportIcon,
+            chat: this.chatMenuIcon, skill: this.skillMenuIcon,
+            settings: this.settingsMenuIcon,
+        });
+    }
+
+    private ensureSettingsPanel(): Setting {
+        if (!this._settingNode?.isValid) {
+            if (!this.settingPrefab) throw new Error('[MapUI] 设置预制体引用缺失');
+            const exit = this.node.getChildByPath('HudRoot/MorePanel/ExitButton');
+            if (!exit) throw new Error('[MapUI] 设置页的退出入口缺失');
+            const node = instantiate(this.settingPrefab);
+            node.active = false;
+            const settings = node.getComponent(Setting);
+            if (!settings) { node.destroy(); throw new Error('[MapUI] 设置组件缺失'); }
+            settings.setExitButton(exit);
+            node.parent = this.contentNode;
+            this._settingNode = node;
+        }
+        return this._settingNode.getComponent(Setting);
+    }
+
+    public onClickSetting(): void {
+        AudioManager.instance.playClick();
+        this.closeMoreMenu();
+        const settings = this.ensureSettingsPanel();
+        this._settingNode.setSiblingIndex(this.topLayer());
+        settings.show();
+    }
+
+    private initInnerCityEntry(): void {
+        const navigation = this.node.getChildByPath('HudRoot/BottomNav');
+        if (!navigation || this._innerCityButton) return;
+        // 沿用已核对过的市场按钮结构，新入口只替换图标、文案和事件。
+        const template = navigation.children.find(node =>
+            node.getChildByPath('Background/New Label')?.getComponent(Label)?.string === '市场');
+        if (!template || !this.innerCityIcon) {
+            console.error('[MapUI] 内城按钮缺少导航模板或图标引用');
+            return;
+        }
+        const entry = instantiate(template);
+        entry.name = 'InnerCityButton';
+        const button = entry.getComponent(Button);
+        const label = entry.getChildByPath('Background/New Label')?.getComponent(Label);
+        const icon = entry.getChildByName('Icon')?.getComponent(Sprite);
+        if (!button || !label || !icon) { entry.destroy(); return; }
+        button.clickEvents = [];
+        label.string = '内城';
+        icon.spriteFrame = this.innerCityIcon;
+        icon.sizeMode = Sprite.SizeMode.CUSTOM;
+        navigation.addChild(entry);
+        entry.setSiblingIndex(0);
+        entry.on(Button.EventType.CLICK, this.openInnerCity, this);
+        this._innerCityButton = entry;
+    }
+
+    public openInnerCity(): void {
+        AudioManager.instance.playClick();
+        const city = MapCommand.getInstance().cityProxy.getMyMainCity();
+        if (!this._uiListenersReady || !city || city.cityId <= 0) {
+            EventMgr.emit(LogicEvent.showToast, '主城信息正在同步，请稍后重试');
+            return;
+        }
+        this.closeMoreMenu();
+        this.openCityAbout(city);
     }
 
     public toggleMoreMenu(): void {
@@ -492,6 +645,7 @@ export default class MapUILogic extends Component {
      * 战报
      */
     protected openWarReport(): void {
+        this.closeMoreMenu();
         AudioManager.instance.playClick();
         if (this._warReportNode == null) {
             this._warReportNode = instantiate(this.warReportPrefab);
@@ -571,7 +725,7 @@ export default class MapUILogic extends Component {
 
 
     /**
-     * 抽卡
+     * 招募
      */
     protected openDraw(): void {
         AudioManager.instance.playClick();
@@ -713,6 +867,7 @@ export default class MapUILogic extends Component {
     }
 
     protected updateRole(): void {
+        if (!this.isValid) return;
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
         if (!roleData) return;
         this.nameLabel.string = roleData.name;
@@ -778,13 +933,269 @@ export default class MapUILogic extends Component {
 
     }
 
+    protected onEnable(): void {
+        this.bindGMInput();
+    }
+
+    protected onDisable(): void {
+        this.unbindGMInput();
+    }
+
+    private bindGMInput(): void {
+        if (!this._uiListenersReady || !this.enabledInHierarchy || this._gmInputBound) return;
+        this._gmInputBound = true;
+        input.on(Input.EventType.KEY_DOWN, this.onGMKeyDown, this);
+        input.on(Input.EventType.KEY_UP, this.onGMKeyUp, this);
+        game.on(Game.EVENT_HIDE, this.resetGMKeys, this);
+        // Creator 3.8 的 Web 键盘事件只来自画布，EditBox 聚焦后需接收 DOM 按键。
+        // 捕获到快捷键后停止传播，避免同一次按键又经 input 触发一次。
+        if (typeof document !== 'undefined') {
+            document.addEventListener('keydown', this.onGMBrowserKeyDown, true);
+            document.addEventListener('keyup', this.onGMBrowserKeyUp, true);
+        }
+        if (typeof window !== 'undefined') window.addEventListener('blur', this.resetGMKeys);
+    }
+
+    private unbindGMInput(): void {
+        this.resetGMKeys();
+        if (!this._gmInputBound) return;
+        this._gmInputBound = false;
+        input.off(Input.EventType.KEY_DOWN, this.onGMKeyDown, this);
+        input.off(Input.EventType.KEY_UP, this.onGMKeyUp, this);
+        game.off(Game.EVENT_HIDE, this.resetGMKeys, this);
+        if (typeof document !== 'undefined') {
+            document.removeEventListener('keydown', this.onGMBrowserKeyDown, true);
+            document.removeEventListener('keyup', this.onGMBrowserKeyUp, true);
+        }
+        if (typeof window !== 'undefined') window.removeEventListener('blur', this.resetGMKeys);
+    }
+
+    private resetGMKeys = (): void => {
+        this._gmCtrlKeys.clear();
+        this._gmBDown = false;
+    };
+
+    private onGMBrowserKeyDown = (event: KeyboardEvent): void => {
+        if (!this.enabledInHierarchy || !this._uiListenersReady || event.isComposing) return;
+        if (!event.ctrlKey) this._gmCtrlKeys.clear();
+        if (event.ctrlKey && (event.code === 'KeyB' || event.key?.toLowerCase() === 'b')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!event.repeat) this.toggleGMPanel();
+            this.resetGMKeys();
+            return;
+        }
+        const key = event.key === 'Escape' ? KeyCode.ESCAPE
+            : event.key === 'ArrowUp' ? KeyCode.ARROW_UP
+            : event.key === 'ArrowDown' ? KeyCode.ARROW_DOWN : KeyCode.NONE;
+        if (this.handleGMPanelKey(key)) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    private onGMBrowserKeyUp = (event: KeyboardEvent): void => {
+        // Ctrl 的释放可能发生在输入框上，此时画布收不到 KEY_UP。
+        if (!event.ctrlKey) this._gmCtrlKeys.clear();
+        if (event.code === 'KeyB' || event.key?.toLowerCase() === 'b') this._gmBDown = false;
+    };
+
+    private onGMKeyDown(event: EventKeyboard): void {
+        if (!this.enabledInHierarchy || !this._uiListenersReady) return;
+        if (event.keyCode === KeyCode.CTRL_LEFT || event.keyCode === KeyCode.CTRL_RIGHT) {
+            this._gmCtrlKeys.add(event.keyCode);
+            return;
+        }
+        if (event.keyCode === KeyCode.KEY_B) {
+            if (this._gmBDown) return;
+            this._gmBDown = true;
+            if (this._gmCtrlKeys.size > 0) this.toggleGMPanel();
+            return;
+        }
+        this.handleGMPanelKey(event.keyCode);
+    }
+
+    private onGMKeyUp(event: EventKeyboard): void {
+        this._gmCtrlKeys.delete(event.keyCode);
+        if (event.keyCode === KeyCode.KEY_B) this._gmBDown = false;
+    }
+
+    private handleGMPanelKey(key: KeyCode): boolean {
+        if (!this.gmPanel?.active) return false;
+        if (key === KeyCode.ESCAPE) {
+            this.onClickGMClose();
+            return true;
+        }
+        if (this.gmCommandBox?.isFocused() && (key === KeyCode.ARROW_UP || key === KeyCode.ARROW_DOWN)) {
+            this.navigateGMHistory(key === KeyCode.ARROW_UP ? 1 : -1);
+            return true;
+        }
+        return false;
+    }
+
+    public toggleGMPanel(): void {
+        if (!this.gmPanel || !this._uiListenersReady) return;
+        if (this.gmPanel.active) {
+            this.onClickGMClose();
+            return;
+        }
+        AudioManager.instance.playClick();
+        this.gmPanel.active = true;
+        this.gmPanel.setSiblingIndex(this.gmPanel.parent.children.length - 1);
+        this.refreshGMCoord();
+        if (this.gmCommandBox) this.gmCommandBox.string = "";
+        this._gmHistoryIndex = -1;
+        this._gmHistoryDraft = "";
+        this.setGMTip("就绪 · Enter 执行 · ↑↓ 历史 · Esc 关闭");
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    public onClickGMClose(): void {
+        AudioManager.instance.playClick();
+        this.unschedule(this.focusGMCommand);
+        this.gmCommandBox?.blur();
+        this.gmEditBoxX?.blur();
+        this.gmEditBoxY?.blur();
+        if (this.gmPanel) this.gmPanel.active = false;
+    }
+
+    private focusGMCommand(): void {
+        if (this.gmPanel?.active && this.enabledInHierarchy) this.gmCommandBox?.focus();
+    }
+
+    private onMapCenterChange(): void {
+        if (this.gmPanel?.active) this.refreshGMCoord();
+    }
+
+    private refreshGMCoord(): void {
+        const center = MapCommand.getInstance().proxy.getCurCenterPoint();
+        if (!center) return;
+        if (this.gmCoordLabel) this.gmCoordLabel.string = `当前坐标  ${center.x} , ${center.y}`;
+        if (this.gmEditBoxX) this.gmEditBoxX.string = String(center.x);
+        if (this.gmEditBoxY) this.gmEditBoxY.string = String(center.y);
+    }
+
+    private setGMTip(text: string, append = false): void {
+        const value = (text || "").trim();
+        if (append && value) {
+            if (this._gmMessages[this._gmMessages.length - 1] === value) return;
+            this._gmMessages.push(value);
+            this._gmMessages = this._gmMessages.slice(-2);
+        } else {
+            this._gmMessages = value ? [value] : [];
+        }
+        if (this.gmTipLabel) this.gmTipLabel.string = this._gmMessages.join("\n");
+    }
+
+    public onClickGMJump(): void {
+        AudioManager.instance.playClick();
+        if (!this.gmEditBoxX || !this.gmEditBoxY) return;
+        this.jumpToCell(this.parseGMCoord(this.gmEditBoxX.string), this.parseGMCoord(this.gmEditBoxY.string));
+    }
+
+    private onGMCoordReturn(): void {
+        this.onClickGMJump();
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    public onClickGMExecute(): void {
+        if (!this.gmCommandBox || !this.gmPanel?.active || !this._uiListenersReady) return;
+        AudioManager.instance.playClick();
+        this.executeGMCommand(this.gmCommandBox.string);
+        this.scheduleOnce(this.focusGMCommand, 0);
+    }
+
+    private navigateGMHistory(direction: number): void {
+        if (!this.gmCommandBox || this._gmHistory.length === 0) return;
+        if (this._gmHistoryIndex < 0) {
+            if (direction < 0) return;
+            this._gmHistoryDraft = this.gmCommandBox.string;
+        }
+        this._gmHistoryIndex = Math.max(-1, Math.min(this._gmHistory.length - 1, this._gmHistoryIndex + direction));
+        this.gmCommandBox.string = this._gmHistoryIndex < 0
+            ? this._gmHistoryDraft : this._gmHistory[this._gmHistoryIndex];
+    }
+
+    private parseGMCoord(value: string): number {
+        return value?.trim() ? Number(value) : NaN;
+    }
+
+    private executeGMCommand(command: string): void {
+        const text = (command || "").trim();
+        if (!text) {
+            this.setGMTip("请输入命令", true);
+            return;
+        }
+        if (this._gmHistory[0] !== text) {
+            this._gmHistory.unshift(text);
+            this._gmHistory = this._gmHistory.slice(0, 20);
+        }
+        this._gmHistoryIndex = -1;
+        this._gmHistoryDraft = "";
+        const args = text.split(/\s+/);
+        const cmd = args[0].toLowerCase();
+        if (cmd === "goto" || cmd === "jump" || cmd === "tp") {
+            if (args.length !== 3) {
+                this.setGMTip("用法：goto x y", true);
+                return;
+            }
+            this.jumpToCell(this.parseGMCoord(args[1]), this.parseGMCoord(args[2]));
+        } else if (cmd === "pos" || cmd === "where" || cmd === "coord") {
+            this.refreshGMCoord();
+            const center = MapCommand.getInstance().proxy.getCurCenterPoint();
+            this.setGMTip(center ? `当前坐标 ${center.x} , ${center.y}` : "坐标不可用", true);
+        } else if (cmd === "help" || cmd === "?") {
+            this.setGMTip("本地命令：goto x y · pos · clear · help；其它指令会发送到服务器", true);
+        } else if (cmd === "clear") {
+            if (this.gmCommandBox) this.gmCommandBox.string = "";
+            this.setGMTip("");
+        } else if (args.length === 2 && args.every(value => !isNaN(this.parseGMCoord(value)))) {
+            this.jumpToCell(this.parseGMCoord(args[0]), this.parseGMCoord(args[1]));
+        } else {
+            const name = ServerConfig.c2s_gm_command;
+            const bytes = ProtoManager.getInstance().encode(name, { cmd: text });
+            if (!bytes) {
+                this.setGMTip("指令编码失败，请检查 Protobuf 配置", true);
+                return;
+            }
+            NetManager.getInstance().send({ name, msg: bytes });
+            this.setGMTip("已发送：" + text + "  ·  等待服务器返回", true);
+        }
+    }
+
+    private jumpToCell(x: number, y: number): void {
+        const size = MapUtil.mapSize;
+        if (!size || !Number.isInteger(x) || !Number.isInteger(y)
+            || x < 0 || y < 0 || x >= size.width || y >= size.height) {
+            this.setGMTip(size ? `坐标无效，X 范围 0-${size.width - 1}，Y 范围 0-${size.height - 1}` : "地图尚未就绪", true);
+            return;
+        }
+        EventMgr.emit(LogicEvent.scrollToMap, x, y);
+        if (this.gmEditBoxX) this.gmEditBoxX.string = String(x);
+        if (this.gmEditBoxY) this.gmEditBoxY.string = String(y);
+        this.setGMTip(`已跳转到 (${x}, ${y})`, true);
+    }
+
+    private onGMCommandHelp(data: any): void {
+        const list = data?.ret;
+        if (!Array.isArray(list) || list.length === 0) {
+            this.setGMTip("服务器未返回 GM 帮助", true);
+            return;
+        }
+        this.setGMTip("GM 帮助：" + list.slice(0, 8).map(item => item.k + "=" + item.v).join("  "), true);
+    }
+
     protected onTellMe(data: any): void {
         const raw = data && (data.msg != null ? data.msg : (data.message != null ? data.message : (data.content != null ? data.content : data.text)));
         const msg = raw == null ? "" : String(raw).trim();
         if (msg.length === 0) {
             return;
         }
-        EventMgr.emit(LogicEvent.showToast, msg);
+        if (this.gmPanel?.active) {
+            this.setGMTip(msg, true);
+        } else {
+            EventMgr.emit(LogicEvent.showToast, msg);
+        }
     }
 
 

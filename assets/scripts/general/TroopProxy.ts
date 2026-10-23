@@ -159,7 +159,7 @@ export default class TroopProxy {
         }
         const troop = unwrapTroop(serverData);
         const troopIdx = Number(troop.troopIdx != null ? troop.troopIdx : troop.troop_idx);
-        if (!troopIdx) {
+        if (!Number.isInteger(troopIdx) || troopIdx <= 0 || troopIdx > 0xffffffff) {
             return null;
         }
         const troopData = TroopData.createFromServer(troop, this._troops.get(troopIdx) || null);

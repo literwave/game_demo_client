@@ -42,7 +42,7 @@ export default class GeneralListLogic extends Component {
         EventMgr.on(LogicEvent.updateMyGenerals, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.generalConvert, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.updateTroopList, this.initGeneralCfg, this);
-        EventMgr.on(LogicEvent.chosedGeneral, this.onClickClose, this);
+        EventMgr.on(LogicEvent.troopEditSubmitted, this.onTroopEditSubmitted, this);
     }
 
 
@@ -59,6 +59,11 @@ export default class GeneralListLogic extends Component {
     protected onClickClose(): void {
         AudioManager.instance.playClick();
         this.node.active = false;
+    }
+
+    private onTroopEditSubmitted(): void {
+        // 发送成功才退出选将；数据校验或发送失败时保留当前选择界面。
+        if (this._type === 1) this.node.active = false;
     }
 
     protected onClickConvert(): void {
@@ -90,7 +95,9 @@ export default class GeneralListLogic extends Component {
         }
 
         const excluded = new Set<number>();
-        this._cunGeneral.forEach((id) => {
+        const assigned = this._type === 1
+            ? Array.from(TroopCommand.getInstance().proxy.getAssignedHeroIds()) : this._cunGeneral;
+        assigned.forEach((id) => {
             const heroIdx = Number(id);
             if (heroIdx > 0) {
                 excluded.add(heroIdx);

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require(process.argv[2] || 'typescript');
 const root = path.resolve(__dirname, '../..');
+process.on('uncaughtException', error => { console.error(error); process.exit(1); });
 const engine = {
     Component: class {},
     _decorator: { ccclass: () => type => type, property: () => () => {} },
@@ -31,24 +32,47 @@ const proxyModule = load('assets/scripts/login/LoginProxy.ts');
 function fixture() {
     const { EventMgr } = load('assets/scripts/utils/EventMgr.ts');
     const sent = [];
+    let systemRequests = 0;
     const Command = load('assets/scripts/login/LoginCommand.ts', {
         './LoginProxy': proxyModule,
         '../config/ServerConfig': { ServerConfig }, '../utils/EventMgr': { EventMgr },
         '../common/LogicEvent': { LogicEvent }, '../network/socket/NetInterface': netInterface,
         '../network/socket/NetManager': { NetManager: { getInstance: () => ({ send: data => sent.push(data) }) } },
-        '../network/pto/ProtoManager': { ProtoManager: { getInstance: () => ({ encode: () => new Uint8Array([1]) }) } },
+        '../network/pto/ProtoManager': { ProtoManager: { getInstance: () => ({
+            encode: () => new Uint8Array([1]), isReady: () => true, getIdByMsgType: () => 1,
+        }) } },
+        './HeadIconProxy': asDefault(class { clear() {} }),
+        '../systemopen/SystemOpenCommand': asDefault({ getInstance: () => ({
+            requestSystemOpen: () => systemRequests++, clearData() {},
+        }) }),
         '../utils/Tools': { Tools: {} }, '../utils/LocalCache': { LocalCache: {} },
         '../utils/DateUtil': asDefault({}), '../libs/crypto/md5': { Md5: {} },
     }).default;
     const command = Command.getInstance();
     command.proxy.saveLoginData({ userId: 1, serverId: 120 });
+    command.startHeartbeat = () => {};
+    EventMgr.emit(ServerConfig.s2c_user_login_ok, { userId: 1, serverId: 120 });
+    sent.length = 0;
     let entries = 0, resourceRefreshes = 0;
     EventMgr.on(LogicEvent.enterMap, () => entries++, {});
     EventMgr.on(LogicEvent.upateMyRoleRes, () => resourceRefreshes++, {});
-    return { EventMgr, command, sent, get entries() { return entries; }, get resourceRefreshes() { return resourceRefreshes; } };
+    return { EventMgr, command, sent, get systemRequests() { return systemRequests; },
+        get entries() { return entries; }, get resourceRefreshes() { return resourceRefreshes; } };
 }
 let passed = 0;
 function test(name, run) { run(); passed++; console.log(`PASS ${name}`); }
+
+test('an account without a character stays on creation without world/resource requests', () => {
+    const f = fixture();
+    let creates = 0;
+    f.EventMgr.on(LogicEvent.createRole, () => creates++, {});
+    f.EventMgr.emit(ServerConfig.s2c_user_base_info, { name: '' });
+    f.command.beginMapLoading();
+    assert.equal(creates, 1);
+    assert.equal(f.entries, 0);
+    assert.equal(f.sent.length, 0);
+    assert.equal(f.systemRequests, 0);
+});
 
 test('new character immediately enters loading even when resources have not returned', () => {
     const f = fixture();
@@ -57,6 +81,12 @@ test('new character immediately enters loading even when resources have not retu
     assert.equal(f.entries, 1, 'entry must be emitted in the create response callback');
     assert.equal(f.command.proxy.getRoleData().name, '时序测试');
     assert.equal(f.command.proxy.getRoleResData(), null, 'entry must not synthesize a resource response');
+    assert.equal(f.sent.length, 0, 'creation callback must not start world requests');
+    assert.equal(f.systemRequests, 0);
+    f.command.beginMapLoading(); f.command.beginMapLoading();
+    assert.equal(f.sent.length, 1);
+    assert.equal(f.sent[0].name, ServerConfig.c2s_req_user_res);
+    assert.equal(f.systemRequests, 1);
     const laterResources = { resList: [{ k: 1, v: 1000 }] };
     f.EventMgr.emit(ServerConfig.s2c_req_user_res, laterResources);
     assert.equal(f.entries, 1, 'late resources must not trigger another entry');
@@ -82,7 +112,26 @@ test('failed creation remains on the create page; existing characters still ente
     f.EventMgr.emit(ServerConfig.s2c_user_base_info, { name: '已有角色', sex: 1 });
     assert.equal(f.entries, 1);
     assert.equal(f.command.proxy.getRoleResData(), null);
-    assert.equal(f.sent[0].name, ServerConfig.c2s_req_user_res, 'resource request remains active after entry');
+    assert.equal(f.sent.length, 0, 'existing characters also wait for the loading page');
+    f.command.beginMapLoading();
+    assert.equal(f.sent[0].name, ServerConfig.c2s_req_user_res);
+});
+
+test('reconnection refreshes resources once; creation responses after disconnect cannot reopen the map', () => {
+    const f = fixture();
+    f.EventMgr.emit(ServerConfig.s2c_user_base_info, { name: '已有角色', sex: 1 });
+    f.command.beginMapLoading();
+    f.command.notifyClientLoaded();
+    f.EventMgr.emit(netInterface.NetEvent.ServerDisconnected);
+    const entries = f.entries;
+    f.EventMgr.emit(ServerConfig.s2c_user_create, { name: '迟到的创建回包', sex: 1 });
+    assert.equal(f.entries, entries);
+    f.EventMgr.emit(ServerConfig.s2c_user_login_ok, { userId: 1, serverId: 120 });
+    f.EventMgr.emit(ServerConfig.s2c_user_base_info, { name: '已有角色', sex: 1 });
+    f.command.beginMapLoading();
+    assert.equal(f.sent.filter(packet => packet.name === ServerConfig.c2s_req_user_res).length, 2);
+    assert.equal(f.sent.filter(packet => packet.name === ServerConfig.c2s_client_load_ok).length, 2);
+    assert.equal(f.systemRequests, 2);
 });
 
 test('create page does not preload map assets and rapid clicks still send only one create request', () => {
@@ -118,3 +167,4 @@ test('create page does not preload map assets and rapid clicks still send only o
 });
 
 console.log(`PASS ${passed} login/create entry regression groups`);
+process.exit(0);

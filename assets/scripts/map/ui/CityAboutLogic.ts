@@ -10,6 +10,8 @@ import { CityAddition } from "./MapUIProxy";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import GeneralCommand from '../../general/GeneralCommand';
+import { ServerConfig } from '../../config/ServerConfig';
 
 @ccclass('CityAboutLogic')
 export default class CityAboutLogic extends Component {
@@ -45,7 +47,7 @@ export default class CityAboutLogic extends Component {
     }
 
     protected onUpdateCityAdditon(cityId: number): void {
-        if (this._cityData.cityId == cityId) {
+        if (this._cityData && this._cityData.cityId == cityId) {
             this.updateArmyList();
         }
     }
@@ -66,9 +68,12 @@ export default class CityAboutLogic extends Component {
     }
 
     public setData(data: MapCityData): void {
+        if (!data) return;
         this._cityData = data;
         this.updateArmyList();
-        MapUICommand.getInstance().qryCityFacilities(this._cityData.cityId);
+        if (GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.city_facilities)) {
+            MapUICommand.getInstance().qryCityFacilities(this._cityData.cityId);
+        }
     }
 
 

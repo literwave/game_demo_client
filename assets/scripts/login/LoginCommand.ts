@@ -8,7 +8,7 @@ import { LocalCache } from "../utils/LocalCache";
 import DateUtil from "../utils/DateUtil";
 import { EventMgr } from "../utils/EventMgr";
 import { Md5 } from "../libs/crypto/md5";
-import { LogicEvent } from "../common/LogicEvent";
+import { HeadIconFeedback, LogicEvent } from "../common/LogicEvent";
 import { ProtoManager } from "../network/pto/ProtoManager";
 import HeadIconProxy from './HeadIconProxy';
 import SystemOpenCommand from '../systemopen/SystemOpenCommand';
@@ -42,6 +42,7 @@ export default class LoginCommand {
     public readonly headIcons = new HeadIconProxy();
     private _serverReady = false;
     private _baseInfoReady = false;
+    private _mapDataRequested = false;
     private _clientLoaded = false;
     private _loadOkSent = false;
     private _loadOkAcknowledged = false;
@@ -87,6 +88,7 @@ export default class LoginCommand {
     public resetClientState(): void {
         this._serverReady = false;
         this._baseInfoReady = false;
+        this._mapDataRequested = false;
         this._clientLoaded = false;
         this._loadOkSent = false;
         this._loadOkAcknowledged = false;
@@ -107,29 +109,35 @@ export default class LoginCommand {
     public changeHeadIcon(id: number): boolean {
         if (this.changingHeadIcon || id === this._proxy.getRoleData()?.headIcon) return false;
         if (!this.headIcons.getConfig(id)) {
-            EventMgr.emit(LogicEvent.showToast, '该头像未配置');
+            this.showHeadIconFeedback('该头像未配置');
             return false;
         }
         if (!this.isHeadIconOpen()) {
-            EventMgr.emit(LogicEvent.showToast, '更换头像尚未开放');
+            this.showHeadIconFeedback('更换头像尚未开放');
             return false;
         }
         if (!this._serverReady || !this._baseInfoReady || !this._clientLoaded) {
-            EventMgr.emit(LogicEvent.showToast, '正在连接服务器，请稍后再试');
+            this.showHeadIconFeedback('正在连接服务器，请稍后再试');
             return false;
         }
         this._pendingHeadIcon = id;
         this._headChangeTimer = setTimeout(() => {
             this.finishHeadChange();
-            EventMgr.emit(LogicEvent.showToast, '更换头像响应超时，请重试');
+            this.showHeadIconFeedback('更换头像响应超时，请重试');
         }, 8000);
         EventMgr.emit(LogicEvent.headIconChangeState);
         if (!this.sendUserMessage(ServerConfig.c2s_change_head_icon, { headIcon: id })) {
             this.finishHeadChange();
-            EventMgr.emit(LogicEvent.showToast, '头像请求发送失败，请重试');
+            this.showHeadIconFeedback('头像请求发送失败，请重试');
             return false;
         }
         return true;
+    }
+
+    private showHeadIconFeedback(message: string): void {
+        const feedback: HeadIconFeedback = { message, handled: false };
+        EventMgr.emit(LogicEvent.headIconFeedback, feedback);
+        if (!feedback.handled) EventMgr.emit(LogicEvent.showToast, message);
     }
 
     private finishHeadChange(): void {
@@ -146,12 +154,12 @@ export default class LoginCommand {
         this.finishHeadChange();
         const id = toProtoInt(data?.headIcon);
         if (!Number.isInteger(id) || id <= 0) {
-            if (requested) EventMgr.emit(LogicEvent.showToast, '更换头像未成功');
+            if (requested) this.showHeadIconFeedback('更换头像未成功');
             return;
         }
         this._proxy.setHeadIcon(id);
         EventMgr.emit(LogicEvent.updateMyRole);
-        if (requested) EventMgr.emit(LogicEvent.showToast, id === requested ? '头像已更换' : '已同步服务器头像');
+        if (requested) this.showHeadIconFeedback(id === requested ? '头像已更换' : '已同步服务器头像');
     }
 
     /** 仅在地图、界面和必要资源全部就绪后调用；每次连接只通知一次。 */
@@ -189,6 +197,7 @@ export default class LoginCommand {
         this.stopHeartbeat();
         this._serverReady = false;
         this._baseInfoReady = false;
+        this._mapDataRequested = false;
         this._loadOkSent = false;
         this._loadOkAcknowledged = false;
         this.finishHeadChange();
@@ -203,43 +212,33 @@ export default class LoginCommand {
     /**玩家基础信息*/
     private onGetUserBaseInfo(data: any): void {
         if (!data || !this._serverReady) return;
-        console.log("LoginProxy  getUserBaseInfo:", data);
-        let name = data.name;
-        if (name == "") {
+        if (!data.name) {
             this._baseInfoReady = false;
             EventMgr.emit(LogicEvent.createRole);
+            return;
         }
         else {
             data.userId = this._proxy.getLoginData().userId;
-            console.log("LoginProxy  getUserBaseInfo userId:", data, this._proxy.getLoginData());
             this._proxy.saveEnterData(data);
             this._baseInfoReady = true;
             EventMgr.emit(LogicEvent.updateMyRole);
             EventMgr.emit(LogicEvent.enterMap);
             // 重连时保留已加载地图，基础信息同步后重新通知服务端。
+            if (this._clientLoaded) this.beginMapLoading();
             this.trySendClientLoadOk();
         }
+    }
+
+    /** 首次进入由 Main 在加载页首帧之后调用；重连则在基础信息恢复后补发。 */
+    public beginMapLoading(): void {
+        if (!this._serverReady || !this._baseInfoReady || this._mapDataRequested) return;
+        this._mapDataRequested = this.sendUserMessage(ServerConfig.c2s_req_user_res, {});
         SystemOpenCommand.getInstance().requestSystemOpen();
-        var msgName = ServerConfig.c2s_req_user_res;
-        var protoData = ProtoManager.getInstance().encode(msgName, {
-        });
-
-        if (!protoData) {
-            console.error("Failed to encode login request");
-            return;
-        }
-
-        var sendData = {
-            name: msgName,
-            msg: protoData, // 这里直接传 Uint8Array
-        };
-        NetManager.getInstance().send(sendData);
     }
 
     /**玩家资源*/
     private onGetUserRes(data: any): void {
         if (!data) return;
-        console.log("LoginProxy  onGetUserRes:", data);
         this._proxy.setRoleResData(data);
         // 资源回包只同步数据；不能用它决定是否进入加载页。
         EventMgr.emit(LogicEvent.upateMyRoleRes);
@@ -281,11 +280,10 @@ export default class LoginCommand {
 
     /**创建玩家*/
     private onUserCreate(data: any): void {
-        console.log("LoginProxy  onUserCreate:", data);
-        if (!data || !data.name) return;
+        if (!this._serverReady || !data || !data.name) return;
         this._proxy.saveEnterData(data);
         this._baseInfoReady = true;
-        SystemOpenCommand.getInstance().requestSystemOpen();
+        console.info('[RoleCreate] 创建成功，切换加载页');
         // 与已有角色保持一致：创建成功立即显示进度页，其它资源在加载阶段就绪。
         EventMgr.emit(LogicEvent.enterMap);
     }
@@ -354,6 +352,7 @@ export default class LoginCommand {
         this._proxy.setLoginDataUserAndServerId(data);
         this._serverReady = true;
         this._baseInfoReady = false;
+        this._mapDataRequested = false;
 
         var msgName = ServerConfig.c2s_user_base_info;
 

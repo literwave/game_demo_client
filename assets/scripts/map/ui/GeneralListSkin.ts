@@ -1,6 +1,6 @@
 import { Button, Color, Graphics, Label, Node, Sprite, UITransform, Widget, view } from 'cc';
-import BgLogic from '../../common/BgLogic';
 import ListLogic from '../../utils/ListLogic';
+import { styleGeneralPageBackground } from './GeneralPageBackground';
 
 const mutedInk = new Color(179, 169, 145, 255);
 const paper = new Color(239, 230, 205, 255);
@@ -147,19 +147,7 @@ export function applyGeneralListSkin(root: Node, itemCount = 0, listType = 0): v
     contentTransform.setContentSize(width, height);
 
     // 低对比暖墨纸纹承接卡牌的红金配色，不用大块黑栏切割画面。
-    const backdrop = root.getChildByName('mask');
-    const backdropSprite = backdrop?.getComponent(Sprite);
-    const backdropTransform = backdrop?.getComponent(UITransform);
-    if (backdrop && backdropSprite && backdropTransform) {
-        const bgLogic = backdrop.getComponent(BgLogic);
-        if (bgLogic) bgLogic.enabled = false;
-        const bgWidget = backdrop.getComponent(Widget);
-        if (bgWidget) bgWidget.enabled = false;
-        const cover = Math.max(width / 1280, height / 720);
-        backdropTransform.setContentSize(1280 * cover, 720 * cover);
-        backdrop.setPosition(0, 0, 0);
-        backdropSprite.color = new Color(71, 65, 55, 255);
-    }
+    styleGeneralPageBackground(root, width, height);
 
     const title = labelStyle(content.getChildByName('titleLab'), 34, 128, 0, top - 50,
         paper, Label.HorizontalAlign.CENTER);

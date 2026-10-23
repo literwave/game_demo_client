@@ -124,6 +124,7 @@ export default class Main extends Component {
         view.off('design-resolution-changed', this.alignUiCamera, this);
         this.disposeLoadingNow();
         GeneralCommand.getInstance().clearData();
+        TroopCommand.getInstance().clearData();
         EventMgr.targetOff(this);
     }
 
@@ -246,6 +247,7 @@ export default class Main extends Component {
                 this.scheduleOnce(() => {
                     if (!this.isValid || generation !== this._loadGeneration) return;
                     try {
+                        LoginCommand.getInstance().beginMapLoading();
                         this._heroRequest = GeneralCommand.getInstance().beginLoading();
                         LoaderManager.getInstance().startLoadList(dataList, null,
                             (error: Error, paths: string[], datas: any[]) => {
