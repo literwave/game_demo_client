@@ -1,4 +1,4 @@
-import { _decorator, Component, Prefab, Node, Layout, Label, Button, Color, Graphics, instantiate, UITransform, Vec2 } from 'cc';
+import { _decorator, Component, Prefab, Node, Layout, Label, Button, Color, Graphics, instantiate, UITransform, Vec2, Sprite } from 'cc';
 const { ccclass, property } = _decorator;
 
 import LoginCommand from "../../login/LoginCommand";
@@ -27,6 +27,8 @@ import { LogicEvent } from '../../common/LogicEvent';
 import { ServerConfig } from '../../config/ServerConfig';
 import TroopCommand from '../../general/TroopCommand';
 import { CoreEvent } from '../../core/CoreEvent';
+import HeadIconPanel from './HeadIconPanel';
+import SystemOpenCommand from '../../systemopen/SystemOpenCommand';
 
 @ccclass('MapUILogic')
 export default class MapUILogic extends Component {
@@ -130,6 +132,9 @@ export default class MapUILogic extends Component {
     protected _resArray: any = [];
     private _uiListenersReady = false;
     private _hudTopShade: Graphics | null = null;
+    private _headPanel: HeadIconPanel | null = null;
+    private _headRequest = 0;
+    private _playerAvatar: Sprite | null = null;
 
     protected onLoad(): void {
 
@@ -143,6 +148,7 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.robLoginUI, this.robLoginUI, this);
 
         this.initMoreMenu();
+        this.initHeadIconEntry();
         this.node.on(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
         this.layoutHud();
         this.scheduleOnce(this.layoutHud, 0);
@@ -158,6 +164,7 @@ export default class MapUILogic extends Component {
         EventMgr.on(LogicEvent.openFacility, this.openFacility, this);
         EventMgr.on(LogicEvent.openArmySetting, this.openArmySetting, this);
         EventMgr.on(LogicEvent.upateMyRoleRes, this.updateRoleRes, this);
+        EventMgr.on(LogicEvent.updateMyRole, this.updateRole, this);
         EventMgr.on(LogicEvent.openGeneralDes, this.openGeneralDes, this);
         EventMgr.on(LogicEvent.openGeneralChoose, this.openGeneralChoose, this);
         EventMgr.on(LogicEvent.openArmySelectUi, this.onOpenArmySelectUI, this);
@@ -205,6 +212,8 @@ export default class MapUILogic extends Component {
 
 
     protected onDestroy(): void {
+        this._headRequest++;
+        this._playerAvatar?.node.off(Button.EventType.CLICK, this.openHeadIcons, this);
         this.node.off(Node.EventType.SIZE_CHANGED, this.layoutHud, this);
         this.clearAllNode();
         MapUICommand.getInstance().proxy.clearData();
@@ -705,9 +714,56 @@ export default class MapUILogic extends Component {
 
     protected updateRole(): void {
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
-        console.log("updateRole", roleData);
+        if (!roleData) return;
         this.nameLabel.string = roleData.name;
         this.ridLabel.string = "ID " + roleData.userId + "";
+        const sprite = this._playerAvatar;
+        if (!sprite) return;
+        const request = ++this._headRequest;
+        const icons = LoginCommand.getInstance().headIcons;
+        const id = icons.getDisplayId(roleData.headIcon);
+        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        sprite.color = Color.WHITE;
+        sprite.spriteFrame = icons.getIcon(id);
+        if (!sprite.spriteFrame) {
+            icons.loadIcon(id).then(frame => {
+                if (!this.isValid || !sprite.isValid || request !== this._headRequest) return;
+                sprite.spriteFrame = frame;
+            });
+        }
+    }
+
+    private initHeadIconEntry(): void {
+        const node = this.node.getChildByPath('PlayerCard/AvatarIcon');
+        this._playerAvatar = node?.getComponent(Sprite) || null;
+        if (!node || !this._playerAvatar) {
+            console.warn('未找到主界面头像入口 PlayerCard/AvatarIcon');
+            return;
+        }
+        const button = node.getComponent(Button) || node.addComponent(Button);
+        button.transition = Button.Transition.SCALE;
+        button.zoomScale = .96;
+        node.on(Button.EventType.CLICK, this.openHeadIcons, this);
+    }
+
+    private openHeadIcons(): void {
+        if (!this._uiListenersReady) return;
+        AudioManager.instance.playClick();
+        if (!LoginCommand.getInstance().isHeadIconOpen()) {
+            SystemOpenCommand.getInstance().requestSystemOpen();
+            EventMgr.emit(LogicEvent.showToast, '更换头像尚未开放');
+            return;
+        }
+        this.closeMoreMenu();
+        if (!this.contentNode) return;
+        if (!this._headPanel?.isValid) {
+            const node = new Node('HeadIconPanel');
+            node.layer = this.node.layer;
+            this.contentNode.addChild(node);
+            this._headPanel = node.addComponent(HeadIconPanel);
+        }
+        this._headPanel.node.setSiblingIndex(this.topLayer());
+        this._headPanel.show();
     }
 
     protected onClickCollection(): void {

@@ -39,6 +39,10 @@ export default class SystemOpenProxy {
         return this._configs.get(Number(id)) || null;
     }
 
+    public getConfigByEnum(name: string): SystemOpenConfig | null {
+        return Array.from(this._configs.values()).find(config => config.Enum === name) || null;
+    }
+
     public setOpenedIds(ids: number[]): void {
         this._openedIds.clear();
         if (!Array.isArray(ids)) {

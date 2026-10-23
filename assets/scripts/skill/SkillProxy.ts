@@ -1,5 +1,6 @@
 import { resources, SpriteFrame } from 'cc';
 import { SkillConf, SkillOutline } from "../config/skill/Skill";
+import { getConfigIconPath } from '../utils/ConfigIcon';
 
 export class Skill {
     id:number = 0;
@@ -16,6 +17,7 @@ export default class SkillProxy {
     private _iconLoads: Map<string, Promise<SpriteFrame | null>> = new Map();
     private _iconGeneration = 0;
     public initSkillConfig(cfgs: any[]): void {
+        this.releaseIcons();
         this._skillConfs = [];
         this._skillCfgMap.clear();
 
@@ -26,8 +28,8 @@ export default class SkillProxy {
                 continue;
             }
             const data = entry.json || entry;
-            const cfgId = data.Id ?? data.cfgId;
-            if (!Number.isFinite(cfgId)) continue;
+            const cfgId = Number(data.Id ?? data.cfgId);
+            if (!Number.isInteger(cfgId) || cfgId <= 0) continue;
             const icon = data.Icon ?? data.icon;
             const conf: SkillConf = {
                 cfgId,
@@ -59,10 +61,8 @@ export default class SkillProxy {
         }
     }
 
-    private getIconPath(cfgId: number): string {
-        const icon = this.getSkillCfg(cfgId)?.icon;
-        const base = icon ? icon.trim().replace(/\/spriteFrame$/i, '').replace(/\.png$/i, '') : '';
-        return base ? `${base}/spriteFrame` : '';
+    public getIconPath(cfgId: number): string {
+        return getConfigIconPath(this.getSkillCfg(cfgId)?.icon);
     }
 
     /** 加载页与所有技能格子共用真实图片缓存，不再按触发类型选择备用图。 */

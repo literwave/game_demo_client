@@ -25,6 +25,7 @@ import LoadingLogic from './common/LoadingLogic';
 import ReconnectLogic, { ReconnectState } from './common/ReconnectLogic';
 import RewardCommand from './reward/RewardCommand';
 import RewardWindowLogic from './reward/RewardWindowLogic';
+import SystemOpenCommand from './systemopen/SystemOpenCommand';
 
 @ccclass('Main')
 export default class Main extends Component {
@@ -62,6 +63,7 @@ export default class Main extends Component {
     private _mapUiReady = false;
     private _heroAssetsReady = false;
     private _skillAssetsReady = false;
+    private _headAssetsReady = false;
     private _finishingLoading = false;
     private _heroRequest: Promise<boolean> | null = null;
     private _heroWarmupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -136,6 +138,7 @@ export default class Main extends Component {
     }
 
     protected clearData(): void {
+        LoginCommand.getInstance().resetClientState();
         MapCommand.getInstance().clearData();
         GeneralCommand.getInstance().clearData();
         ArmyCommand.getInstance().clearData();
@@ -226,6 +229,7 @@ export default class Main extends Component {
         this._mapUiReady = false;
         this._heroAssetsReady = false;
         this._skillAssetsReady = false;
+        this._headAssetsReady = false;
         this._finishingLoading = false;
         const generation = ++this._loadGeneration;
         const startedAt = Date.now();
@@ -281,6 +285,8 @@ export default class Main extends Component {
         SkillCommand.getInstance().proxy.initSkillConfig(configs.getConfig('Skill') || []);
         this.prepareSkillAssets();
         const heroJson = configs.getConfig('Hero');
+        LoginCommand.getInstance().headIcons.initConfig(configs.getConfig('HeadIcon'), heroJson);
+        this.prepareHeadIcons();
         const basicCfg = configs.getConfig('Global');
         MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
         if (heroJson) GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);
@@ -342,7 +348,23 @@ export default class Main extends Component {
             EventMgr.emit(CoreEvent.mapLoadProgress, 0.98, '正在准备技能图标…');
             return;
         }
+        if (!this._headAssetsReady) {
+            EventMgr.emit(CoreEvent.mapLoadProgress, 0.98, '正在准备头像…');
+            return;
+        }
         this.finishLoading();
+    }
+
+    private prepareHeadIcons(): void {
+        const generation = this._loadGeneration;
+        const isCurrent = () => this.isValid && this._enteringMap && generation === this._loadGeneration;
+        LoginCommand.getInstance().headIcons.preloadIcons(isCurrent).then(() => {
+            if (!isCurrent()) return;
+            this._headAssetsReady = true;
+            this.tryFinishLoading();
+        }).catch(error => {
+            if (isCurrent()) this.failMapLoading(error);
+        });
     }
 
     private prepareSkillAssets(): void {
@@ -418,6 +440,8 @@ export default class Main extends Component {
         GeneralCommand.getInstance().setUIReady();
         RewardWindowLogic.init();
         RewardCommand.getInstance().setUIReady();
+        SystemOpenCommand.getInstance().setUIReady();
+        LoginCommand.getInstance().notifyClientLoaded();
     }
 
     private disposeLoadingNow(): void {
@@ -432,6 +456,7 @@ export default class Main extends Component {
         this._mapUiReady = false;
         this._heroAssetsReady = false;
         this._skillAssetsReady = false;
+        this._headAssetsReady = false;
         this._finishingLoading = false;
         this._heroRequest = null;
         if (this._heroWarmupTimer !== null) clearTimeout(this._heroWarmupTimer);

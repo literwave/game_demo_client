@@ -10,6 +10,8 @@ import { EventMgr } from "../utils/EventMgr";
 import { Md5 } from "../libs/crypto/md5";
 import { LogicEvent } from "../common/LogicEvent";
 import { ProtoManager } from "../network/pto/ProtoManager";
+import HeadIconProxy from './HeadIconProxy';
+import SystemOpenCommand from '../systemopen/SystemOpenCommand';
 
 /** 心跳间隔。短于常见 NAT 的 30 秒空闲断开 */
 const HEARTBEAT_INTERVAL_MS = 5000;
@@ -37,6 +39,14 @@ export default class LoginCommand {
 
     //数据model
     protected _proxy: LoginProxy = new LoginProxy();
+    public readonly headIcons = new HeadIconProxy();
+    private _serverReady = false;
+    private _baseInfoReady = false;
+    private _clientLoaded = false;
+    private _loadOkSent = false;
+    private _loadOkAcknowledged = false;
+    private _pendingHeadIcon = 0;
+    private _headChangeTimer: ReturnType<typeof setTimeout> | null = null;
     private _heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     /** 最近一次收到 s2c_heart_beat 的单调钟 */
     private _lastHeartbeatMono: number = 0;
@@ -44,8 +54,9 @@ export default class LoginCommand {
     private _reconnecting: boolean = false;
 
     constructor() {
+        SystemOpenCommand.getInstance();
         EventMgr.on(NetEvent.ServerCheckLogin, this.onServerConneted, this);
-        EventMgr.on(NetEvent.ServerDisconnected, this.stopHeartbeat, this);
+        EventMgr.on(NetEvent.ServerDisconnected, this.onDisconnected, this);
         EventMgr.on(NetEvent.ServerReconnecting, this.onServerReconnecting, this);
         EventMgr.on(NetEvent.ServerReconnectFailed, this.onReconnectFailed, this);
         EventMgr.on(LogicEvent.enterLogin, this.onEnterLogin, this);
@@ -55,6 +66,8 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_user_base_info, this.onGetUserBaseInfo, this);
         EventMgr.on(ServerConfig.s2c_req_user_res, this.onGetUserRes, this);
         EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
+        EventMgr.on(ServerConfig.s2c_change_head_icon, this.onHeadIconChanged, this);
+        EventMgr.on(ServerConfig.s2c_client_load_ok, this.onClientLoadOk, this);
         EventMgr.on(ServerConfig.s2c_sync_item_data, this.onSyncItemData, this);
         EventMgr.on(ServerConfig.s2c_sync_user_res_list, this.onSyncUserResList, this);
 
@@ -67,7 +80,118 @@ export default class LoginCommand {
 
     public onDestory(): void {
         this.stopHeartbeat();
+        this.resetClientState();
         EventMgr.targetOff(this);
+    }
+
+    public resetClientState(): void {
+        this._serverReady = false;
+        this._baseInfoReady = false;
+        this._clientLoaded = false;
+        this._loadOkSent = false;
+        this._loadOkAcknowledged = false;
+        this.finishHeadChange();
+        this.headIcons.clear();
+        SystemOpenCommand.getInstance().clearData();
+    }
+
+    public get changingHeadIcon(): boolean { return this._pendingHeadIcon > 0; }
+    public get clientLoadAcknowledged(): boolean { return this._loadOkAcknowledged; }
+
+    public isHeadIconOpen(): boolean {
+        const systems = SystemOpenCommand.getInstance();
+        const config = systems.proxy.getConfigByEnum('HEAD_ICON');
+        return !!config && systems.isSystemOpen(config.Id);
+    }
+
+    public changeHeadIcon(id: number): boolean {
+        if (this.changingHeadIcon || id === this._proxy.getRoleData()?.headIcon) return false;
+        if (!this.headIcons.getConfig(id)) {
+            EventMgr.emit(LogicEvent.showToast, '该头像未配置');
+            return false;
+        }
+        if (!this.isHeadIconOpen()) {
+            EventMgr.emit(LogicEvent.showToast, '更换头像尚未开放');
+            return false;
+        }
+        if (!this._serverReady || !this._baseInfoReady || !this._clientLoaded) {
+            EventMgr.emit(LogicEvent.showToast, '正在连接服务器，请稍后再试');
+            return false;
+        }
+        this._pendingHeadIcon = id;
+        this._headChangeTimer = setTimeout(() => {
+            this.finishHeadChange();
+            EventMgr.emit(LogicEvent.showToast, '更换头像响应超时，请重试');
+        }, 8000);
+        EventMgr.emit(LogicEvent.headIconChangeState);
+        if (!this.sendUserMessage(ServerConfig.c2s_change_head_icon, { headIcon: id })) {
+            this.finishHeadChange();
+            EventMgr.emit(LogicEvent.showToast, '头像请求发送失败，请重试');
+            return false;
+        }
+        return true;
+    }
+
+    private finishHeadChange(): void {
+        if (this._headChangeTimer !== null) clearTimeout(this._headChangeTimer);
+        this._headChangeTimer = null;
+        const wasPending = this.changingHeadIcon;
+        this._pendingHeadIcon = 0;
+        if (wasPending) EventMgr.emit(LogicEvent.headIconChangeState);
+    }
+
+    private onHeadIconChanged(data: any): void {
+        if (!this._serverReady || !this._baseInfoReady) return;
+        const requested = this._pendingHeadIcon;
+        this.finishHeadChange();
+        const id = toProtoInt(data?.headIcon);
+        if (!Number.isInteger(id) || id <= 0) {
+            if (requested) EventMgr.emit(LogicEvent.showToast, '更换头像未成功');
+            return;
+        }
+        this._proxy.setHeadIcon(id);
+        EventMgr.emit(LogicEvent.updateMyRole);
+        if (requested) EventMgr.emit(LogicEvent.showToast, id === requested ? '头像已更换' : '已同步服务器头像');
+    }
+
+    /** 仅在地图、界面和必要资源全部就绪后调用；每次连接只通知一次。 */
+    public notifyClientLoaded(): void {
+        this._clientLoaded = true;
+        this.trySendClientLoadOk();
+    }
+
+    private trySendClientLoadOk(): void {
+        if (!this._clientLoaded || !this._serverReady || !this._baseInfoReady || this._loadOkSent) return;
+        this._loadOkSent = this.sendUserMessage(ServerConfig.c2s_client_load_ok, {});
+    }
+
+    private onClientLoadOk(): void {
+        if (!this._serverReady || !this._loadOkSent) return;
+        // 该协议为空消息，只确认加载状态，不携带玩家头像。
+        this._loadOkAcknowledged = true;
+    }
+
+    private sendUserMessage(name: string, data: { headIcon?: number }): boolean {
+        const proto = ProtoManager.getInstance();
+        if (!proto.isReady() || !proto.getIdByMsgType(name)) return false;
+        const bytes = proto.encode(name, data);
+        if (!bytes) return false;
+        try {
+            NetManager.getInstance().send({ name, msg: bytes });
+            return true;
+        } catch (error) {
+            console.warn(`发送失败: ${name}`, error);
+            return false;
+        }
+    }
+
+    private onDisconnected(): void {
+        this.stopHeartbeat();
+        this._serverReady = false;
+        this._baseInfoReady = false;
+        this._loadOkSent = false;
+        this._loadOkAcknowledged = false;
+        this.finishHeadChange();
     }
 
     //抢登录
@@ -78,17 +202,24 @@ export default class LoginCommand {
 
     /**玩家基础信息*/
     private onGetUserBaseInfo(data: any): void {
+        if (!data || !this._serverReady) return;
         console.log("LoginProxy  getUserBaseInfo:", data);
         let name = data.name;
         if (name == "") {
+            this._baseInfoReady = false;
             EventMgr.emit(LogicEvent.createRole);
         }
         else {
             data.userId = this._proxy.getLoginData().userId;
             console.log("LoginProxy  getUserBaseInfo userId:", data, this._proxy.getLoginData());
             this._proxy.saveEnterData(data);
+            this._baseInfoReady = true;
+            EventMgr.emit(LogicEvent.updateMyRole);
             EventMgr.emit(LogicEvent.enterMap);
+            // 重连时保留已加载地图，基础信息同步后重新通知服务端。
+            this.trySendClientLoadOk();
         }
+        SystemOpenCommand.getInstance().requestSystemOpen();
         var msgName = ServerConfig.c2s_req_user_res;
         var protoData = ProtoManager.getInstance().encode(msgName, {
         });
@@ -153,6 +284,8 @@ export default class LoginCommand {
         console.log("LoginProxy  onUserCreate:", data);
         if (!data || !data.name) return;
         this._proxy.saveEnterData(data);
+        this._baseInfoReady = true;
+        SystemOpenCommand.getInstance().requestSystemOpen();
         // 与已有角色保持一致：创建成功立即显示进度页，其它资源在加载阶段就绪。
         EventMgr.emit(LogicEvent.enterMap);
     }
@@ -219,6 +352,8 @@ export default class LoginCommand {
         // MapCommand.getInstance()
         // EventMgr.emit(LogicEvent.enterMap);
         this._proxy.setLoginDataUserAndServerId(data);
+        this._serverReady = true;
+        this._baseInfoReady = false;
 
         var msgName = ServerConfig.c2s_user_base_info;
 
@@ -270,6 +405,7 @@ export default class LoginCommand {
     private onEnterLogin(): void {
         this.stopHeartbeat();
         this._reconnecting = false;
+        this.resetClientState();
     }
 
     /**重新登录回调回调*/

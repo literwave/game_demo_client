@@ -67,12 +67,17 @@ export default class LoginProxy {
         if (!this._roleData) {
             this._roleData = new Role();
         }
-        this._roleData.userId = toProtoInt(this._loginData.userId);
+        this._roleData.userId = toProtoInt(this._loginData?.userId);
         this._roleData.name = data.name;
         this._roleData.sex = data.sex;
-        this._roleData.serverId = toProtoInt(this._loginData.serverId);
-        this._roleData.headIcon = this._loginData.headIcon;
-        this._roleData.birthTime = this._loginData.birthTime;
+        this._roleData.serverId = toProtoInt(this._loginData?.serverId);
+        // 头像来自 User 基础信息，Login 登录回包没有这个字段。
+        if (data.headIcon !== undefined) this.setHeadIcon(toProtoInt(data.headIcon));
+        if (data.birthTime !== undefined) this._roleData.birthTime = toProtoInt(data.birthTime);
+    }
+
+    public setHeadIcon(id: number): void {
+        if (this._roleData && Number.isInteger(id) && id >= 0) this._roleData.headIcon = id;
     }
 
 

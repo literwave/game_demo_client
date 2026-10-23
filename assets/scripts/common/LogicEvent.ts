@@ -40,6 +40,10 @@ export class LogicEvent {
     public static openFacility:string = "open_facility";
     public static openArmySetting:string = "open_army_setting";
     public static upateMyRoleRes:string = "upate_my_roleRes";
+    public static updateMyRole:string = "update_my_role";
+    public static headIconChangeState:string = "head_icon_change_state";
+    public static systemOpenUpdated:string = "system_open_updated";
+    public static systemUnlock:string = "system_unlock";
     public static openGeneralDes:string = "open_general_des";
     public static openGeneralChoose:string = "open_general_choose";
     public static openArmySelectUi:string = "open_army_select_ui";

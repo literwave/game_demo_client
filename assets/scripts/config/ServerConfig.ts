@@ -15,6 +15,10 @@ const ServerConfig = {
     s2c_user_base_info: "User.s2c_user_base_info",
     c2s_user_create: "User.c2s_user_create",
     s2c_user_create: "User.s2c_user_create",
+    c2s_change_head_icon: "User.c2s_change_head_icon",
+    s2c_change_head_icon: "User.s2c_change_head_icon",
+    c2s_client_load_ok: "User.c2s_client_load_ok",
+    s2c_client_load_ok: "User.s2c_client_load_ok",
 
     c2s_req_all_hero_base_info: "Hero.c2s_req_all_hero_base_info",
     s2c_req_all_hero_base_info: "Hero.s2c_req_all_hero_base_info",
