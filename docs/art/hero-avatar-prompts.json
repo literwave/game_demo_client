@@ -1,0 +1,199 @@
+{
+  "title": "武将头像生成记录",
+  "generationMode": "内置 image_gen，逐角色引用当前立绘生成",
+  "date": "2026-10-23",
+  "size": {
+    "width": 256,
+    "height": 256
+  },
+  "format": "png",
+  "directory": "assets/resources/ui/head_icon",
+  "naming": "avatar_<Hero.Id>.png",
+  "style": "中国历史连环画墨线与哑光水粉，头肩近景、淡纸色背景、无文字和边框",
+  "commonPrompt": "Use case: identity-preserve.\nAsset type: ONE square 1:1 head-and-shoulders portrait icon for a Chinese Three Kingdoms strategy game, readable at 64px and delivered as a full square illustration.\nInput image 1 is the exact character identity and painted style reference. Redraw as a dedicated close-up avatar of that SAME individual, preserving facial structure, age, skin tone, hair, facial hair, headwear, costume colour and distinctive personality. This is NOT a full body card or a collage.\nStyle: carefully hand-drawn Chinese historical illustrated-book artwork, tapered ink contours, restrained matte gouache washes and designed flat shadow shapes, subtle natural asymmetry. Follow the reference's line work and dry brush, but simplify small ornamental detail for thumbnail legibility. No airbrushed or photographic face.\nComposition: face is the clear focal point, centered horizontally, eyes near 43% height, neck and upper shoulders visible across the lower quarter. Head including main headwear fills most of the upper area with modest top margin. Preserve an expressive individual three-quarter head turn, natural human expression. No hands, arms, weapons or props crossing the face. Simple warm pale stone / parchment field right to all four edges, extremely subtle paper, no scenery. No border: the game supplies the frame and may mask the square to a circle.\nLighting: restrained soft diffuse painted daylight in 2-3 values. Warm ivory, muted earthy accent colours, charcoal linework. Face and hair silhouettes must read instantly at tiny size.\nText: none. No name, letters, labels, watermark, frame, UI, glowing rim, cinematic effects, glossy gold, fantasy spikes, 3D/PBR, photorealism, beauty-filter skin, generic model face, extra people.\nCharacter-specific identity and crop direction:\n",
+  "characters": [
+    {
+      "id": 1001,
+      "name": "吕布",
+      "reference": "assets/resources/ui/hero/card_1001_v2.png",
+      "output": "assets/resources/ui/head_icon/avatar_1001.png",
+      "specificPrompt": "吕布 / Lu Bu: the same angular black-haired archer from the reference, strong sloping brows, short moustache and pointed beard, aged bronze small crown with two rust-red pheasant plumes, dark iron armour and vermilion collar. Three-quarter head turned slightly LEFT, intent controlled gaze; lower all archery gear out of frame. Plume bases recognizable; long plume tips may leave top edge. Face should dominate, not helmet."
+    },
+    {
+      "id": 1002,
+      "name": "刘协",
+      "reference": "assets/resources/ui/hero/card_1002.png",
+      "output": "assets/resources/ui/head_icon/avatar_1002.png",
+      "specificPrompt": "刘协 / Liu Xie: the same young emperor with slender face, fine moustache and small chin beard, black-and-red Han imperial robe and restrained bronze crown with beaded tassels. Raise chin into a readable solemn three-quarter portrait facing slightly RIGHT, preserve melancholic dignity. Do not let bead tassels obscure eyes, show modest crown at top; no desk or writing hand."
+    },
+    {
+      "id": 1003,
+      "name": "张让",
+      "reference": "assets/resources/ui/hero/card_1003.png",
+      "output": "assets/resources/ui/head_icon/avatar_1003.png",
+      "specificPrompt": "张让 / Zhang Rang: the same elderly clean-shaven court eunuch, narrow wary eyes, deeply etched cheek folds, long nose, thin lips and tall black official cap, dark maroon collar. Head slightly turned toward RIGHT, sidelong suspicious gaze. Preserve his distinct older face, no facial hair, no scroll or curtain."
+    },
+    {
+      "id": 1004,
+      "name": "貂蝉",
+      "reference": "assets/resources/ui/hero/card_1004.png",
+      "output": "assets/resources/ui/head_icon/avatar_1004.png",
+      "specificPrompt": "貂蝉 / Diao Chan: the same adult woman with soft oval face, naturally almond-shaped eyes, loosely curled black hair in high coiled bun, restrained bronze-and-red floral hairpins, muted rose-red and ivory collar. Slight head tilt and gaze LEFT, poised quiet expression, retain the real face from the reference and avoid doll-like beauty smoothing. No hands or ribbons crossing face."
+    },
+    {
+      "id": 1005,
+      "name": "何太后",
+      "reference": "assets/resources/ui/hero/card_1005.png",
+      "output": "assets/resources/ui/head_icon/avatar_1005.png",
+      "specificPrompt": "何太后 / Empress Dowager He: same mature woman with broad composed face, arched brows and raised chin, authoritative reserved expression. Dark black coiled bun with modest antique bronze phoenix pin, muted burgundy-red and charcoal imperial collar. Three-quarter gaze LEFT, keep age and natural facial proportions; dignified ruler, no glamorous young-model makeover."
+    },
+    {
+      "id": 1006,
+      "name": "黄盖",
+      "reference": "assets/resources/ui/hero/card_1006.png",
+      "output": "assets/resources/ui/head_icon/avatar_1006.png",
+      "specificPrompt": "黄盖 / Huang Gai: same elderly broad-faced veteran, sun-weathered tan cheeks, fierce thick grey brows, close white beard and moustache, coarse brown cloth headwrap and worn dark iron shoulder armour over rust-red collar. Tilt slightly forward and face LEFT with calm resolve. Preserve the distinct grey hairline and rugged human face; no flames or weapon in portrait."
+    },
+    {
+      "id": 1007,
+      "name": "董卓",
+      "reference": "assets/resources/ui/hero/card_1007.png",
+      "output": "assets/resources/ui/head_icon/avatar_1007.png",
+      "specificPrompt": "董卓 / Dong Zhuo normal: same corpulent older warlord, broad full face, ruddy cheeks, curled dark moustache, dense black-and-grey beard, small dark maroon cap with bronze central badge, dark red robe over iron shoulder armour. Chin slightly raised in a smug three-quarter look toward RIGHT. His heavy facial mass and cap distinguish this avatar from SP."
+    },
+    {
+      "id": 1008,
+      "name": "张角",
+      "reference": "assets/resources/ui/hero/card_1008.png",
+      "output": "assets/resources/ui/head_icon/avatar_1008.png",
+      "specificPrompt": "张角 / Zhang Jiao: same lean middle-aged mystic leader with long narrow face, deeply creased brow, black moustache and long tapered beard, dishevelled black hair bound in ochre-yellow cloth, faded ochre and dark moss collar. Slight forward head tilt and intent compassionate gaze toward LEFT; preserve human worn face with no glowing eyes or magical aura."
+    },
+    {
+      "id": 1009,
+      "name": "董卓sp",
+      "reference": "assets/resources/ui/hero/card_1009.png",
+      "output": "assets/resources/ui/head_icon/avatar_1009.png",
+      "specificPrompt": "董卓 SP / Dong Zhuo SP: same robust younger-looking frontier rider in the reference, round strong ruddy face, thick arched eyebrows, black moustache and full beard, unruly tied black topknot with simple brown band, prominent weathered grey fur collar over ochre and dark iron. Head turned RIGHT with alert forceful gaze. Keep visible fur and uncovered topknot to clearly distinguish normal cap-and-red-robe version; no bow or hands."
+    },
+    {
+      "id": 1010,
+      "name": "吕布sp",
+      "reference": "assets/resources/ui/hero/card_1010.png",
+      "output": "assets/resources/ui/head_icon/avatar_1010.png",
+      "specificPrompt": "吕布 SP / Lu Bu SP: same mature sharp-browed warrior with short black moustache and pointed chin beard, tall small bronze crown and two dark rust-red pheasant plumes, black iron beast-motif shoulder guard, vivid but matte vermilion cloak collar. Look over RIGHT shoulder toward viewer, fierce decisive eyes, show the shoulder-turn silhouette from reference. No halberd, no full body, preserve same identity."
+    },
+    {
+      "id": 1011,
+      "name": "贾诩",
+      "reference": "assets/resources/ui/hero/card_1011.png",
+      "output": "assets/resources/ui/head_icon/avatar_1011.png",
+      "specificPrompt": "贾诩 / Jia Xu: same older strategist, lean long thoughtful face, subtle crow's-feet, grey temples, narrow black-and-grey moustache and thin pointed goatee, folded black scholar cap, dark ink-blue and ivory collar. Three-quarter face angled LEFT with a measured calculating gaze, lips closed; remove hand at chin so face and beard unobstructed."
+    },
+    {
+      "id": 1012,
+      "name": "步练师",
+      "reference": "assets/resources/ui/hero/card_1012.png",
+      "output": "assets/resources/ui/head_icon/avatar_1012.png",
+      "specificPrompt": "步练师 / Bu Lianshi: same mature gentle noblewoman, full oval face, clear warm dark eyes, swept black hair gathered into a modest rounded bun with small bronze pin and dark jade earrings, muted teal-green and cream collar. Quiet attentive gaze toward RIGHT, kind confident expression and understated natural features; no youthful doll-face or extravagant crown."
+    },
+    {
+      "id": 1013,
+      "name": "赵云",
+      "reference": "assets/resources/ui/hero/card_1013.png",
+      "output": "assets/resources/ui/head_icon/avatar_1013.png",
+      "specificPrompt": "赵云 / Zhao Yun: same young adult soldier with clean-shaven angular face, dark straight brows, tan wind-weathered cheeks, tied black hair with white cloth ribbons, simple silver-grey iron shoulder plate and off-white cloak over indigo collar. Look alertly LEFT as in reference, focused protective expression; no child, hands, horse or spear in icon."
+    },
+    {
+      "id": 1014,
+      "name": "吕蒙",
+      "reference": "assets/resources/ui/hero/card_1014.png",
+      "output": "assets/resources/ui/head_icon/avatar_1014.png",
+      "specificPrompt": "吕蒙 / Lu Meng: same mature studious officer with tan angular face, straight brows, neat short black moustache and pointed goatee, black topknot tied with brick-red band, worn iron shoulder armour over muted olive-green robe and ivory collar. Thoughtful downward-then-forward gaze toward RIGHT, steady capable expression; no bamboo book or hand."
+    },
+    {
+      "id": 1015,
+      "name": "甄姬",
+      "reference": "assets/resources/ui/hero/card_1015.png",
+      "output": "assets/resources/ui/head_icon/avatar_1015.png",
+      "specificPrompt": "甄姬 / Lady Zhen: same adult woman with softly angled face, lively gentle almond eyes, simple swept black bun with one pale jade flower pin, dusty indigo-blue outer collar over ivory. Head turned RIGHT with a warm empathetic attentive expression; retain natural skin tone, nose and lips, no glamour retouching, no giant hair ornaments."
+    },
+    {
+      "id": 1016,
+      "name": "刘备sp",
+      "reference": "assets/resources/ui/hero/card_1016.png",
+      "output": "assets/resources/ui/head_icon/avatar_1016.png",
+      "specificPrompt": "刘备 SP / Liu Bei SP: same middle-aged ruler with kind slightly tired eyes, broad high forehead, distinct slightly large ears, neatly combed dark hair under folded black headcloth, narrow moustache and long tapered beard, muted deep green robe with charcoal and ivory collar. Head facing slightly RIGHT, respectful calm faint smile; preserve mature face without turning him into a young hero."
+    },
+    {
+      "id": 1017,
+      "name": "诸葛亮",
+      "reference": "assets/resources/ui/hero/card_1017.png",
+      "output": "assets/resources/ui/head_icon/avatar_1017.png",
+      "specificPrompt": "诸葛亮 / Zhuge Liang: same composed adult strategist with long lean face, fine arched brows, short black moustache and neat tapered beard, tall black ribbed scholar cap with small bronze badge, ivory and muted sage robe collar. Raise head slightly into a contemplative three-quarter gaze LEFT, quiet intelligence and focus. Keep cap's distinct silhouette and face from reference, no feather fan or map in frame."
+    },
+    {
+      "id": 1018,
+      "name": "陆逊",
+      "reference": "assets/resources/ui/hero/card_1018.png",
+      "output": "assets/resources/ui/head_icon/avatar_1018.png",
+      "specificPrompt": "陆逊 / Lu Xun: same youthful but mature commander with angular tan face, straight dark eyebrows, narrow moustache and short neat chin beard, modest black tied officer cap, dark indigo-blue robe over bronze-brown lamellar collar. Turn slightly RIGHT with a decisive restrained gaze; show strong neck and one shoulder, no command tablet or hand."
+    },
+    {
+      "id": 1019,
+      "name": "马云禄",
+      "reference": "assets/resources/ui/hero/card_1019.png",
+      "output": "assets/resources/ui/head_icon/avatar_1019.png",
+      "specificPrompt": "马云禄 / Ma Yunlu: same adult female cavalry officer with sun-touched skin, strongly angled brows and focused almond eyes, dark loose strands under a practical plain iron helmet with muted teal cloth plume, teal scarf over worn dark armour. Three-quarter head to LEFT, alert and resolute, human face with no cosmetics/glamour, helmet never covers eyes. No horse or spear."
+    },
+    {
+      "id": 1020,
+      "name": "黄月英",
+      "reference": "assets/resources/ui/hero/card_1020.png",
+      "output": "assets/resources/ui/head_icon/avatar_1020.png",
+      "specificPrompt": "黄月英 / Huang Yueying: same young adult artisan with natural softly angular face, lively intelligent eyes, black hair in practical loose high bun tied with ochre cloth, modest warm ochre robe and grey apron straps visible at shoulders. Curious concentrated gaze slightly RIGHT, soft thoughtful mouth, retain stray wisps and natural skin; no glamorous jewellery, crown, machinery or hand."
+    },
+    {
+      "id": 1021,
+      "name": "马超",
+      "reference": "assets/resources/ui/hero/card_1021.png",
+      "output": "assets/resources/ui/head_icon/avatar_1021.png",
+      "specificPrompt": "马超 / Ma Chao: same adult frontier warrior, broad sharp-browed tan face, short black moustache and chin beard, straightforward silver-grey helmet with russet plume, off-white robe and dark navy cloak collar. Three-quarter head turned RIGHT, proud vigilant gaze. Keep helmet believable and restrained, face clearly visible, no horse or spear."
+    },
+    {
+      "id": 1022,
+      "name": "曹操",
+      "reference": "assets/resources/ui/hero/card_1022.png",
+      "output": "assets/resources/ui/head_icon/avatar_1022.png",
+      "specificPrompt": "曹操 / Cao Cao: same middle-aged statesman with broad high forehead, strong brows, shrewd deep-set eyes, trimmed moustache and pointed dark beard with slight grey, tied hair under a small tall black cap with bronze square badge and cross-pin, navy-indigo robe with maroon patterned collar. Chin slightly raised and three-quarter head LEFT, self-possessed searching gaze, no goblet or spear."
+    },
+    {
+      "id": 1023,
+      "name": "关羽",
+      "reference": "assets/resources/ui/hero/card_1023.png",
+      "output": "assets/resources/ui/head_icon/avatar_1023.png",
+      "specificPrompt": "关羽 / Guan Yu: same imposing middle-aged warrior, long angular naturally ruddy face, heavy slanted brows and narrow focused eyes, distinct long full black beard, soft moss-green headcloth and green collar above dark iron shoulder scales. Raise gaze toward LEFT with composed scholarly dignity. Keep face large and beard flowing to lower edge, no book, hand or weapon; retain natural painted ruddy skin rather than theatrical red face paint."
+    },
+    {
+      "id": 1024,
+      "name": "张飞",
+      "reference": "assets/resources/ui/hero/card_1024.png",
+      "output": "assets/resources/ui/head_icon/avatar_1024.png",
+      "specificPrompt": "张飞 / Zhang Fei: same stocky mature warrior with broad weathered tan face, explosive heavy brows, round intense eyes, bushy black moustache and thick short full beard, practical black headcloth and dark iron shoulders over ochre collar. Three-quarter face toward RIGHT, mouth slightly open in a forceful shout showing a coherent small row of teeth. Preserve rugged distinct character, not a generic snarling monster; no spear, hands or scenery."
+    },
+    {
+      "id": 1025,
+      "name": "周瑜",
+      "reference": "assets/resources/ui/hero/card_1025.png",
+      "output": "assets/resources/ui/head_icon/avatar_1025.png",
+      "specificPrompt": "周瑜 / Zhou Yu: same elegant adult commander with slim strong face, keen dark eyes, fine neat moustache and very small chin beard, plain folded black scholar cap, layered deep ink-blue and ivory robe collar over a modest iron breastplate edge. Three-quarter head turned LEFT as if listening intently, composed alert expression. Preserve human mature face and fine features; no instrument, hands or scenery."
+    },
+    {
+      "id": 1026,
+      "name": "孙尚香",
+      "reference": "assets/resources/ui/hero/card_1026.png",
+      "output": "assets/resources/ui/head_icon/avatar_1026.png",
+      "specificPrompt": "孙尚香 / Sun Shangxiang: same athletic adult noblewoman with softly angular face, bright determined dark eyes, strongly shaped natural brows, black hair in practical high bun with small bronze round hairpin, warm rust-red and charcoal collar over ivory. Head turned LEFT with alert confident expression, a few loose hair wisps, no glamorous beauty retouching. No sword, hand or extra jewellery."
+    }
+  ]
+}
+

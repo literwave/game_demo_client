@@ -50,6 +50,12 @@ export { GameConfig };
 
 ![大地图](img/main.png)
 
+### 配置武将
+
+在大地图右侧展开队伍，点击「配置武将」。
+
+![配置武将](img/hero.png)
+
 ### 联盟
 
 ![联盟](img/09.png)
