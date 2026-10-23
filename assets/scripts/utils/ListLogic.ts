@@ -429,9 +429,25 @@ export default class ListLogic extends Component {
         }.bind(this));
     }
 
+    /** 视口或列数变化时，保留数据并重新计算复用节点的位置。 */
+    public refreshLayout(): void {
+        const template = this.itemPrefab ? this.itemPrefab.data : this.itemNode;
+        const transform = template ? template.getComponent(UITransform) : null;
+        if (transform) {
+            this._itemWidth = transform.width * this.scale;
+            this._itemHeight = transform.height * this.scale;
+            for (const item of this._items) {
+                if (item && item.isValid) item.setScale(this.scale, this.scale, this.scale);
+            }
+        }
+        this._curOffset = -1;
+        this._startIndex = -1;
+        this.updateList();
+    }
+
     /**
      * 设置列表数据
-     * scrollOffset 没有传值代表刷新到初始位置 其他整数代表刷新到当前位置的相对偏移量
+     * scrollOffset 没有传值代表刷新到初始位置，其他整数代表相对当前位置的偏移量。
      */
     public setData(data, scrollOffset?:any):void{
         this._datas = data;

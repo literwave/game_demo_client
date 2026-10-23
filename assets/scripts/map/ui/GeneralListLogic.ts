@@ -1,5 +1,5 @@
 
-import { _decorator, Component, ScrollView, Label } from 'cc';
+import { _decorator, Component, ScrollView, Label, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 import GeneralCommand from "../../general/GeneralCommand";
@@ -10,6 +10,7 @@ import { EventMgr } from '../../utils/EventMgr';
 import ListLogic from '../../utils/ListLogic';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { applyGeneralListSkin } from './GeneralListSkin';
 
 @ccclass('GeneralListLogic')
 export default class GeneralListLogic extends Component {
@@ -24,6 +25,7 @@ export default class GeneralListLogic extends Component {
     private _type: number = 0;
     private _position: number = 0;
     private _convertSupported: boolean = false;
+    private _visibleCount: number = 0;
 
     protected onLoad(): void {
         this._convertSupported = GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.general_convert);
@@ -34,6 +36,9 @@ export default class GeneralListLogic extends Component {
     }
 
     protected onEnable(): void {
+        applyGeneralListSkin(this.node, this._visibleCount, this._type);
+        view.on('canvas-resize', this.onCanvasResize, this);
+        view.on('design-resolution-changed', this.onCanvasResize, this);
         EventMgr.on(LogicEvent.updateMyGenerals, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.generalConvert, this.initGeneralCfg, this);
         EventMgr.on(LogicEvent.updateTroopList, this.initGeneralCfg, this);
@@ -42,7 +47,13 @@ export default class GeneralListLogic extends Component {
 
 
     protected onDisable(): void {
+        view.off('canvas-resize', this.onCanvasResize, this);
+        view.off('design-resolution-changed', this.onCanvasResize, this);
         EventMgr.targetOff(this);
+    }
+
+    private onCanvasResize(): void {
+        applyGeneralListSkin(this.node, this._visibleCount, this._type);
     }
 
     protected onClickClose(): void {
@@ -88,10 +99,14 @@ export default class GeneralListLogic extends Component {
 
         const list = proxy.getUseGenerals()
             .filter((general) => !excluded.has(general.hero_type))
-            .map((general) => Object.assign({}, general, { listType: this._type, listPosition: this._position }));
+            .map((general) => Object.assign({}, general, {
+                listType: this._type, listPosition: this._position, listAppearance: 'roster',
+            }));
 
         const comp = this.scrollView.node.getComponent(ListLogic);
         if (comp) {
+            this._visibleCount = list.length;
+            applyGeneralListSkin(this.node, this._visibleCount, this._type);
             comp.setData(list);
         }
     }
