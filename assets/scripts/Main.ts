@@ -25,8 +25,6 @@ import LoadingLogic from './common/LoadingLogic';
 import ReconnectLogic, { ReconnectState } from './common/ReconnectLogic';
 import RewardCommand from './reward/RewardCommand';
 import RewardWindowLogic from './reward/RewardWindowLogic';
-import SystemOpenCommand from './systemopen/SystemOpenCommand';
-import SystemUnlockWindow from './systemopen/SystemUnlockWindow';
 
 @ccclass('Main')
 export default class Main extends Component {
@@ -100,7 +98,6 @@ export default class Main extends Component {
         EventMgr.on(NetEvent.ServerReconnectFailed, this.onServerReconnectFailed, this);
 
         RewardCommand.getInstance();
-        SystemOpenCommand.getInstance();
         TroopCommand.getInstance();
 
 
@@ -144,8 +141,6 @@ export default class Main extends Component {
         ArmyCommand.getInstance().clearData();
         TroopCommand.getInstance().clearData();
         RewardCommand.getInstance().clearData();
-        SystemOpenCommand.getInstance().clearData();
-        SystemUnlockWindow.reset();
     }
 
     private enterLogin(): void {
@@ -422,9 +417,7 @@ export default class Main extends Component {
         EventMgr.emit(CoreEvent.gameReady);
         GeneralCommand.getInstance().setUIReady();
         RewardWindowLogic.init();
-        SystemUnlockWindow.init();
         RewardCommand.getInstance().setUIReady();
-        SystemOpenCommand.getInstance().setUIReady();
     }
 
     private disposeLoadingNow(): void {

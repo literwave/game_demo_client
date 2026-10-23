@@ -10,8 +10,6 @@ export class LogicEvent {
     public static hideWaiting:string = "hide_waiting";
     public static showTip:string = "show_tip";
     public static showReward:string = "show_reward";
-    public static systemOpenUpdated:string = "system_open_updated";
-    public static systemUnlock:string = "system_unlock";
 
     public static createRole:string = "createRole";
     public static enterServerComplete:string = "enterServerComplete";
@@ -39,7 +37,6 @@ export class LogicEvent {
     public static unionChange:string = "union_change";
     public static openCityAbout:string = "open_city_about";
     public static closeCityAbout:string = "close_city_about";
-    public static openFortressAbout:string = "open_fortress_about";
     public static openFacility:string = "open_facility";
     public static openArmySetting:string = "open_army_setting";
     public static upateMyRoleRes:string = "upate_my_roleRes";

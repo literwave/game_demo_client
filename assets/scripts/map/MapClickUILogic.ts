@@ -104,49 +104,9 @@ export default class MapClickUILogic extends Component {
     }
 
     protected onClickEnter(): void {
-        console.log("onClickEnter");
         AudioManager.instance.playClick();
-
-        if (this._data instanceof MapBuildData) {
-            EventMgr.emit(LogicEvent.openFortressAbout, this._data);
-        } else if (this._data instanceof MapCityData) {
+        if (this._data instanceof MapCityData) {
             EventMgr.emit(LogicEvent.openCityAbout, this._data);
-        }
-
-        this.node.parent = null;
-    }
-
-    protected onClickReclaim(): void {
-        AudioManager.instance.playClick();
-        EventMgr.emit(LogicEvent.openArmySelectUi, ArmyCmd.Reclaim, this._data.x, this._data.y);
-        this.node.parent = null;
-    }
-
-    protected onClickGiveUp(): void {
-        AudioManager.instance.playClick();
-        MapCommand.getInstance().giveUpBuild(this._data.x, this._data.y);
-        this.node.parent = null;
-    }
-
-    protected onClickBuild(): void {
-        AudioManager.instance.playClick();
-        MapCommand.getInstance().build(this._data.x, this._data.y, MapResType.FORTRESS);
-        this.node.parent = null;
-    }
-
-    protected onClickTransfer(): void {
-        AudioManager.instance.playClick();
-        console.log("onClickTransfer");
-        this.node.parent = null;
-        EventMgr.emit(LogicEvent.openArmySelectUi, ArmyCmd.Transfer, this._data.x, this._data.y);
-    }
-
-    protected onClickMove(): void {
-        AudioManager.instance.playClick();
-        if (MapCommand.getInstance().isCanMoveCell(this._data.x, this._data.y)) {
-            EventMgr.emit(LogicEvent.openArmySelectUi, ArmyCmd.Garrison, this._data.x, this._data.y);
-        } else {
-            console.log("只能驻军自己占领的地");
         }
         this.node.parent = null;
     }
@@ -180,121 +140,42 @@ export default class MapClickUILogic extends Component {
         this._pixelPos = pixelPos;
         this.labelPos.string = "(" + data.x + ", " + data.y + ")";
         this.leftInfoNode.active = true;
+        this.btnMove.node.active = false;
+        this.btnGiveUp.node.active = false;
         this.btnReclaim.node.active = false;
+        this.btnBuild.node.active = false;
+        this.btnTransfer.node.active = false;
         this.btnEnter.node.active = false;
+        this.btnOccupy.node.active = false;
         this.bgSelect.getComponent(UITransform).width = 200;
         this.bgSelect.getComponent(UITransform).height = 100;
 
         var isTag = MapCommand.getInstance().proxy.isPosTag(this._data.x, this._data.y);
-
-        // console.log("isTag:", isTag);
-
         this.btnTagAdd.node.active = !isTag;
         this.btnTagRemove.node.active = isTag;
 
         if (this._data instanceof MapResData) {
-            //点击的是野外
-            this.btnMove.node.active = false;
             this.btnOccupy.node.active = true;
-            this.btnGiveUp.node.active = false;
-            this.btnBuild.node.active = false;
-            this.btnTransfer.node.active = false;
             this.durableNode.active = false;
-
         } else if (this._data instanceof MapBuildData) {
-            //点击的是占领地
-            if ((this._data as MapBuildData).rid == MapCommand.getInstance().buildProxy.myId) {
-                //我自己的地
-                this.btnMove.node.active = true;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = !this._data.isInGiveUp();
-                this.btnReclaim.node.active = this._data.isResBuild();
-                this.btnBuild.node.active = !this._data.isWarFree();
-
-                //是资源地
-                if (this._data.isResBuild()) {
-                    this.btnTransfer.node.active = false;
-                    this.btnEnter.node.active = false;
-                    this.btnBuild.node.active = !this._data.isBuilding();
-                } else if (this._data.isSysCity()) {
-                    this.btnTransfer.node.active = false;
-                    this.btnEnter.node.active = false;
-                    this.btnBuild.node.active = false;
-                } else if (this._data.isSysFortress) {
-                    this.btnTransfer.node.active = true;
-                    this.btnEnter.node.active = true;
-                    this.btnBuild.node.active = false;
-                }
-
-                if (this._data.isInGiveUp()) {
-                    this.btnBuild.node.active = false;
-                }
-
-                if (this._data.isWarFree()) {
-                    this.btnGiveUp.node.active = false;
-                }
-
-            } else if ((this._data as MapBuildData).unionId > 0
-                && (this._data as MapBuildData).unionId == MapCommand.getInstance().buildProxy.myUnionId) {
-                //盟友的地
-                this.btnMove.node.active = true;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
-            } else if ((this._data as MapBuildData).parentId > 0
-                && (this._data as MapBuildData).parentId == MapCommand.getInstance().buildProxy.myUnionId) {
-                //俘虏的地
-                this.btnMove.node.active = true;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
-            } else {
-                this.btnMove.node.active = false;
-                this.btnOccupy.node.active = true;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
-            }
+            const build = this._data as MapBuildData;
+            const mine = build.rid == MapCommand.getInstance().buildProxy.myId;
+            const ally = build.unionId > 0 && build.unionId == MapCommand.getInstance().buildProxy.myUnionId;
+            const captive = build.parentId > 0 && build.parentId == MapCommand.getInstance().buildProxy.myUnionId;
+            this.btnOccupy.node.active = !mine && !ally && !captive;
             this.durableNode.active = true;
             this.labelDurable.string = Math.ceil(this._data.curDurable / 100) + "/" + Math.ceil(this._data.maxDurable / 100);
             this.progressBarDurable.progress = this._data.curDurable / this._data.maxDurable;
         } else if (this._data instanceof MapCityData) {
-            //点击其他城市
-            if (this._data.rid == MapCommand.getInstance().cityProxy.myId) {
-                //我自己的城池
+            const city = this._data as MapCityData;
+            if (city.rid == MapCommand.getInstance().cityProxy.myId) {
                 this.btnEnter.node.active = true;
-                this.btnMove.node.active = false;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
                 this.btnTagAdd.node.active = false;
                 this.btnTagRemove.node.active = false;
-
-            } else if ((this._data as MapCityData).unionId > 0
-                && (this._data as MapCityData).unionId == MapCommand.getInstance().cityProxy.myUnionId) {
-                //盟友的城池
-                this.btnMove.node.active = true;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
-            } else if ((this._data as MapCityData).parentId > 0
-                && (this._data as MapCityData).parentId == MapCommand.getInstance().cityProxy.myUnionId) {
-                //俘虏的城池
-                this.btnMove.node.active = true;
-                this.btnOccupy.node.active = false;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
             } else {
-                this.btnMove.node.active = false;
-                this.btnOccupy.node.active = true;
-                this.btnGiveUp.node.active = false;
-                this.btnBuild.node.active = false;
-                this.btnTransfer.node.active = false;
+                const ally = city.unionId > 0 && city.unionId == MapCommand.getInstance().cityProxy.myUnionId;
+                const captive = city.parentId > 0 && city.parentId == MapCommand.getInstance().cityProxy.myUnionId;
+                this.btnOccupy.node.active = !ally && !captive;
             }
             this.bgSelect.getComponent(UITransform).setContentSize(600, 300);
             this.leftInfoNode.active = false;

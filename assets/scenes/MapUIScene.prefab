@@ -15617,7 +15617,7 @@
         "__id__": 706
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 722
@@ -22563,9 +22563,6 @@
         "__id__": 1158
       },
       {
-        "__id__": 705
-      },
-      {
         "__id__": 971
       }
     ],
@@ -28286,10 +28283,6 @@
       "__uuid__": "cb8a794b-4b28-4a41-8d81-0d0ab47ccf3b",
       "__expectedType__": "cc.Prefab"
     },
-    "fortressAboutPrefab": {
-      "__uuid__": "5ebcfef2-6d63-4b2b-ba6b-d7ff88ba918a",
-      "__expectedType__": "cc.Prefab"
-    },
     "warReportPrefab": {
       "__uuid__": "b4c977bf-bdfd-43b1-8169-44168828eb4a",
       "__expectedType__": "cc.Prefab"
@@ -28336,10 +28329,6 @@
     },
     "skillInfoPrefab": {
       "__uuid__": "d1861182-3e2c-4c8e-ba82-6bd63952b7ba",
-      "__expectedType__": "cc.Prefab"
-    },
-    "settingPrefab": {
-      "__uuid__": "2627c7e2-3663-4760-bd6b-9b0c85a2a189",
       "__expectedType__": "cc.Prefab"
     },
     "cloudAniPrefab": {
