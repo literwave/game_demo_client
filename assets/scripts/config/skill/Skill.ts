@@ -48,6 +48,7 @@ export class SkillLevel {
 export class SkillConf {
 	cfgId: number
 	name: string
+    icon: string
     des: string
     trigger: number //发起类型
     target: number  //目标类型

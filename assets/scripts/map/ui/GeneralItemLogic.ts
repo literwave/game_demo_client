@@ -9,6 +9,7 @@ import GeneralHeadLogic from "./GeneralHeadLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+import { applyGeneralCardSkin, clearGeneralCardSkin } from './GeneralCardSkin';
 
 // /**军队命令*/
 export class GeneralItemType {
@@ -95,6 +96,7 @@ export default class GeneralItemLogic extends Component {
 
 
     protected updateView(curData: any): void {
+        clearGeneralCardSkin(this.node);
         this._curData = curData;
 
         // 服务器下发的 hero_type 就是配置 ID
@@ -137,6 +139,18 @@ export default class GeneralItemLogic extends Component {
         if (this.delNode) this.delNode.active = false;
         if (this.useNode) this.useNode.active = TroopCommand.getInstance().proxy.isHeroInTroop(hero_type);
         this.select(false);
+        if (curData.listAppearance === 'roster') {
+            applyGeneralCardSkin(this.node, {
+                name: this.nameLabel.string,
+                level: this.lvLabel.string,
+                role: cfgData ? (this.armLabel?.string || '') : '',
+                camp: cfgData ? (this.campLabel?.string || '') : '',
+                stat: cfgData?.cost > 0 ? '统御 ' + cfgData.cost :
+                    (cfgData?.quality > 0 ? '品阶 ' + cfgData.quality : ''),
+                stars: cfgData?.star || 0,
+                promotedStars: curData.star_lv || 0,
+            });
+        }
     }
 
     protected armstr(arms: number[]): string {

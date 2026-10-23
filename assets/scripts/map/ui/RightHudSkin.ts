@@ -1,4 +1,4 @@
-import { Color, Graphics, Label, Node, UITransform } from 'cc';
+import { Button, Color, Graphics, Label, Node, Sprite, UITransform, Widget } from 'cc';
 
 // 侧栏共用的轻量矢量装饰，只在布局或数据变化时重绘。
 const ink = new Color(31, 38, 32, 238);
@@ -132,6 +132,104 @@ export function drawCommandRow(parent: Node, expanded = false, status = false): 
     g.moveTo(x - 3, y + (expanded ? -2 : 2));
     g.lineTo(x, y + (expanded ? 1 : -1));
     g.lineTo(x + 3, y + (expanded ? -2 : 2));
+    g.stroke();
+}
+
+export function drawCommandDetail(parent: Node, hasPortrait: boolean): void {
+    const ui = parent?.getComponent(UITransform);
+    if (!ui) return;
+    const g = surface(parent, ui.width, ui.height);
+    if (!g) return;
+    const left = -ui.width / 2;
+    g.fillColor = new Color(20, 28, 23, 88);
+    g.roundRect(left, -ui.height / 2, ui.width, ui.height, 3);
+    g.fill();
+
+    // 头像和空位共用同一个卡槽，空编队也保持完整的视觉重心。
+    const portraitX = left + 35;
+    g.fillColor = new Color(28, 35, 28, 255);
+    chamfer(g, portraitX - 24, -13, 48, 62, 3);
+    g.fill();
+    g.strokeColor = new Color(164, 143, 93, 130);
+    g.lineWidth = 1;
+    chamfer(g, portraitX - 24, -13, 48, 62, 3);
+    g.stroke();
+    if (!hasPortrait) {
+        g.strokeColor = new Color(177, 155, 101, 180);
+        g.moveTo(portraitX - 6, 3);
+        g.lineTo(portraitX - 6, 34);
+        g.stroke();
+        g.fillColor = new Color(152, 132, 82, 135);
+        g.moveTo(portraitX - 4, 33);
+        g.lineTo(portraitX + 12, 31);
+        g.lineTo(portraitX + 8, 23);
+        g.lineTo(portraitX + 12, 17);
+        g.lineTo(portraitX - 4, 19);
+        g.close();
+        g.fill();
+        g.strokeColor = new Color(177, 155, 101, 100);
+        g.moveTo(portraitX - 11, 2);
+        g.lineTo(portraitX + 3, 2);
+        g.stroke();
+    }
+}
+
+export function styleCommandAction(node: Node, text: string, x: number, width: number, primary: boolean): void {
+    const ui = node?.getComponent(UITransform);
+    const background = node?.getChildByName('Background');
+    const backgroundUi = background?.getComponent(UITransform);
+    const label = background?.getComponentInChildren(Label);
+    const labelUi = label?.getComponent(UITransform);
+    const button = node?.getComponent(Button);
+    if (!ui || !background || !backgroundUi || !label || !labelUi || !button) return;
+
+    // 保留原有 Button 和序列化点击事件；只替换视觉及命中区域。
+    ui.setAnchorPoint(.5, .5);
+    ui.setContentSize(width, 40);
+    node.setPosition(x, -32, 0);
+    const widget = background.getComponent(Widget);
+    if (widget) widget.enabled = false;
+    const sprite = background.getComponent(Sprite);
+    if (sprite) sprite.enabled = false;
+    backgroundUi.setAnchorPoint(.5, .5);
+    backgroundUi.setContentSize(width, 40);
+    background.setPosition(0, 0, 0);
+    background.setScale(1, 1, 1);
+    button.target = background;
+    button.transition = Button.Transition.SCALE;
+    button.zoomScale = .97;
+    button.duration = .08;
+
+    const labelWidget = label.getComponent(Widget);
+    if (labelWidget) labelWidget.enabled = false;
+    labelUi.setAnchorPoint(.5, .5);
+    labelUi.setContentSize(width - 24, 32);
+    label.node.setPosition(0, 0, 0);
+    label.string = text;
+    label.fontSize = 13;
+    label.lineHeight = 20;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
+    label.verticalAlign = Label.VerticalAlign.CENTER;
+    label.overflow = Label.Overflow.CLAMP;
+    label.enableWrapText = false;
+    label.outlineWidth = 0;
+    label.color = primary ? new Color(249, 234, 192, 255) : ivory;
+
+    const g = surface(background, width, 40);
+    if (!g) return;
+    g.fillColor = new Color(10, 16, 11, 80);
+    chamfer(g, -width / 2, -18, width, 32, 3);
+    g.fill();
+    g.fillColor = primary ? new Color(109, 91, 49, 255) : new Color(43, 50, 39, 255);
+    chamfer(g, -width / 2, -16, width, 32, 3);
+    g.fill();
+    g.lineWidth = 1;
+    g.strokeColor = primary ? new Color(191, 162, 99, 230) : bronze;
+    chamfer(g, -width / 2 + .5, -15.5, width - 1, 31, 3);
+    g.stroke();
+    g.strokeColor = primary ? new Color(226, 202, 143, 100) : new Color(164, 143, 93, 50);
+    g.moveTo(-width / 2 + 5, 13);
+    g.lineTo(width / 2 - 5, 13);
     g.stroke();
 }
 

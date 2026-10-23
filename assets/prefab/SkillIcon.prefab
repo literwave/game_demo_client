@@ -403,10 +403,7 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "674df64a-e247-4e99-a87a-80298656fc11@f9941",
-      "__expectedType__": "cc.SpriteFrame"
-    },
+    "_spriteFrame": null,
     "_type": 0,
     "_fillType": 0,
     "_sizeMode": 1,
@@ -437,24 +434,6 @@
     "__prefab": {
       "__id__": 21
     },
-    "sps": [
-      {
-        "__uuid__": "674df64a-e247-4e99-a87a-80298656fc11@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "890aca29-71c6-46c5-a44f-12d689ef6eca@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "0677877d-bde7-4a7a-9066-4bb82f9f6a38@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      },
-      {
-        "__uuid__": "46e9d6c6-eaf5-4b11-bc56-c67c9603fc57@f9941",
-        "__expectedType__": "cc.SpriteFrame"
-      }
-    ],
     "lvLab": {
       "__id__": 11
     },

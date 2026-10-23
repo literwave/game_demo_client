@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, SpriteFrame } from 'cc';
+import { _decorator, Component, Label, Node } from 'cc';
 const {ccclass, property} = _decorator;
 import SkillCommand from "../../skill/SkillCommand";
 import { Skill } from "../../skill/SkillProxy";
@@ -18,9 +18,6 @@ export default class SkillItemLogic extends Component {
     @property(Node)
     icon:Node = null;
 
-    @property([SpriteFrame])
-    sps:SpriteFrame[] = [];
-
     _skill: Skill = null;
 
     protected onEnable():void{
@@ -31,11 +28,11 @@ export default class SkillItemLogic extends Component {
    
         var conf = SkillCommand.getInstance().proxy.getSkillCfg(skill.cfgId);
         this._skill = skill;
-        this.nameLab.string = conf.name;
+        this.nameLab.string = conf ? conf.name : '未知技能';
 
         this.icon.getComponent(SkillIconLogic).setData(skill, null);
 
-        this.limitLab.string = this._skill.generals.length + "/" + conf.limit;
+        this.limitLab.string = conf ? (skill.generals || []).length + "/" + conf.limit : '';
     }
 
 }

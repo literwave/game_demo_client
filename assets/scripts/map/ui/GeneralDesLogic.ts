@@ -135,44 +135,20 @@ export default class GeneralDesLogic extends Component {
         }
 
         if (this.powerLabel) this.powerLabel.string = "职业:" + (cfgData.heroClass || "无");
-        if (this.costLabel) this.costLabel.string = "技能:" + (cfgData.skill || "无");
+        const skillProxy = SkillCommand.getInstance().proxy;
+        const innateSkill = skillProxy.getSkillCfg(cfgData.skillId);
+        if (this.costLabel) this.costLabel.string = "技能:" + (innateSkill?.name || cfgData.skill || "无");
 
         const skills = curData.skills || [];
         for (let index = 0; index < this.skillIcons.length; index++) {
-            if (index >= skills.length) {
-                const icon = this.skillIcons[index];
-                const iconNameLab = this.skillNameLab[index];
-                if (icon && icon.getComponent(SkillIconLogic)) {
-                    icon.getComponent(SkillIconLogic).setData(null, null);
-                }
-                if (iconNameLab) {
-                    iconNameLab.string = index == 0 ? (cfgData.skill || "") : "";
-                }
-                continue;
-            }
-            let gSkill = curData.skills[index];
-            let icon = this.skillIcons[index];
-            let iconNameLab = this.skillNameLab[index];
-
-            if (gSkill == null) {
-                if (icon && icon.getComponent(SkillIconLogic)) {
-                    icon.getComponent(SkillIconLogic).setData(null, null);
-                }
-                if (iconNameLab) iconNameLab.string = "";
-            } else {
-
-                let skillConf = SkillCommand.getInstance().proxy.getSkillCfg(gSkill.cfgId);
-                let skill = SkillCommand.getInstance().proxy.getSkill(gSkill.cfgId);
-                if (skillConf && skill) {
-                    icon.getComponent(SkillIconLogic).setData(skill, gSkill);
-                    iconNameLab.string = skillConf.name;
-                } else {
-                    if (icon && icon.getComponent(SkillIconLogic)) {
-                        icon.getComponent(SkillIconLogic).setData(null, null);
-                    }
-                    if (iconNameLab) iconNameLab.string = "";
-                }
-            }
+            const equipped = skills[index] || null;
+            const cfgId = equipped ? equipped.cfgId : (index === 0 ? cfgData.skillId : 0);
+            const conf = skillProxy.getSkillCfg(cfgId);
+            const displaySkill = skillProxy.getSkillForDisplay(cfgId);
+            const icon = this.skillIcons[index]?.getComponent(SkillIconLogic);
+            if (icon) icon.setData(displaySkill, equipped);
+            const label = this.skillNameLab[index];
+            if (label) label.string = conf?.name || '';
         }
     }
 
@@ -192,17 +168,20 @@ export default class GeneralDesLogic extends Component {
     protected onClickSkill(event: EventTouch, pos) {
         AudioManager.instance.playClick();
         console.log("event", event, pos);
-        var node: Node = event.target;
+        const slot = Number(pos);
+        const node: Node = this.skillIcons[slot] || event.currentTarget || event.target;
         const skillIcon = node ? node.getComponent(SkillIconLogic) : null;
         if (!skillIcon) {
             return;
         }
         var isEmpty = skillIcon.isEmpty();
         if (isEmpty) {
-            EventMgr.emit(LogicEvent.openSkill, 1, this._currData, pos);
+            EventMgr.emit(LogicEvent.openSkill, 1, this._currData, slot);
         } else {
             let skill = skillIcon.getSkill();
-            EventMgr.emit(LogicEvent.openSkillInfo, skill, 2, this._currData, pos);
+            const equipped = this._currData?.skills?.[slot];
+            const type = equipped && equipped.cfgId === skill.cfgId ? 2 : 0;
+            EventMgr.emit(LogicEvent.openSkillInfo, skill, type, this._currData, slot);
         }
     }
 

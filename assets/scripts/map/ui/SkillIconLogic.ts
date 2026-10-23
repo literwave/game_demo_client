@@ -1,4 +1,4 @@
-import { _decorator, Component, SpriteFrame, Label, Sprite } from 'cc';
+import { _decorator, Component, Label, Sprite } from 'cc';
 const {ccclass, property} = _decorator;
 
 
@@ -10,27 +10,16 @@ import { Skill } from "../../skill/SkillProxy";
 @ccclass('SkillIconLogic')
 export default class SkillIconLogic extends Component {
 
-    @property([SpriteFrame])
-    sps:SpriteFrame[] = [];
-
     @property(Label)
     lvLab:Label = null;
 
     _data: Skill = null;
+    private _iconRequest: number = 0;
 
     public setData(data:Skill, gdata:gSkill):void{
 
         this._data = data;
-        if(this._data == null){
-            this.getComponent(Sprite).spriteFrame = null;
-        }else{
-            var conf = SkillCommand.getInstance().proxy.getSkillCfg(data.cfgId);
-            if(conf.trigger <= this.sps.length){
-                this.getComponent(Sprite).spriteFrame = this.sps[conf.trigger-1];
-            }else{
-                this.getComponent(Sprite).spriteFrame = null;
-            }
-        }
+        const request = ++this._iconRequest;
 
         if(gdata){
             if(this.lvLab){
@@ -41,7 +30,24 @@ export default class SkillIconLogic extends Component {
                 this.lvLab.string = "";
             }
         }
-    
+        const sprite = this.getComponent(Sprite);
+        if (!sprite) return;
+        const proxy = SkillCommand.getInstance().proxy;
+        // 图片尺寸不改变现有技能格子的大小。
+        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        const cached = data ? proxy.getSkillIcon(data.cfgId) : null;
+        sprite.spriteFrame = cached;
+        if (!data || cached) return;
+        // 正常进图已准备好全部图标；资源失效或单独打开界面时只加载对应的新图。
+        proxy.loadSkillIcon(data.cfgId).then(frame => {
+            // 列表复用、清空或销毁后，旧请求不能覆盖当前技能图标。
+            if (!this.isValid || !sprite.isValid || request !== this._iconRequest) return;
+            if (frame?.isValid) sprite.spriteFrame = frame;
+        });
+    }
+
+    protected onDestroy(): void {
+        this._iconRequest++;
     }
 
     public isEmpty():boolean {

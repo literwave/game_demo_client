@@ -1,7 +1,7 @@
 import { _decorator, Component, Label, Node, Button } from 'cc';
 const {ccclass, property} = _decorator;
 
-import { SkillConf, SkillOutline } from "../../config/skill/Skill";
+import { SkillConf, SkillEffectType, SkillLevel } from "../../config/skill/Skill";
 import GeneralCommand from "../../general/GeneralCommand";
 import { GeneralData } from "../../general/GeneralProxy";
 import SkillCommand from "../../skill/SkillCommand";
@@ -10,6 +10,12 @@ import SkillIconLogic from "./SkillIconLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
+
+const TRIGGER_NAMES: Record<number, string> = { 1: '主动', 2: '被动', 3: '追击', 4: '指挥' };
+const TARGET_NAMES: Record<number, string> = {
+    1: '自身', 4: '我军全体', 5: '敌军单体',
+    6: '敌军1-2个目标', 7: '敌军2-3个目标', 8: '敌军全体',
+};
 
 @ccclass('SkillInfoLogic')
 export default class SkillInfoLogic extends Component {
@@ -59,7 +65,7 @@ export default class SkillInfoLogic extends Component {
     _skillPos : number = -1;
 
     protected onEnable() {
-        this.learnBtn.node.active = false;
+        this.hideUnsupportedActions();
     }
 
     protected onClickClose(): void {
@@ -68,65 +74,64 @@ export default class SkillInfoLogic extends Component {
     }
 
     public setData(data: Skill, type:number, general:GeneralData, skillPos: number) {
-
-        console.log("setData Skill:", data, general);
-
-        var conf = SkillCommand.getInstance().proxy.getSkillCfg(data.cfgId);
-        this.icon.getComponent(SkillIconLogic).setData(data, null);
-        var outLine: SkillOutline = SkillCommand.getInstance().proxy.outLine;
-
+        const proxy = SkillCommand.getInstance().proxy;
+        const conf = data ? proxy.getSkillCfg(data.cfgId) : null;
         this._cfg = conf;
         this._data = data;
         this._type = type;
         this._general = general;
         this._skillPos = skillPos;
+        this.hideUnsupportedActions();
 
-        this.learnBtn.node.active = type == 1;
-        this.giveUpBtn.node.active = type == 2;
-
-        this.nameLab.string = conf.name;
-
-        let isShowLv = false;
-        let lv = 0;
-        if(type == 2){
-            for (let index = 0; index < general.skills.length; index++) {
-                const gskill =  general.skills[index];
-                if (gskill && gskill.cfgId == data.cfgId && gskill.lv <= conf.levels.length){
-                    isShowLv = true;
-                    lv = gskill.lv;
-                    break
-                }
-            }
+        const slotSkill = type === 2 ? general?.skills?.[skillPos] : null;
+        const equipped = conf && slotSkill?.cfgId === conf.cfgId ? slotSkill : null;
+        this.icon?.getComponent(SkillIconLogic)?.setData(conf ? data : null, equipped);
+        for (const label of [this.lvLab, this.triggerLab, this.targetLab, this.armLab,
+            this.rateLab, this.curDesLab, this.nextDesLab]) {
+            if (label) label.string = '';
         }
+        if (this.nameLab) this.nameLab.string = conf?.name || '未知技能';
+        if (!conf) return;
 
-        this.lvBtn.node.active = isShowLv;
-        if(isShowLv){
-            this.lvLab.string = "lv:" + lv;
-        }else{
-            this.lvLab.string = "";
+        const outline = proxy.outLine;
+        const triggerName = outline?.trigger_type?.list?.find(item => item.type === conf.trigger)?.des;
+        const targetName = outline?.target_type?.list?.find(item => item.type === conf.target)?.des;
+        if (this.triggerLab) this.triggerLab.string = triggerName || TRIGGER_NAMES[conf.trigger] || '未知类型';
+        if (this.targetLab) this.targetLab.string = targetName || TARGET_NAMES[conf.target] || '未知目标';
+        if (this.armLab) this.armLab.string = this.armstr(conf.arms || []);
+        if (this.lvLab) this.lvLab.string = equipped ? 'lv:' + equipped.lv : '';
+
+        const levels = conf.levels || [];
+        const index = Math.min(Math.max(0, Math.floor(Number(equipped?.lv) || 1) - 1), levels.length - 1);
+        const current = levels[index];
+        if (!current) {
+            if (this.curDesLab) this.curDesLab.string = '暂无等级配置';
+            return;
         }
-    
-        this.triggerLab.string =  outLine.trigger_type.list[conf.trigger-1].des;
-        this.rateLab.string = conf.levels[0].probability + "%";
-        this.targetLab.string = outLine.target_type.list[conf.target-1].des;
-        this.armLab.string = this.armstr(conf.arms);
+        if (this.rateLab) this.rateLab.string = current.probability + '%';
+        if (this.curDesLab) this.curDesLab.string = this.formatDescription(conf, current);
+        if (this.nextDesLab) this.nextDesLab.string = levels[index + 1]
+            ? this.formatDescription(conf, levels[index + 1]) : '已达最高等级';
+    }
 
-        var des1 = conf.des
-        for (let index = 0; index < conf.levels[0].effect_value.length; index++) {
-            var str = conf.levels[0].effect_value[index] + "";
-            des1 = des1.replace("%n%", str);
+    private hideUnsupportedActions(): void {
+        // 当前协议只有武将技能同步，学习、升级和遗忘尚无可用接口。
+        for (const button of [this.learnBtn, this.lvBtn, this.giveUpBtn]) {
+            if (button) button.node.active = false;
         }
+    }
 
-        this.curDesLab.string = des1;
-
-        var des2 = conf.des
-        for (let index = 0; index < conf.levels[1].effect_value.length; index++) {
-            var str = conf.levels[1].effect_value[index] + "";
-            des2 = des2.replace("%n%", str);
-        }
-
-        this.nextDesLab.string = des2;
-
+    private formatDescription(conf: SkillConf, level: SkillLevel): string {
+        let index = 0;
+        const effects = SkillCommand.getInstance().proxy.outLine?.effect_type?.list;
+        return (conf.des || '').replace(/%n%/g, () => {
+            const effectType = conf.include_effect?.[index];
+            const value = level.effect_value?.[index++];
+            if (value == null) return '—';
+            const isRate = effects?.find(effect => effect.type === effectType)?.isRate
+                ?? (effectType === SkillEffectType.HurtRate);
+            return String(value) + (isRate ? '%' : '');
+        });
     }
 
     protected armstr(arms:number []): string{
@@ -149,6 +154,7 @@ export default class SkillInfoLogic extends Component {
 
     
     protected onClickLearn():void {
+        if (!this.learnBtn?.node.active || !this._cfg) return;
         AudioManager.instance.playClick();
         if(this._general){
             GeneralCommand.getInstance().upSkill(this._general.id, this._cfg.cfgId, this._skillPos);
@@ -158,6 +164,7 @@ export default class SkillInfoLogic extends Component {
     }
 
     protected onClickLv():void {
+        if (!this.lvBtn?.node.active || !this._cfg) return;
         AudioManager.instance.playClick();
         if(this._general){
             GeneralCommand.getInstance().lvSkill(this._general.id, this._skillPos);
@@ -167,6 +174,7 @@ export default class SkillInfoLogic extends Component {
     }
 
     protected onClickForget():void {
+        if (!this.giveUpBtn?.node.active || !this._cfg) return;
         AudioManager.instance.playClick();
         if(this._general){
             GeneralCommand.getInstance().downSkill(this._general.id, this._cfg.cfgId, this._skillPos);

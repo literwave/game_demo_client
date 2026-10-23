@@ -19,6 +19,7 @@ export class GeneralConfig {
     heroClass: string = "";
     crit: number = 0;
     skill: string = "";
+    skillId: number = 0;
 
     // 旧战斗逻辑使用的兼容字段
     force: number = 0;
@@ -192,6 +193,7 @@ export default class GeneralProxy {
             cfg.heroClass = data.Class || "";
             cfg.crit = Number(data.Crit || 0);
             cfg.skill = data.Skill || "";
+            cfg.skillId = Number(data.SkillId || 0);
 
             // 新配置字段映射到旧显示/战斗字段
             cfg.star = Number(data.Star != null ? data.Star : (data.star || 0));
