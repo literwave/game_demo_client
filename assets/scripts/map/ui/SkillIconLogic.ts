@@ -1,4 +1,4 @@
-import { _decorator, Component, SpriteFrame, Label, Sprite, resources } from 'cc';
+import { _decorator, Component, Label, Sprite } from 'cc';
 const {ccclass, property} = _decorator;
 
 
@@ -9,9 +9,6 @@ import { Skill } from "../../skill/SkillProxy";
 
 @ccclass('SkillIconLogic')
 export default class SkillIconLogic extends Component {
-
-    @property([SpriteFrame])
-    sps:SpriteFrame[] = [];
 
     @property(Label)
     lvLab:Label = null;
@@ -35,29 +32,22 @@ export default class SkillIconLogic extends Component {
         }
         const sprite = this.getComponent(Sprite);
         if (!sprite) return;
-        const conf = data ? SkillCommand.getInstance().proxy.getSkillCfg(data.cfgId) : null;
+        const proxy = SkillCommand.getInstance().proxy;
         // 图片尺寸不改变现有技能格子的大小。
         sprite.sizeMode = Sprite.SizeMode.CUSTOM;
-        sprite.spriteFrame = conf ? this.sps[conf.trigger - 1] || null : null;
-        if (!conf || !conf.icon) return;
-
-        const base = conf.icon.trim().replace(/\/spriteFrame$/i, '').replace(/\.png$/i, '');
-        if (!base) return;
-        const path = `${base}/spriteFrame`;
-        const cached = resources.get(path, SpriteFrame);
-        if (cached && cached.isValid) {
-            sprite.spriteFrame = cached;
-            return;
-        }
-        resources.load(path, SpriteFrame, (error: Error | null, frame: SpriteFrame) => {
+        const cached = data ? proxy.getSkillIcon(data.cfgId) : null;
+        sprite.spriteFrame = cached;
+        if (!data || cached) return;
+        // 正常进图已准备好全部图标；资源失效或单独打开界面时只加载对应的新图。
+        proxy.loadSkillIcon(data.cfgId).then(frame => {
             // 列表复用、清空或销毁后，旧请求不能覆盖当前技能图标。
             if (!this.isValid || !sprite.isValid || request !== this._iconRequest) return;
-            if (error || !(frame instanceof SpriteFrame)) {
-                console.warn(`技能图标加载失败: ${conf.cfgId} (${path})`, error);
-                return;
-            }
-            sprite.spriteFrame = frame;
+            if (frame?.isValid) sprite.spriteFrame = frame;
         });
+    }
+
+    protected onDestroy(): void {
+        this._iconRequest++;
     }
 
     public isEmpty():boolean {

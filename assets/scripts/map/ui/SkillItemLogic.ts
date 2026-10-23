@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, SpriteFrame } from 'cc';
+import { _decorator, Component, Label, Node } from 'cc';
 const {ccclass, property} = _decorator;
 import SkillCommand from "../../skill/SkillCommand";
 import { Skill } from "../../skill/SkillProxy";
@@ -17,9 +17,6 @@ export default class SkillItemLogic extends Component {
 
     @property(Node)
     icon:Node = null;
-
-    @property([SpriteFrame])
-    sps:SpriteFrame[] = [];
 
     _skill: Skill = null;
 

@@ -29,6 +29,7 @@ export default class SkillCommand {
     }
     protected _proxy: SkillProxy = new SkillProxy();
     public onDestory(): void {
+        this._proxy.releaseIcons();
         EventMgr.targetOff(this);
     }
     public get proxy(): SkillProxy {
