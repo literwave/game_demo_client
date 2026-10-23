@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, Sprite, UITransform, Layout } from 'cc';
+import { _decorator, Color, Component, Label, Node, Sprite, UITransform, Layout } from 'cc';
 const { ccclass, property } = _decorator;
 
 import { ArmyCmd, ArmyData } from "../../general/ArmyProxy";
@@ -13,7 +13,7 @@ import GeneralHeadLogic from "./GeneralHeadLogic";
 import { EventMgr } from '../../utils/EventMgr';
 import { AudioManager } from '../../common/AudioManager';
 import { LogicEvent } from '../../common/LogicEvent';
-import { drawCommandRow, setCommandLabel } from './RightHudSkin';
+import { drawCommandDetail, drawCommandRow, setCommandLabel, styleCommandAction } from './RightHudSkin';
 
 @ccclass('RightArmyItemLogic')
 export default class RightArmyItemLogic extends Component {
@@ -100,12 +100,62 @@ export default class RightArmyItemLogic extends Component {
         const bottomUi = this.bottomNode?.getComponent(UITransform);
         const rootUi = this.node.getComponent(UITransform);
         if (!top || !topUi || !bottomUi || !rootUi) return;
+        this.refreshDetailSkin();
         const detailHeight = this.bottomNode.active ? bottomUi.height : 0;
         rootUi.height = topUi.height + detailHeight;
         top.setPosition(0, detailHeight * 0.5, 0);
         this.bottomNode.setPosition(0, -topUi.height * 0.5, 0);
         this.refreshHeaderSkin();
         this.node.parent?.getComponent(Layout)?.updateLayout();
+    }
+
+    private refreshDetailSkin(): void {
+        const ui = this.bottomNode?.getComponent(UITransform);
+        if (!ui) return;
+        ui.height = 112;
+        const background = this.bottomNode.getComponent(Sprite);
+        if (background) background.enabled = false;
+        const hasHeroes = this._troop ? this._troop.getSortedHeroes().length > 0 : !!this._firstGeneral;
+        const emptyTroop = !!this._troop && !hasHeroes;
+        drawCommandDetail(this.bottomNode, hasHeroes);
+
+        const portraitUi = this.headIcon?.getComponent(UITransform);
+        if (portraitUi) {
+            this.headIcon.node.active = hasHeroes;
+            this.headIcon.sizeMode = Sprite.SizeMode.CUSTOM;
+            portraitUi.setContentSize(42, 58);
+            this.headIcon.node.setPosition(-ui.width / 2 + 35, 18, 0);
+        }
+        const textX = -ui.width / 2 + 68;
+        const textWidth = ui.width - 80;
+        this.styleDetailLabel(this.labelSoldierCnt, textX, emptyTroop ? 30 : 34, textWidth, 13, false);
+        this.styleDetailLabel(this.labelStrength, textX, emptyTroop ? 8 : 14, textWidth, 11, true);
+        this.styleDetailLabel(this.labelMorale, textX, -5, textWidth, 11, true);
+        if (this.labelMorale) this.labelMorale.node.active = !emptyTroop;
+
+        const showSetting = !!this.btnSetting?.active;
+        const showBack = !!this.btnBack?.active;
+        const twoActions = showSetting && showBack;
+        const width = twoActions ? (ui.width - 32) / 2 : ui.width - 24;
+        const offset = twoActions ? (width + 8) / 2 : 0;
+        if (showSetting) styleCommandAction(this.btnSetting, hasHeroes ? '调整编队' : '配置武将', -offset, width, true);
+        if (showBack) styleCommandAction(this.btnBack, '返回主城', offset, width, !showSetting);
+    }
+
+    private styleDetailLabel(label: Label, x: number, y: number, width: number, fontSize: number, muted: boolean): void {
+        const ui = label?.getComponent(UITransform);
+        if (!ui) return;
+        ui.setAnchorPoint(0, .5);
+        ui.setContentSize(width, 20);
+        label.node.setPosition(x, y, 0);
+        label.fontSize = fontSize;
+        label.lineHeight = 20;
+        label.horizontalAlign = Label.HorizontalAlign.LEFT;
+        label.verticalAlign = Label.VerticalAlign.CENTER;
+        label.overflow = Label.Overflow.CLAMP;
+        label.enableWrapText = false;
+        label.outlineWidth = 0;
+        label.color = muted ? new Color(174, 177, 152, 255) : new Color(235, 227, 203, 255);
     }
 
     private refreshHeaderSkin(): void {
@@ -194,6 +244,7 @@ export default class RightArmyItemLogic extends Component {
             this._firstGeneral = null;
             this.node.active = false;
         }
+        if (this.node.active) this.layoutItem();
     }
 
     protected updateTroopItem(): void {
@@ -213,9 +264,9 @@ export default class RightArmyItemLogic extends Component {
         }
         if (this.labelInfo) this.labelInfo.string = firstCfg ? teamName + "队" : "第" + this.order + "部队";
         if (this.labelPos) this.labelPos.string = "武将 " + heroes.length + "/3";
-        if (this.labelSoldierCnt) this.labelSoldierCnt.string = "上阵 " + heroes.length + "/3";
+        if (this.labelSoldierCnt) this.labelSoldierCnt.string = heroes.length > 0 ? "上阵 " + heroes.length + "/3" : "尚未配置武将";
         if (this.labelStrength) {
-            this.labelStrength.string = firstCfg ? "速度 " + firstCfg.speed : "尚未配置武将";
+            this.labelStrength.string = heroes.length > 0 ? "速度 " + (firstCfg?.speed || 0) : "选择武将，组建你的部队";
         }
         if (this.labelMorale) {
             let attack: number = 0;
@@ -230,7 +281,7 @@ export default class RightArmyItemLogic extends Component {
         }
         if (this.btnBack) this.btnBack.active = false;
         if (this.btnSetting) this.btnSetting.active = true;
-        this.refreshHeaderSkin();
+        this.layoutItem();
     }
 
     public setArmyData(data: ArmyData): void {

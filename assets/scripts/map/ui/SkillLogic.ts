@@ -2,6 +2,7 @@ import { _decorator, Component, ScrollView } from 'cc';
 const {ccclass, property} = _decorator;
 
 import { GeneralData } from "../../general/GeneralProxy";
+import GeneralCommand from "../../general/GeneralCommand";
 import SkillCommand from "../../skill/SkillCommand";
 import { Skill } from "../../skill/SkillProxy";
 import { EventMgr } from '../../utils/EventMgr';
@@ -24,6 +25,8 @@ export default class SkillLogic extends Component {
     protected onEnable():void{
        
         EventMgr.on(LogicEvent.skillListInfo, this.onSkillList, this);
+        EventMgr.on(LogicEvent.updateGeneral, this.onSkillList, this);
+        this.onSkillList();
         SkillCommand.getInstance().qrySkillList();
     }
 
@@ -33,33 +36,17 @@ export default class SkillLogic extends Component {
 
     protected onSkillList(){
     
-        var skills = SkillCommand.getInstance().proxy.skills;
-        var skillConfs = SkillCommand.getInstance().proxy.skillConfs;
-
-        var arr = [];
-        for (let i = 0; i < skillConfs.length; i++) {
-            var found = false;
-            let cfg = skillConfs[i];
-
-            let dSkill = new Skill();
-            dSkill.cfgId = cfg.cfgId;
-            dSkill.generals = [];
-
-            for (let j = 0; j < skills.length; j++) {
-                var skill = skills[j];
-                if (skill.cfgId == cfg.cfgId){
-                    found = true;
-                    arr.push(skill);
-                    break
-                }
-            }
-            if(found == false){
-                arr.push(dSkill);
-            }
-        }
-
-        var comp = this.scrollView.node.getComponent(ListLogic);
-        comp.setData(arr);
+        const proxy = SkillCommand.getInstance().proxy;
+        const generals = GeneralCommand.getInstance().proxy.getMyGenerals();
+        const items = proxy.skillConfs.map(conf => {
+            const item = Object.assign(new Skill(), proxy.getSkillForDisplay(conf.cfgId));
+            item.generals = generals.filter(general =>
+                (general.skills || []).some(skill => skill && skill.cfgId === conf.cfgId)
+            ).map(general => general.id);
+            return item;
+        });
+        const comp = this.scrollView?.node.getComponent(ListLogic);
+        if (comp) comp.setData(items);
     }
 
     protected onClickClose(): void {

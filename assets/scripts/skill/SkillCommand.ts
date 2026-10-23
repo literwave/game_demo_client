@@ -4,6 +4,7 @@ import { NetManager } from "../network/socket/NetManager";
 import SkillProxy from "./SkillProxy";
 import { EventMgr } from '../utils/EventMgr';
 import { LogicEvent } from '../common/LogicEvent';
+import { ProtoManager } from '../network/pto/ProtoManager';
 
 export default class SkillCommand {
 // //单例
@@ -33,12 +34,15 @@ export default class SkillCommand {
     public get proxy(): SkillProxy {
         return this._proxy;
     }
-    public qrySkillList(): void {
-        let sendData: any = {
-            name: ServerConfig.skill_list,
-            msg: {}
-        };
-        NetManager.getInstance().send(sendData);
+    public qrySkillList(): boolean {
+        const proto = ProtoManager.getInstance();
+        const name = ServerConfig.skill_list;
+        // 当前协议仅同步武将已装备技能，图鉴先使用本地配置展示。
+        if (proto.getIdByMsgType(name) == null) return false;
+        const msg = proto.encode(name, {});
+        if (!msg) return false;
+        NetManager.getInstance().send({ name, msg });
+        return true;
     }
     
     protected onSkillList(data: any): void {

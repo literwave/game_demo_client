@@ -281,6 +281,7 @@ export default class Main extends Component {
         if (!tiledMap || !Array.isArray(configAssets)) throw new Error('战场启动资源不完整');
         const configs = ConfigManager.getInstance();
         configs.loadConfigs(configAssets);
+        SkillCommand.getInstance().proxy.initSkillConfig(configs.getConfig('Skill') || []);
         const heroJson = configs.getConfig('Hero');
         const basicCfg = configs.getConfig('Global');
         MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
