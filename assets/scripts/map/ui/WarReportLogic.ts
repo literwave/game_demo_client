@@ -1,3 +1,4 @@
+import BattleCommand, { ReportBrief } from '../../battle/BattleCommand';
 // // Learn TypeScript:
 // //  - https://docs.cocos.com/creator/manual/en/scripting/typescript.html
 // // Learn Attribute:
@@ -48,7 +49,7 @@ export default class WarReportLogic extends Component {
 
 
     protected initView():void{
-        var report:WarReport[] = MapUICommand.getInstance().proxy.getWarReport();
+        var report = BattleCommand.getInstance().getReports();
         
         var comp = this.scrollView.node.getComponent(ListLogic);
         comp.setData(report);
@@ -59,7 +60,7 @@ export default class WarReportLogic extends Component {
         MapUICommand.getInstance().qryWarReport();
     }
 
-    protected openWarPortDes(data:WarReport):void{
+    protected openWarPortDes(data:ReportBrief):void{
         console.log("openWarPortDes");
         if (this._warPortDesNode == null) {
             this._warPortDesNode = instantiate(this.warPortDesPrefab);

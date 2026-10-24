@@ -78,19 +78,20 @@ export default class FacilityDesLogic extends Component {
     //更新解锁条件
     public updateContidionView() {
         this._isUnLock = true;
-        if (this._cfg.conditions.length > 0) {
+        const conditions = this._data.level > 0 ? (this._cfg.upLevels[this._data.level]?.conditions || []) : this._cfg.conditions;
+        if (conditions.length > 0) {
             //有解锁条件
             let contidionList: string[] = [];
-            for (let i: number = 0; i < this._cfg.conditions.length; i++) {
-                let data: Facility = MapUICommand.getInstance().proxy.getMyFacilityByType(this._cityId, this._cfg.conditions[i].type);
-                let cfg: FacilityConfig = MapUICommand.getInstance().proxy.getFacilityCfgByType(this._cfg.conditions[i].type);
-                if (data == null || data.level < this._cfg.conditions[i].level) {
+            for (let i: number = 0; i < conditions.length; i++) {
+                let data: Facility = MapUICommand.getInstance().proxy.getMyFacilityByType(this._cityId, conditions[i].type);
+                let cfg: FacilityConfig = MapUICommand.getInstance().proxy.getFacilityCfgByType(conditions[i].type);
+                if (data == null || data.level < conditions[i].level) {
                     //不满足条件
-                    contidionList.push("<color=#ff0000>" + cfg.name + this._cfg.conditions[i].level + "级</color>");
+                    contidionList.push("<color=#ff0000>" + cfg.name + conditions[i].level + "级</color>");
                     this._isUnLock = false;
                 } else {
                     //满足条件
-                    contidionList.push("<color=#00ff00>" + cfg.name + this._cfg.conditions[i].level + "级</color>");
+                    contidionList.push("<color=#00ff00>" + cfg.name + conditions[i].level + "级</color>");
                 }
             }
             this.labelConditions.node.parent.active = true;
@@ -108,7 +109,10 @@ export default class FacilityDesLogic extends Component {
         let curLevel: number = this._data.level;
         if (curLevel >= 0 && curLevel < this._cfg.upLevels.length) {
             //未达到最高级时
-            let roleRes: any = LoginCommand.getInstance().proxy.getRoleResData();
+            const proxy = LoginCommand.getInstance().proxy;
+            const res = proxy.getRoleResData()?.resList || [];
+            const amount = (id: number) => Number(res.find(r => Number(r.k) === id)?.v || 0);
+            let roleRes: any = { grain: amount(1), wood: amount(2), iron: amount(3), stone: 0, decree: 0 };
             let upLevel: FacilityUpLevel = this._cfg.upLevels[curLevel];
             let needStrList: string[] = [];
             if (upLevel.grain > 0) {
@@ -162,10 +166,11 @@ export default class FacilityDesLogic extends Component {
     }
 
     public updateNeedTime(): void {
+        if (!this._cfg || !this._data) return;
         if(this._isLevelMax == false){
             var level = this._cfg.upLevels[this._data.level];
             if (this._data.isUping() == false){
-                this.labelNeedTime.string =  DateUtil.converSecondStr(level.time*1000);
+                this.labelNeedTime.string =  "即时完成";
             }else{
                 this.labelNeedTime.string = DateUtil.converSecondStr(this._data.upLastTime());
             }
@@ -205,6 +210,7 @@ export default class FacilityDesLogic extends Component {
         this._cityId = cityId;
         this._data = data;
         this._cfg = cfg;
+        if (!data || !cfg) { this.btnUp.interactable = false; return; }
         this.labelTitle.string = cfg.name;
         this.labelDes.string = cfg.des;
         this.updateAdditionView();

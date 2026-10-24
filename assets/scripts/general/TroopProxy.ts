@@ -1,39 +1,8 @@
 /** 部队协议中的英雄位置映射：英雄 ID -> 位置 */
 export type HeroIndexMap = { [heroIdx: string]: number };
 
-/** 协议 pos2HeroMap：位置 -> 英雄 idx，转成 [英雄 idx, 位置] */
-function normalizePos2HeroMap(rawMap: any): Array<[number, number]> {
-    const result: Array<[number, number]> = [];
-    if (!rawMap) {
-        return result;
-    }
-
-    if (rawMap instanceof Map) {
-        rawMap.forEach((heroIdx, position) => {
-            result.push([Number(heroIdx), Number(position)]);
-        });
-        return result;
-    }
-
-    if (Array.isArray(rawMap)) {
-        rawMap.forEach((item: any) => {
-            if (!item) {
-                return;
-            }
-            const position = Number(item.key != null ? item.key : item[0]);
-            const heroIdx = Number(item.value != null ? item.value : item[1]);
-            result.push([heroIdx, position]);
-        });
-        return result;
-    }
-
-    if (typeof rawMap === 'object') {
-        Object.keys(rawMap).forEach((position) => {
-            result.push([Number(rawMap[position]), Number(position)]);
-        });
-    }
-    return result;
-}
+export interface SoldierInfo { count: number; hurtCount: number; }
+export interface TroopPosition { heroIdx: number; soldier: SoldierInfo; }
 
 function unwrapTroop(serverData: any): any {
     if (!serverData) {
@@ -46,6 +15,7 @@ function unwrapTroop(serverData: any): any {
 export class TroopData {
     troopIdx: number = 0;
     heroPositions: Map<number, number> = new Map<number, number>();
+    private soldiers = new Map<number, SoldierInfo>();
 
     public static createFromServer(serverData: any, troopData: TroopData = null): TroopData {
         const data = troopData || new TroopData();
@@ -57,15 +27,33 @@ export class TroopData {
         data.troopIdx = Number(troop.troopIdx != null ? troop.troopIdx : (troop.troop_idx != null ? troop.troop_idx : data.troopIdx));
         data.heroPositions.clear();
 
-        const entries = normalizePos2HeroMap(troop.pos2HeroMap != null ? troop.pos2HeroMap : troop.pos_2_hero_map);
-        entries.forEach(([heroIdx, position]) => {
-            if (!Number.isFinite(heroIdx) || !Number.isFinite(position) || heroIdx <= 0 || position < 0) {
-                return;
-            }
+        data.soldiers.clear();
+        const posMap = troop.posMap || {};
+        Object.keys(posMap).forEach(key => {
+            const position = Number(key);
+            const slot = posMap[key];
+            const heroIdx = Number(slot?.heroIdx);
+            if (!Number.isInteger(heroIdx) || heroIdx <= 0 || !Number.isInteger(position) || position < 0 || position >= 3) return;
             data.removePosition(position);
             data.heroPositions.set(heroIdx, position);
+            data.soldiers.set(heroIdx, {
+                count: Number(slot.soldier?.count) || 0,
+                hurtCount: Number(slot.soldier?.hurtCount) || 0,
+            });
         });
         return data;
+    }
+
+    public getSoldier(heroIdx: number): SoldierInfo {
+        return { ...(this.soldiers.get(heroIdx) || { count: 0, hurtCount: 0 }) };
+    }
+
+    public getPosMap(): { [position: string]: TroopPosition } {
+        const result: { [position: string]: TroopPosition } = {};
+        this.heroPositions.forEach((position, heroIdx) => {
+            result[position] = { heroIdx, soldier: this.getSoldier(heroIdx) };
+        });
+        return result;
     }
 
     public getHeroMap(): HeroIndexMap {
@@ -105,6 +93,7 @@ export class TroopData {
 
     public removeHero(heroIdx: number): void {
         this.heroPositions.delete(heroIdx);
+        this.soldiers.delete(heroIdx);
     }
 
     public removePosition(position: number): void {
@@ -116,6 +105,7 @@ export class TroopData {
         });
         if (occupant > 0) {
             this.heroPositions.delete(occupant);
+            this.soldiers.delete(occupant);
         }
     }
 

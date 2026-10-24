@@ -1,3 +1,4 @@
+import UnionCommand from './UnionCommand';
 
 import { _decorator, Component, Node, Label } from 'cc';
 import { AudioManager } from '../common/AudioManager';
@@ -31,6 +32,7 @@ export default class UnionLogic extends Component {
         EventMgr.on(LogicEvent.dismissUnionSuccess,this.onDismiss,this);
         EventMgr.on(LogicEvent.closeUnion,this.closeUnion,this);
         EventMgr.on(LogicEvent.createUnionSuccess,this.openMyUnion,this);
+        EventMgr.on(LogicEvent.unionChange,this.refreshMembership,this);
     }
     protected onDestroy():void{
         EventMgr.targetOff(this);
@@ -79,8 +81,12 @@ export default class UnionLogic extends Component {
     }
     protected onEnable():void{
 
-        let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        if(city.unionId > 0){
+        UnionCommand.getInstance().requestMine();
+        this.refreshMembership();
+    }
+    private refreshMembership(): void {
+        if (!this.node.activeInHierarchy) return;
+        if(UnionCommand.getInstance().proxy.isMeInUnion()){
             this.openMyUnion();
         }else{
             this.mainNode.active = false;

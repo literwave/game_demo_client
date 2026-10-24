@@ -1,78 +1,49 @@
-import { _decorator } from 'cc';
-
+import { idKey } from '../network/pto/ProtocolCommand';
 export class ChatMsg {
-    rid: number = 0;
-    nick_name: string = "";
-    type:number = 0;
-    msg:string = "";
-    time:number = 0;
+    msgId: number | string = 0;
+    rid: number | string = 0;
+    targetId: number | string = 0;
+    headIcon = 0;
+    nick_name = '';
+    type = 0;
+    channel = 1;
+    msg = '';
+    time = 0;
 }
-
-
 export default class ChatProxy {
-
-
-    private _worldMsgList:ChatMsg[] = [];
-    private _unionMsgList:ChatMsg[] = [];
-    
-    public clearData(): void {
-
+    private histories = new Map<string, ChatMsg[]>();
+    private receiving = new Map<string, ChatMsg[]>();
+    limit = 100;
+    key(channel: number, targetId: any = 0): string { return channel === 3 ? `3:${idKey(targetId)}` : String(channel); }
+    clearData(): void { this.histories.clear(); this.receiving.clear(); }
+    clearAlliance(): void { this.histories.delete('2'); this.receiving.delete('2'); }
+    beginHistory(channel: number, targetId: any): void { this.receiving.set(this.key(channel, targetId), []); }
+    cancelHistory(channel: number, targetId: any): void { this.receiving.delete(this.key(channel, targetId)); }
+    private convert(d: any): ChatMsg {
+        return Object.assign(new ChatMsg(), { msgId: d.msgId, rid: d.senderId, nick_name: d.senderName,
+            headIcon: d.headIcon, targetId: d.targetId, channel: d.channel, type: d.channel - 1, msg: d.content, time: d.time });
     }
-
-    public updateWorldChatList(data:any[]):void{
-        this._worldMsgList = [];
-        for(var i = 0; i < data.length;i++){
-            var chat = new ChatMsg();
-            chat.msg = data[i].msg;
-            chat.rid = data[i].rid;
-            chat.type = data[i].type;
-            chat.time = data[i].time;
-            chat.nick_name = data[i].nickName
-            this._worldMsgList.push(chat);
-        }
+    private merge(key: string, messages: ChatMsg[]): void {
+        const unique = new Map<string, ChatMsg>();
+        messages.forEach(m => unique.set(idKey(m.msgId), m));
+        this.histories.set(key, Array.from(unique.values()).sort((a, b) => a.time - b.time ||
+            idKey(a.msgId).length - idKey(b.msgId).length || idKey(a.msgId).localeCompare(idKey(b.msgId))).slice(-this.limit));
     }
-
-
-    public updateUnionChatList(data:any[]):void{
-        this._unionMsgList = [];
-        for(var i = 0; i < data.length;i++){
-            var chat = new ChatMsg();
-            chat.msg = data[i].msg;
-            chat.rid = data[i].rid;
-            chat.type = data[i].type;
-            chat.time = data[i].time;
-            chat.nick_name = data[i].nickName
-            this._unionMsgList.push(chat);
-        }
+    updateHistory(channel: number, targetId: any, messages: any[]): void {
+        const key = this.key(channel, targetId);
+        this.merge(key, [...(messages || []).map(m => this.convert(m)), ...(this.receiving.get(key) || [])]);
+        this.receiving.delete(key);
     }
-
-
-    public updateWorldChat(data:any):void{
-        var chat = new ChatMsg();
-        chat.msg = data.msg;
-        chat.rid = data.rid;
-        chat.type = data.type;
-        chat.time = data.time;
-        chat.nick_name = data.nickName
-        this._worldMsgList.push(chat);
+    updateMessage(message: any, myUid: any): void {
+        if (!message || [1, 2, 3].indexOf(message.channel) < 0) return;
+        const target = idKey(message.senderId) === idKey(myUid) ? message.targetId : message.senderId;
+        const key = this.key(message.channel, target);
+        const msg = this.convert(message);
+        const pending = this.receiving.get(key);
+        if (pending) pending.push(msg);
+        this.merge(key, [...(this.histories.get(key) || []), msg]);
     }
-
-    public updateUnionChat(data:any):void{
-        var chat = new ChatMsg();
-        chat.msg = data.msg;
-        chat.rid = data.rid;
-        chat.type = data.type;
-        chat.time = data.time;
-        chat.nick_name = data.nickName
-        this._unionMsgList.push(chat);
-    }
-
-
-    public getWorldChatList():ChatMsg[]{
-        return this._worldMsgList;
-    }
-
-    public getUnionChatList():ChatMsg[]{
-        return this._unionMsgList;
-    }
+    getWorldChatList(): ChatMsg[] { return this.getHistory(1); }
+    getUnionChatList(): ChatMsg[] { return this.getHistory(2); }
+    getHistory(channel: number, targetId: any = 0): ChatMsg[] { return (this.histories.get(this.key(channel, targetId)) || []).slice(); }
 }

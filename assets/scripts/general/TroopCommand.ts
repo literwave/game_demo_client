@@ -4,7 +4,7 @@ import { NetManager } from "../network/socket/NetManager";
 import { ProtoManager } from "../network/pto/ProtoManager";
 import { NetEvent } from "../network/socket/NetInterface";
 import { EventMgr } from "../utils/EventMgr";
-import TroopProxy, { HeroIndexMap } from "./TroopProxy";
+import TroopProxy, { HeroIndexMap, TroopPosition } from "./TroopProxy";
 import GeneralCommand from "./GeneralCommand";
 
 const TROOP_REQUEST_TIMEOUT_MS = 8000;
@@ -33,12 +33,14 @@ export default class TroopCommand {
     private _serverReady = false;
     private _hasSnapshot = false;
     private _pendingTroopIdx = 0;
+    private _listUpdates = new Map<number, any>();
     private _listTimer: ReturnType<typeof setTimeout> | null = null;
     private _editTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor() {
         EventMgr.on(ServerConfig.s2c_req_troop, this.onTroopList, this);
         EventMgr.on(ServerConfig.s2c_edit_troop, this.onEditTroop, this);
+        EventMgr.on(ServerConfig.s2c_sync_troop, this.onSyncTroop, this);
         EventMgr.on(ServerConfig.s2c_user_login_ok, this.onServerReady, this);
         EventMgr.on(NetEvent.ServerDisconnected, this.onDisconnected, this);
     }
@@ -58,6 +60,7 @@ export default class TroopCommand {
         this._hasSnapshot = false;
         this.finishListRequest();
         this._proxy.clearData();
+        this._listUpdates.clear();
         this.finishEdit();
     }
 
@@ -71,6 +74,7 @@ export default class TroopCommand {
         if (!this._serverReady || this._pendingTroopIdx) return false;
         if (this._listTimer !== null || (this._hasSnapshot && !force)) return true;
         this._hasSnapshot = false;
+        this._listUpdates.clear();
         this._listTimer = setTimeout(() => {
             this.finishListRequest();
             this._hasSnapshot = false;
@@ -83,8 +87,8 @@ export default class TroopCommand {
         return true;
     }
 
-    /** 界面使用英雄 ID -> 位置；协议要求 troopInfo.pos2HeroMap（位置 -> 英雄 ID）。 */
-    public editTroop(troopIdx: number, heroIdxMap: HeroIndexMap): boolean {
+    /** 界面使用英雄 ID -> 位置；协议要求 troopInfo.posMap（位置 -> 英雄和兵力）。 */
+    public editTroop(troopIdx: number, heroIdxMap: HeroIndexMap, soldierCounts?: { [heroIdx: string]: number }): boolean {
         if (!this._serverReady) return this.rejectEdit('正在连接服务器，请稍后再试');
         if (this._pendingTroopIdx) return this.rejectEdit('编队正在保存，请稍候');
         // 未拿到完整快照时，不能用空阵容覆盖服务器上的其他位置。
@@ -96,13 +100,16 @@ export default class TroopCommand {
         if (!this.isValidId(index) || !heroIdxMap || typeof heroIdxMap !== 'object' || Array.isArray(heroIdxMap)) {
             return this.rejectEdit('编队数据无效，请重新打开编队');
         }
-        const pos2HeroMap: { [position: string]: number } = {};
+        const posMap: { [position: string]: TroopPosition } = {};
+        if (soldierCounts && Object.keys(soldierCounts).some(id => heroIdxMap[id] === undefined)) {
+            return this.rejectEdit('只能给当前编队中的武将配兵');
+        }
         const heroIds = new Set<number>();
         for (const heroKey of Object.keys(heroIdxMap)) {
             const heroIdx = Number(heroKey);
             const position = Number(heroIdxMap[heroKey]);
             if (!this.isValidId(heroIdx) || !Number.isInteger(position) || position < 0 || position >= 3
-                || pos2HeroMap[String(position)] !== undefined || heroIds.has(heroIdx)) {
+                || posMap[String(position)] !== undefined || heroIds.has(heroIdx)) {
                 return this.rejectEdit('武将或上阵位置无效');
             }
             if (!GeneralCommand.getInstance().proxy.getMyGeneral(heroIdx)) {
@@ -113,7 +120,13 @@ export default class TroopCommand {
                 return this.rejectEdit('该武将已在其他部队中，请先下阵');
             }
             heroIds.add(heroIdx);
-            pos2HeroMap[String(position)] = heroIdx;
+            posMap[String(position)] = { heroIdx, soldier: this._proxy.getTroop(index)?.getSoldier(heroIdx) || { count: 0, hurtCount: 0 } };
+            if (soldierCounts && soldierCounts[heroKey] !== undefined) {
+                const count = soldierCounts[heroKey];
+                if (!Number.isInteger(count) || count < 0 || count > 0xffffffff) return this.rejectEdit('配兵数量无效');
+                // 伤兵只能由服务器结算，不能被配兵操作转换成可用兵。
+                posMap[String(position)].soldier.count = count;
+            }
         }
         this._pendingTroopIdx = index;
         this._editTimer = setTimeout(() => {
@@ -123,7 +136,7 @@ export default class TroopCommand {
             EventMgr.emit(LogicEvent.showToast, '编队保存响应超时，正在重新同步部队');
         }, TROOP_REQUEST_TIMEOUT_MS);
         EventMgr.emit(LogicEvent.troopEditState);
-        if (!this.sendMessage(ServerConfig.c2s_edit_troop, { troopInfo: { troopIdx: index, pos2HeroMap } })) {
+        if (!this.sendMessage(ServerConfig.c2s_edit_troop, { troopInfo: { troopIdx: index, posMap } })) {
             this.finishEdit();
             return this.rejectEdit('编队请求发送失败，请重试');
         }
@@ -142,6 +155,8 @@ export default class TroopCommand {
             return;
         }
         this._proxy.updateTroops(list);
+        this._listUpdates.forEach(troop => this._proxy.updateTroop(troop));
+        this._listUpdates.clear();
         this._hasSnapshot = true;
         EventMgr.emit(LogicEvent.updateTroopList, this._proxy.getTroops());
     }
@@ -166,6 +181,15 @@ export default class TroopCommand {
         if (confirmed) EventMgr.emit(LogicEvent.showToast, '编队已更新');
     }
 
+    private onSyncTroop(data: any): void {
+        if (!this._serverReady) return;
+        const troop = this._proxy.updateTroop(this.getPayload(data)?.troopInfo);
+        if (!troop) return;
+        if (this._listTimer !== null) this._listUpdates.set(troop.troopIdx, this.getPayload(data).troopInfo);
+        EventMgr.emit(LogicEvent.updateTroopList, this._proxy.getTroops());
+        EventMgr.emit(LogicEvent.updateTroop, troop);
+    }
+
     private onServerReady(): void {
         this._serverReady = true;
         // 重连后重新取服务器阵容，不重发上次未确认的修改。
@@ -177,6 +201,7 @@ export default class TroopCommand {
         this._hasSnapshot = false;
         this.finishListRequest();
         const wasEditing = this._pendingTroopIdx > 0;
+        this._listUpdates.clear();
         this.finishEdit();
         if (wasEditing) EventMgr.emit(LogicEvent.showToast, '连接已断开，重连后将重新同步编队');
     }

@@ -1,6 +1,7 @@
 import { _decorator, Component, ScrollView, Node, instantiate } from 'cc';
 const { ccclass, property } = _decorator;
 
+import ListLogic from '../utils/ListLogic';
 import UnionCommand from "./UnionCommand";
 import { Member, Union } from "./UnionProxy";
 import { MapCityData } from "../map/MapCityProxy";
@@ -63,10 +64,10 @@ export default class UnionMemberLogic extends Component {
     protected updateMember(data:any[]){
 
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
+        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(UnionCommand.getInstance().proxy.myAllianceId);
 
-        var comp = this.memberView.node.getComponent("ListLogic");
-        var list:Member[] = UnionCommand.getInstance().proxy.getMemberList(unionData.id).concat();
+        var comp = this.memberView.node.getComponent(ListLogic);
+        var list:Member[] = UnionCommand.getInstance().proxy.getMemberList().concat();
 
         comp.setData(list);
 
@@ -75,8 +76,8 @@ export default class UnionMemberLogic extends Component {
 
     protected updateBtn(){
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
-        if(unionData.getChairman().rid == city.rid){
+        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(UnionCommand.getInstance().proxy.myAllianceId);
+        if(UnionCommand.getInstance().proxy.myPos === 1){
             this.exitButton.active = false;
             this.disMissButton.active = true;
         }else{
@@ -87,8 +88,8 @@ export default class UnionMemberLogic extends Component {
 
     protected getMember():void{
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
-        UnionCommand.getInstance().unionMember(unionData.id);
+        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(UnionCommand.getInstance().proxy.myAllianceId);
+        UnionCommand.getInstance().unionMember();
     }
 
     protected onEnable():void{

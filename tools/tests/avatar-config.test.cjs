@@ -60,6 +60,7 @@ function harness() {
     };
     const scripts = path.join(root, 'assets/scripts');
     function load(name) {
+        if (name.endsWith('.js')) return { default: require(path.resolve(scripts, name)) };
         const full = path.resolve(scripts, name.endsWith('.ts') ? name : name + '.ts');
         if (cache.has(full)) return cache.get(full).exports;
         const key = path.relative(scripts, full).replace(/\\/g, '/').replace(/\.ts$/, '');
@@ -193,7 +194,7 @@ async function main() {
         assert.equal(notices.length, 1);
         assert.equal(Object.keys(notices[0].data).length, 0);
         assert.equal(notices[0].msg.length, 0);
-        assert.equal(h.proto.getIdByMsgType(notices[0].name), 50);
+        assert.equal(h.proto.getIdByMsgType(notices[0].name), JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/protbuf/net_pb.json'), 'utf8')).define.User.c2s_client_load_ok);
         assert.ok(uiReady);
         assert.equal(h.sent.some(msg => msg.name === h.server.s2c_client_load_ok), false);
         h.events.emit(h.server.s2c_client_load_ok, {});
@@ -225,7 +226,7 @@ async function main() {
         const requests = h.sent.filter(msg => msg.name === h.server.c2s_change_head_icon);
         assert.equal(requests.length, 1);
         assert.equal(requests[0].data.headIcon, 1002);
-        assert.equal(h.proto.getIdByMsgType(requests[0].name), 48);
+        assert.equal(h.proto.getIdByMsgType(requests[0].name), JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/protbuf/net_pb.json'), 'utf8')).define.User.c2s_change_head_icon);
         h.events.emit(h.server.s2c_change_head_icon, { headIcon: 1002 });
         assert.equal(h.command.changingHeadIcon, false);
         assert.equal(h.command.proxy.getRoleData().headIcon, 1002);

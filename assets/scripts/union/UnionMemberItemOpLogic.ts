@@ -42,37 +42,14 @@ export default class UnionMemberItemOpLogic extends Component {
     
     public setData(data):void{
         this._menberData = data;
-        let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
-        if (unionData){
-            if(this._menberData.rid == city.rid){
-                this.node.active = false;
-            }else{
-                if(unionData.getChairman().rid == city.rid){
-                    console.log("unionData:", unionData, unionData.getViceChairman(), this._menberData);
-
-                    this.unAppointButton.node.active = unionData.getViceChairman().rid == this._menberData.rid;
-                    this.kickButton.node.active = unionData.isMajor(city.rid);
-                    this.abdicateButton.node.active = unionData.getChairman().rid == city.rid;
-                    this.appointButton.node.active = unionData.getChairman().rid == city.rid && unionData.getViceChairman().rid != this._menberData.rid;
-                }else if(unionData.getViceChairman().rid == city.rid){
-                    if(unionData.getChairman().rid == this._menberData.rid){
-                        this.node.active = false;
-                    }else{
-                        this.unAppointButton.node.active = false;
-                        this.kickButton.node.active = true;
-                        this.abdicateButton.node.active = unionData.getViceChairman().rid != this._menberData.rid;
-                        this.appointButton.node.active = false;
-                        this.node.active = true;
-                    }
-                }else{
-                    this.node.active = false;
-                }
-            }
-        }else{
-            this.node.active = false;
-        }
-       
+        const proxy = UnionCommand.getInstance().proxy;
+        const canKick = proxy.canKick(data.rid);
+        const leader = proxy.myPos === 1;
+        this.kickButton.node.active = canKick;
+        this.abdicateButton.node.active = leader && canKick;
+        this.appointButton.node.active = leader && data.pos === 3;
+        this.unAppointButton.node.active = leader && data.pos === 2;
+        this.node.active = canKick;
     }
 
     protected kick():void{

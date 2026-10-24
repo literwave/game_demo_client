@@ -1,3 +1,4 @@
+import BattleCommand, { ReportBrief } from '../../battle/BattleCommand';
 import { _decorator, Component, Node, Label } from 'cc';
 const { ccclass, property } = _decorator;
 
@@ -14,7 +15,7 @@ import { LogicEvent } from '../../common/LogicEvent';
 @ccclass('WarReportItemLogic')
 export default class WarReportItemLogic extends Component {
 
-    private _curData:WarReport = null;
+    private _curData:ReportBrief = null;
 
     @property(Node)
     readBg:Node = null;
@@ -47,48 +48,18 @@ export default class WarReportItemLogic extends Component {
         this.winNode.active = this.loseNode.active = false;
     }
 
-    protected updateItem(data:any):void{
+    protected updateItem(data: ReportBrief): void {
         this._curData = data;
-
-        var isRead = MapUICommand.getInstance().proxy.isRead(this._curData.id);
-        this.readBg.active = isRead;
-       
-        this.setTeams(this.ackNode,this._curData.beg_attack_general);
-        this.setTeams(this.defNode,this._curData.beg_defense_general);
-
-        var roleData:Role = LoginCommand.getInstance().proxy.getRoleData();
-        this.isMeWin(this._curData.attack_rid)
-        
-        this.leftLabel.string = roleData.rid == this._curData.attack_rid?"我":"敌";
-        this.rightLabel.string = roleData.rid == this._curData.defense_rid?"我":"敌"
-
-        this.timeLabel.string = DateUtil.converTimeStr(this._curData.ctime, "YYYY-MM-DD hh:mm:ss");
-
-        this.posLabel.string = "(" + this._curData.x + "," + this._curData.y + ")";
-    }
-
-    protected isMeWin(rid:number = 0):void{
-        var roleData:Role = LoginCommand.getInstance().proxy.getRoleData();
-        this.winNode.active = this.loseNode.active = false;
-        
-        if(roleData.rid == rid){
-            if(this._curData.result == 0){
-                this.loseNode.active = true;
-            }else if(this._curData.result == 1){
-
-            }else{
-                this.winNode.active = true;
-            }
-        }else{
-            if(this._curData.result == 0){
-                this.winNode.active = true;
-            }else if(this._curData.result == 1){
-
-            }else{
-                this.loseNode.active = true;
-            }
-        }
-
+        this.readBg.active = data.isRead;
+        this.ackNode.forEach(node => node.active = false);
+        this.defNode.forEach(node => node.active = false);
+        this.winNode.active = data.result === 1;
+        this.loseNode.active = data.result === 2;
+        const detail = BattleCommand.getInstance().details.get(String(data.reportId));
+        this.leftLabel.string = `${detail?.atkSide?.name || '攻方'}  ${data.atkPower}`;
+        this.rightLabel.string = `${detail?.defSide?.name || '守方'}  ${data.defPower}`;
+        this.timeLabel.string = DateUtil.converTimeStr(data.time * 1000, 'YYYY-MM-DD hh:mm:ss');
+        this.posLabel.string = `(${data.pos?.x || 0},${data.pos?.y || 0})`;
     }
 
     protected setTeams(node:Node[],generals:any[]){
@@ -112,9 +83,9 @@ export default class WarReportItemLogic extends Component {
     protected onClickItem():void{
         AudioManager.instance.playClick();
 
-        var isRead = MapUICommand.getInstance().proxy.isRead(this._curData.id);
+        var isRead = MapUICommand.getInstance().proxy.isRead(this._curData.reportId);
         if(!isRead){
-            MapUICommand.getInstance().warRead(this._curData.id);
+            MapUICommand.getInstance().warRead(this._curData.reportId);
         }
 
         EventMgr.emit(LogicEvent.clickWarReport, this._curData);
@@ -124,6 +95,6 @@ export default class WarReportItemLogic extends Component {
     protected onClickPos(){
         AudioManager.instance.playClick();
         EventMgr.emit(LogicEvent.closeReport);
-        EventMgr.emit(LogicEvent.scrollToMap, this._curData.x, this._curData.y);
+        EventMgr.emit(LogicEvent.scrollToMap, this._curData.pos.x, this._curData.pos.y);
     }
 }

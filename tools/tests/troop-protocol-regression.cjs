@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '../..');
 const scripts = path.join(root, 'assets/scripts');
 const protobuf = require(path.join(scripts, '3rd/protobuf.js'));
 const plain = value => JSON.parse(JSON.stringify(value));
+const protocolIds = JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/protbuf/net_pb.json'), 'utf8')).define;
 let passed = 0;
 
 function harness() {
@@ -67,6 +68,7 @@ function harness() {
         'map/ui/TroopPanelSkin': { styleTroopPanel() {}, styleTroopCard() {} },
     };
     function load(name) {
+        if (name.endsWith('.js')) return { default: require(path.resolve(scripts, name)) };
         const file = path.resolve(scripts, name.endsWith('.ts') ? name : name + '.ts');
         const key = path.relative(scripts, file).replace(/\\/g, '/').replace(/\.ts$/, '');
         if (stubs[key]) return stubs[key];
@@ -149,7 +151,7 @@ test('登录/创建阶段不请求部队，打开编队才请求且合并重复�
     h.command.requestTroops();
     h.command.requestTroops();
     assert.equal(h.sent.length, 1);
-    assert.equal(h.proto.getIdByMsgType(h.sent[0].name), 52);
+    assert.equal(h.proto.getIdByMsgType(h.sent[0].name), protocolIds.World.c2s_req_troop);
     h.receive(h.server.s2c_req_troop, { troopList: [] });
     h.command.requestTroops();
     assert.equal(h.sent.length, 1);
@@ -163,11 +165,11 @@ test('真实协议 54/55 编解码：保留 0 号主将位、三格阵容，回�
     h.events.on(h.logic.updateTroop, troop => updated = troop, h);
     assert.equal(h.command.editTroop(2, { 1001: 0, 1002: 1, 1003: 2 }), true);
     const packet = h.sent.at(-1);
-    assert.equal(h.proto.getIdByMsgType(packet.name), 54);
-    assert.deepEqual(plain(packet.data), { troopInfo: { troopIdx: 2, pos2HeroMap: { 0: 1001, 1: 1002, 2: 1003 } } });
+    assert.equal(h.proto.getIdByMsgType(packet.name), protocolIds.World.c2s_edit_troop);
+    assert.deepEqual(plain(packet.data), { troopInfo: { troopIdx: 2, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } }, 1: { heroIdx: 1002, soldier: { count: 0, hurtCount: 0 } }, 2: { heroIdx: 1003, soldier: { count: 0, hurtCount: 0 } } } } });
     assert.equal(h.command.proxy.getTroop(2), null);
     h.receive(h.server.s2c_edit_troop, packet.data);
-    assert.equal(h.proto.getIdByMsgType(h.server.s2c_edit_troop), 55);
+    assert.equal(h.proto.getIdByMsgType(h.server.s2c_edit_troop), protocolIds.World.s2c_edit_troop);
     assert.equal(h.command.editingTroopIdx, 0);
     assert.equal(updated.getHeroIdxAt(0), 1001);
     assert.deepEqual(plain(updated.getHeroMap()), { 1001: 0, 1002: 1, 1003: 2 });
@@ -176,10 +178,10 @@ test('真实协议 54/55 编解码：保留 0 号主将位、三格阵容，回�
 
 test('配置页上阵、替换和下阵共用协议，空 map 能清空最后一名武将', () => {
     const h = harness();
-    h.ready([{ troopIdx: 1, pos2HeroMap: { 0: 1001, 1: 1002 } }]);
+    h.ready([{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } }, 1: { heroIdx: 1002, soldier: { count: 0, hurtCount: 0 } } } }]);
     const settings = h.createSettings();
     settings.onChooseGeneral(null, { heroType: 1003 }, 0);
-    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.pos2HeroMap), { 0: 1003, 1: 1002 });
+    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.posMap), { 0: { heroIdx: 1003, soldier: { count: 0, hurtCount: 0 } }, 1: { heroIdx: 1002, soldier: { count: 0, hurtCount: 0 } } });
     assert.equal(settings.labelCost.string, '编队保存中…');
     h.receive(h.server.s2c_edit_troop, h.sent.at(-1).data);
     assert.equal(settings._gengeralLogics[0].args[2].hero_type, 1003);
@@ -188,11 +190,11 @@ test('配置页上阵、替换和下阵共用协议，空 map 能清空最后一
     item._order = 1;
     item._data = h.heroes.get(1003);
     item.onClickDown();
-    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.pos2HeroMap), { 1: 1002 });
+    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.posMap), { 1: { heroIdx: 1002, soldier: { count: 0, hurtCount: 0 } } });
     h.receive(h.server.s2c_edit_troop, h.sent.at(-1).data);
     item._data = h.heroes.get(1002);
     item.onClickDown();
-    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.pos2HeroMap), {});
+    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.posMap), {});
     assert.equal(h.command.proxy.getTroop(1).getHeroCount(), 1);
     h.receive(h.server.s2c_edit_troop, h.sent.at(-1).data);
     assert.equal(h.command.proxy.getTroop(1).getHeroCount(), 0);
@@ -201,7 +203,7 @@ test('配置页上阵、替换和下阵共用协议，空 map 能清空最后一
 
 test('拒绝无效 ID、越界位置、位置冲突、未拥有武将及跨队重复上阵', () => {
     const h = harness();
-    h.ready([{ troopIdx: 2, pos2HeroMap: { 0: 1004 } }]);
+    h.ready([{ troopIdx: 2, posMap: { 0: { heroIdx: 1004, soldier: { count: 0, hurtCount: 0 } } } }]);
     for (const [index, map] of [
         [0, {}], [-1, {}], [1.5, {}], [2 ** 32, {}], [1, null],
         [1, { 1001: -1 }], [1, { 1001: 3 }], [1, { 1001: 0.5 }],
@@ -222,9 +224,9 @@ test('等待完整快照和编辑回包期间不允许覆盖旧阵容，也不�
     assert.equal(h.command.editTroop(1, { 1002: 1 }), false);
     assert.equal(h.command.editTroop(2, { 1002: 0 }), false);
     assert.equal(h.command.requestTroops(true), false);
-    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 2, pos2HeroMap: { 0: 1003 } } });
+    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 2, posMap: { 0: { heroIdx: 1003, soldier: { count: 0, hurtCount: 0 } } } } });
     assert.equal(h.command.editingTroopIdx, 1, '其他部队更新不能解除当前保存状态');
-    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 1, pos2HeroMap: { 0: 1001 } } });
+    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } } });
     assert.equal(h.command.editTroop(1, { 1001: 0, 1002: 1 }), true);
 });
 
@@ -238,7 +240,7 @@ test('超时后重新查询，取得服务器快照后才能继续编辑，不�
     assert.equal(h.command.editTroop(1, { 1002: 1 }), false);
     h.expire();
     assert.equal(h.command.editTroop(1, { 1002: 1 }), false);
-    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, pos2HeroMap: { 0: 1001 } }] });
+    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } }] });
     assert.equal(h.command.editTroop(1, { 1001: 0, 1002: 1 }), true);
     assert.equal(h.sent.filter(p => p.name === h.server.c2s_edit_troop).length, 2);
 });
@@ -265,7 +267,7 @@ test('协议未就绪、编码失败或发送异常不关闭选将页、不残�
 test('错误回包和缺少 troopInfo 不清空原阵容，重新同步后允许重试', () => {
     for (const response of [{}, { troopInfo: null }, { code: 1, msg: { troopInfo: { troopIdx: 1 } } }]) {
         const h = harness();
-        h.ready([{ troopIdx: 1, pos2HeroMap: { 0: 1001 } }]);
+        h.ready([{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } }]);
         h.command.editTroop(1, {});
         h.events.emit(h.server.s2c_edit_troop, response);
         assert.equal(h.command.proxy.getTroop(1).getHeroIdxAt(0), 1001);
@@ -281,13 +283,13 @@ test('断线后禁止写入，重登只查询；退出清理定时器并忽略�
     h.events.emit(h.net.ServerDisconnected);
     assert.equal(h.command.editTroop(1, { 1002: 0 }), false);
     assert.equal(h.timers.size, 0);
-    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 1, pos2HeroMap: { 0: 1001 } } });
+    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } } });
     assert.equal(h.command.proxy.getTroop(1), null);
     h.authenticate();
     assert.equal(h.sent.at(-1).name, h.server.c2s_req_troop);
     assert.equal(h.sent.filter(p => p.name === h.server.c2s_edit_troop).length, 1);
     h.command.clearData();
-    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, pos2HeroMap: { 0: 1001 } }] });
+    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } }] });
     assert.equal(h.command.proxy.getTroops().length, 0);
     assert.equal(h.timers.size, 0);
 });
@@ -319,7 +321,7 @@ test('初始列表回包刷新配置页；选将动态排除已编队武将，�
     const h = harness();
     h.authenticate();
     const settings = h.createSettings();
-    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, pos2HeroMap: { 0: 1001 } }] });
+    h.receive(h.server.s2c_req_troop, { troopList: [{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } } } }] });
     assert.equal(settings._gengeralLogics[0].args[2].hero_type, 1001);
     const List = h.load('map/ui/GeneralListLogic').default;
     const list = new List();
@@ -328,13 +330,13 @@ test('初始列表回包刷新配置页；选将动态排除已编队武将，�
     list.onEnable();
     list.setData([1001, 1002], 1, 1);
     assert.deepEqual(Array.from(rendered, x => x.hero_type), [1002, 1003, 1004], '不沿用过期排除名单');
-    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 2, pos2HeroMap: { 0: 1002 } } });
+    h.receive(h.server.s2c_edit_troop, { troopInfo: { troopIdx: 2, posMap: { 0: { heroIdx: 1002, soldier: { count: 0, hurtCount: 0 } } } } });
     assert.deepEqual(Array.from(rendered, x => x.hero_type), [1003, 1004]);
     h.events.emit(h.logic.chosedGeneral, null, h.heroes.get(1002), 1);
     assert.equal(list.node.active, true);
     h.events.emit(h.logic.chosedGeneral, null, h.heroes.get(1003), 1);
     assert.equal(list.node.active, false);
-    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.pos2HeroMap), { 0: 1001, 1: 1003 });
+    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.posMap), { 0: { heroIdx: 1001, soldier: { count: 0, hurtCount: 0 } }, 1: { heroIdx: 1003, soldier: { count: 0, hurtCount: 0 } } });
     h.receive(h.server.s2c_edit_troop, h.sent.at(-1).data);
     assert.equal(settings.labelCost.string, '上阵 2/3');
 });

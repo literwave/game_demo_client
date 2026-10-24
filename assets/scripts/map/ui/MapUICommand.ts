@@ -1,3 +1,5 @@
+import BuildCommand from '../../build/BuildCommand';
+import BattleCommand from '../../battle/BattleCommand';
 import { _decorator } from 'cc';
 import { ServerConfig } from "../../config/ServerConfig";
 import LoginCommand from "../../login/LoginCommand";
@@ -31,31 +33,27 @@ export default class MapUICommand {
     protected _proxy: MapUIProxy = new MapUIProxy();
 
     constructor() {
-        EventMgr.on(ServerConfig.city_facilities, this.onCityFacilities, this);
-        EventMgr.on(ServerConfig.city_upFacility, this.onCityUpFacility, this);
+
+
         EventMgr.on(ServerConfig.role_myRoleRes, this.onRoleMyRoleRes, this);
-        EventMgr.on(ServerConfig.war_report, this.onUpdataWarReports, this);
-        EventMgr.on(ServerConfig.war_reportPush, this.onUpdataWarReport, this);
-        EventMgr.on(ServerConfig.war_read, this.onUpdataWarRead, this);
+
+
+
         EventMgr.on(ServerConfig.interior_collect, this.onCollect, this);
         EventMgr.on(ServerConfig.interior_openCollect, this.onOpenCollect, this);
 
         EventMgr.on(ServerConfig.roleRes_push, this.updataRoleRes, this);
         
 
-        setInterval(() => {
-           let list: Map<number, Map<number, Facility>> = this._proxy.getMyAllFacilitys();
-           list.forEach((fs, key) => { 
-                fs.forEach(f => {
-                    if(f.isNeedUpdateLevel()){
-                        //倒计时完，请求最新的等级
-                        console.log("有设施升级完了，需要刷新");
-                        this.qryCityFacilities(key);
-                        return
-                    }
-                });
-           });
-        }, 1000);
+        EventMgr.on(LogicEvent.updateCityBuilds, this.onBuildChanged, this);
+    }
+
+    private onBuildChanged(data: { bid: number; level: number }): void {
+        const city = MapCommand.getInstance().cityProxy.getMyMainCity();
+        const cityId = city?.cityId || 0;
+        this.qryCityFacilities(cityId);
+        const facility = this._proxy.getMyFacilityByType(cityId, data.bid);
+        if (facility) EventMgr.emit(LogicEvent.updateMyFacility, cityId, facility);
     }
 
     protected onCityFacilities(data: any): void {
@@ -167,13 +165,13 @@ export default class MapUICommand {
      * @param cityId 
      */
     public qryCityFacilities(cityId: number = 0): void {
-        let sendData: any = {
-            name: ServerConfig.city_facilities,
-            msg: {
-                cityId: cityId,
-            }
-        };
-        NetManager.getInstance().send(sendData);
+        const main = MapCommand.getInstance().cityProxy.getMyMainCity();
+        if (cityId && main && cityId !== main.cityId) return;
+        const levels = BuildCommand.getInstance().levels;
+        const configs = this._proxy.getFacilityConfigs();
+        const facilities = configs.map(cfg => ({ type: cfg.type, level: levels.get(cfg.type) || 0, up_time: 0 }));
+        this._proxy.updateMyFacilityList(cityId, facilities);
+        EventMgr.emit(LogicEvent.updateMyFacilities);
     }
 
 
@@ -183,14 +181,11 @@ export default class MapUICommand {
      * @param ftype 
      */
     public upFacility(cityId: number = 0, ftype: number = 0): void {
-        let sendData: any = {
-            name: ServerConfig.city_upFacility,
-            msg: {
-                cityId: cityId,
-                fType: ftype,
-            }
-        };
-        NetManager.getInstance().send(sendData);
+        const main = MapCommand.getInstance().cityProxy.getMyMainCity();
+        if (cityId && main && cityId !== main.cityId) return;
+        const build = BuildCommand.getInstance();
+        const sent = (build.levels.get(ftype) || 0) > 0 ? build.upgrade(ftype) : build.create(ftype);
+        if (!sent) EventMgr.emit(LogicEvent.showToast, '建造请求未发送，请检查连接或稍后重试');
     }
 
     /**
@@ -221,12 +216,7 @@ export default class MapUICommand {
      * 战报查询
      */
     public qryWarReport(): void {
-        let sendData: any = {
-            name: ServerConfig.war_report,
-            msg: {
-            }
-        };
-        NetManager.getInstance().send(sendData);
+        BattleCommand.getInstance().requestReports();
     }
 
 
@@ -234,14 +224,8 @@ export default class MapUICommand {
     /**
      * 读取
      */
-    public warRead(id: number = 0): void {
-        let sendData: any = {
-            name: ServerConfig.war_read,
-            msg: {
-                id: id,
-            }
-        };
-        NetManager.getInstance().send(sendData);
+    public warRead(id: number | string = 0): void {
+        BattleCommand.getInstance().readReports(String(id) === '0' ? [] : [id]);
     }
 
     public interiorCollect(): void {

@@ -34,9 +34,9 @@ export default class UnionApplyLogic extends Component {
     }
     protected getApply():void{
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
-        if(unionData.isMajor(city.rid)){
-            UnionCommand.getInstance().unionApplyList(unionData.id);
+        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(UnionCommand.getInstance().proxy.myAllianceId);
+        if(UnionCommand.getInstance().proxy.canManage()){
+            UnionCommand.getInstance().unionApplyList();
         }
     }
     protected onEnable():void{

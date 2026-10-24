@@ -71,7 +71,7 @@ export default class CityAboutLogic extends Component {
         if (!data) return;
         this._cityData = data;
         this.updateArmyList();
-        if (GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.city_facilities)) {
+        if (GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.c2s_create_build)) {
             MapUICommand.getInstance().qryCityFacilities(this._cityData.cityId);
         }
     }

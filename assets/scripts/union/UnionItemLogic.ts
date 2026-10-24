@@ -24,7 +24,8 @@ export default class UnionItemLogic extends Component {
 
     }
     protected isCanJoin():boolean{
-        return !UnionCommand.getInstance().proxy.isMeInUnion();
+        const proxy = UnionCommand.getInstance().proxy;
+        return !proxy.isMeInUnion() && this._unionData?.joinType !== 3 && !proxy.applications.has(String(this._unionData?.id));
     }
     protected join():void{
         AudioManager.instance.playClick();

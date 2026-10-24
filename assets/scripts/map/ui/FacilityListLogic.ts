@@ -33,13 +33,17 @@ export default class FacilityListLogic extends Component {
     }
 
     protected initView(): void {
+        const configs = MapUICommand.getInstance().proxy.getFacilityConfigs();
+        let configIndex = 0;
         let children: Node[] = this.scrollView.content.children;
         for (let i: number = 0; i < children.length; i++) {
             let subChildren: Node[] = children[i].children;
             for (let j: number = 0; j < subChildren.length; j++) {
                 let item: Node = subChildren[j];
                 if (item.name.indexOf("CityFacilityItem") == 0) {
-                    let type: number = parseInt(item.name.substring(16));
+                    const config = configs[configIndex++];
+                    if (!config) { item.active = false; continue; }
+                    let type: number = config.type;
                     let comp: FacilityItemLogic = item.addComponent(FacilityItemLogic);
                     comp.labelRate = item.getChildByName("labelRate").getComponent(Label);
                     comp.labelName = item.getChildByName("labelName").getComponent(Label);
@@ -66,7 +70,7 @@ export default class FacilityListLogic extends Component {
                 }
             });
             if (this._curSelectType == -1) {
-                this.setCurSelectType(0);//默认选中主城
+                this.setCurSelectType(this._itemLogics.keys().next().value);//默认选中主城
             }
         }
 
@@ -83,7 +87,9 @@ export default class FacilityListLogic extends Component {
                 logic.setData(this._curCityId, data, cfg, isUnlock);
             }
             this._itemLogics.forEach((logic: FacilityItemLogic, type: number) => {
+                if (!logic.data) return;
                 let cfg: FacilityConfig = MapUICommand.getInstance().proxy.getFacilityCfgByType(logic.data.type);
+                if (!cfg) return;
                 for (let i: number = 0; i < cfg.conditions.length; i++) {
                     if (cfg.conditions[i].type == data.type) {
                         //涉及到了解锁条件
@@ -128,6 +134,7 @@ export default class FacilityListLogic extends Component {
 
     public setData(data: any): void {
         this._curCityId = data.cityId;
+        MapUICommand.getInstance().qryCityFacilities(this._curCityId);
         this.updateView();
     }
 }

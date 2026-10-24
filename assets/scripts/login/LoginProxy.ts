@@ -13,14 +13,25 @@ export function toProtoInt(value: any): number {
     return Number.isFinite(num) ? num : 0;
 }
 
+export function toProtoId(value: any): number | string {
+    const text = value == null ? '0' : String(value);
+    const number = Number(text);
+    return Number.isSafeInteger(number) ? number : text;
+}
+
 export class Role {
-    userId: number = 0;
+    userId: number | string = 0;
     name: string = "";
     sex: number = 0;
     serverId: number = 0;
     balance: number = 0;
     headIcon: number = 0;
     birthTime: number = 0;
+    level = 0;
+    exp = 0;
+    allianceId: number | string = 0;
+    soldierInfo = { count: 0, hurtCount: 0 };
+    cityPos: { x: number; y: number } | null = null;
 }
 
 
@@ -67,13 +78,30 @@ export default class LoginProxy {
         if (!this._roleData) {
             this._roleData = new Role();
         }
-        this._roleData.userId = toProtoInt(this._loginData?.userId);
-        this._roleData.name = data.name;
-        this._roleData.sex = data.sex;
+        this._roleData.userId = toProtoId(this._loginData?.userId);
+        if (data.name !== undefined) this._roleData.name = data.name;
+        if (data.sex !== undefined) this._roleData.sex = data.sex;
         this._roleData.serverId = toProtoInt(this._loginData?.serverId);
         // 头像来自 User 基础信息，Login 登录回包没有这个字段。
         if (data.headIcon !== undefined) this.setHeadIcon(toProtoInt(data.headIcon));
         if (data.birthTime !== undefined) this._roleData.birthTime = toProtoInt(data.birthTime);
+        if (data.level !== undefined) this._roleData.level = toProtoInt(data.level);
+        if (data.exp !== undefined) this._roleData.exp = toProtoInt(data.exp);
+        if (data.allianceId !== undefined) this.setAllianceId(data.allianceId);
+        if (data.soldierInfo) this.setSoldierInfo(data.soldierInfo);
+        if (data.cityPos) this.setCityPos(data.cityPos);
+    }
+
+    public setAllianceId(id: number | string): void {
+        if (this._roleData) this._roleData.allianceId = id;
+    }
+
+    public setSoldierInfo(info: any): void {
+        if (this._roleData && info) this._roleData.soldierInfo = { count: toProtoInt(info.count), hurtCount: toProtoInt(info.hurtCount) };
+    }
+
+    public setCityPos(pos: any): void {
+        if (this._roleData && pos) this._roleData.cityPos = { x: toProtoInt(pos.x), y: toProtoInt(pos.y) };
     }
 
     public setHeadIcon(id: number): void {
@@ -115,7 +143,7 @@ export default class LoginProxy {
     public saveLoginData(data: any): void {
         this._loginData = data;
         if (this._loginData) {
-            this._loginData.userId = toProtoInt(this._loginData.userId);
+            this._loginData.userId = toProtoId(this._loginData.userId);
             this._loginData.serverId = toProtoInt(this._loginData.serverId);
         }
     }
@@ -133,7 +161,7 @@ export default class LoginProxy {
     }
 
     public setLoginDataUserAndServerId(data): void {
-        this._loginData.userId = toProtoInt(data.userId);
+        this._loginData.userId = toProtoId(data.userId);
         this._loginData.serverId = toProtoInt(data.serverId);
         this.serverId = this._loginData.serverId;
     }

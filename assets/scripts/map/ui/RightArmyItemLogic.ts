@@ -6,6 +6,7 @@ import GeneralCommand from "../../general/GeneralCommand";
 import ArmyCommand from "../../general/ArmyCommand";
 import { GeneralConfig, GeneralData } from "../../general/GeneralProxy";
 import { TroopData } from "../../general/TroopProxy";
+import WorldCommand from '../../world/WorldCommand';
 import { MapCityData } from "../MapCityProxy";
 import MapCommand from "../MapCommand";
 import DateUtil from "../../utils/DateUtil";
@@ -45,6 +46,7 @@ export default class RightArmyItemLogic extends Component {
     protected onLoad(): void {
         EventMgr.on(LogicEvent.updateGeneral, this.onUpdateGeneral, this);
         EventMgr.on(LogicEvent.updateTroop, this.onUpdateTroop, this);
+        EventMgr.on(LogicEvent.updateMarches, this.onUpdateGeneral, this);
         this.bottomNode.active = false;
         this.layoutItem();
     }
@@ -56,6 +58,14 @@ export default class RightArmyItemLogic extends Component {
     }
 
     protected update(): void {
+        if (this._troop) {
+            const march = WorldCommand.getInstance().marches.get(this._troop.troopIdx);
+            if (march && this.labelPos) {
+                this.labelPos.string = march.state === 1
+                    ? `${march.targetType === 1 ? '回城' : '行军'} ${DateUtil.converSecondStr(Math.max(0, march.endTime * 1000 - DateUtil.getServerTime()))}`
+                    : '已到达';
+            }
+        }
         if (this._data && (this._data.state > 0 || this._data.cmd == ArmyCmd.Reclaim)) {
             let nowTime: number = DateUtil.getServerTime();
             let time: number = 0;
@@ -171,6 +181,10 @@ export default class RightArmyItemLogic extends Component {
 
     protected onClickBack(): void {
         AudioManager.instance.playClick();
+        if (this._troop) {
+            WorldCommand.getInstance().cancelMarch(this._troop.troopIdx);
+            return;
+        }
         if (this._data) {
             let cityData: MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
             ArmyCommand.getInstance().generalAssignArmy(this._data.id, ArmyCmd.Return, cityData.x, cityData.y, null);
@@ -262,7 +276,9 @@ export default class RightArmyItemLogic extends Component {
         }
         if (this.labelInfo) this.labelInfo.string = firstCfg ? teamName + "队" : "第" + this.order + "部队";
         if (this.labelPos) this.labelPos.string = "武将 " + heroes.length + "/3";
-        if (this.labelSoldierCnt) this.labelSoldierCnt.string = heroes.length > 0 ? "上阵 " + heroes.length + "/3" : "尚未配置武将";
+        const count = heroes.reduce((sum, hero) => sum + this._troop.getSoldier(hero.heroIdx).count, 0);
+        const hurt = heroes.reduce((sum, hero) => sum + this._troop.getSoldier(hero.heroIdx).hurtCount, 0);
+        if (this.labelSoldierCnt) this.labelSoldierCnt.string = heroes.length > 0 ? `兵力 ${count} / 伤兵 ${hurt}` : "尚未配置武将";
         if (this.labelStrength) {
             this.labelStrength.string = heroes.length > 0 ? "速度 " + (firstCfg?.speed || 0) : "选择武将，组建你的部队";
         }
@@ -277,8 +293,9 @@ export default class RightArmyItemLogic extends Component {
             });
             this.labelMorale.string = "攻击 " + attack;
         }
-        if (this.btnBack) this.btnBack.active = false;
-        if (this.btnSetting) this.btnSetting.active = true;
+        const march = WorldCommand.getInstance().marches.get(this._troop.troopIdx);
+        if (this.btnBack) this.btnBack.active = !!march && march.targetType !== 1;
+        if (this.btnSetting) this.btnSetting.active = !march;
         this.layoutItem();
     }
 

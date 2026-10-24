@@ -1,346 +1,153 @@
-import { _decorator } from 'cc';
-import { NetManager } from "../network/socket/NetManager";
-import UnionProxy, { Union } from "./UnionProxy";
-import { ServerConfig } from "../config/ServerConfig";
-import { MapCityData } from "../map/MapCityProxy";
-import MapCommand from "../map/MapCommand";
+import { ServerConfig as S } from '../config/ServerConfig';
+import { LogicEvent as E } from '../common/LogicEvent';
 import { EventMgr } from '../utils/EventMgr';
-import { LogicEvent } from '../common/LogicEvent';
+import ProtocolCommand, { hasId, idKey } from '../network/pto/ProtocolCommand';
+import LoginCommand from '../login/LoginCommand';
+import UnionProxy, { AllianceId } from './UnionProxy';
 
-export default class UnionCommand {
-    //单例
-    protected static _instance: UnionCommand;
-    public static getInstance(): UnionCommand {
-        if (this._instance == null) {
-            this._instance = new UnionCommand();
-        }
-        return this._instance;
+export default class UnionCommand extends ProtocolCommand {
+    private static _instance: UnionCommand;
+    static getInstance(): UnionCommand { return this._instance || (this._instance = new UnionCommand()); }
+    static destory(): boolean {
+        if (!this._instance) return false;
+        this._instance.onDestory(); this._instance = null; return true;
     }
-
-
-    //数据model
-    protected _proxy: UnionProxy = new UnionProxy();
-
-    public static destory(): boolean {
-        if (this._instance) {
-            this._instance.onDestory();
-            this._instance = null;
-            return true;
-        }
-        return false;
-    }
-
-    //数据model
-
+    readonly proxy = new UnionProxy();
+    private membershipVersion = 0;
+    private requestedMembershipVersion = 0;
+    private applyAllianceId = '0';
     constructor() {
-        EventMgr.on(ServerConfig.union_create, this.onUnionCreate, this);
-        EventMgr.on(ServerConfig.union_join, this.onUnionJoin, this);
-        EventMgr.on(ServerConfig.union_list, this.onUnionList, this);
-        EventMgr.on(ServerConfig.union_member, this.onUnionMember, this);
-        EventMgr.on(ServerConfig.union_dismiss, this.onUnionDisMiss, this);
-        EventMgr.on(ServerConfig.union_applyList, this.onUnionApply, this);
-        EventMgr.on(ServerConfig.union_verify, this.onUnionVerify, this);
-        EventMgr.on(ServerConfig.union_exit, this.onUnionDisMiss, this);
-        EventMgr.on(ServerConfig.union_kick, this.onUnionKick, this);
-        EventMgr.on(ServerConfig.union_appoint, this.onUnionAppoint, this);
-        EventMgr.on(ServerConfig.union_abdicate, this.onUnionAbdicate, this);
-        EventMgr.on(ServerConfig.union_modNotice, this.onUnionNotice, this)
-        EventMgr.on(ServerConfig.union_info, this.onUnionInfo, this);
-        EventMgr.on(ServerConfig.union_log, this.onUnionLog, this);
-        EventMgr.on(ServerConfig.union_apply_push, this.onUnionApplyPush, this);
+        super();
+        this.listen(S.s2c_req_my_alliance, d => {
+            this.finish(S.c2s_req_my_alliance);
+            if (this.membershipVersion === this.requestedMembershipVersion) this.setMine(d.info?.brief?.allianceId || 0, d.myPos, d.info);
+        });
+        this.listen(S.s2c_sync_my_alliance, d => { this.membershipVersion++; this.setMine(d.allianceId, d.myPos, d.info); });
+        this.listen(S.s2c_create_alliance, d => {
+            this.finish(S.c2s_create_alliance);
+            this.membershipVersion++;
+            this.setMine(d.info?.brief?.allianceId || 0, 1, d.info);
+            EventMgr.emit(E.createUnionSuccess);
+        });
+        [S.s2c_leave_alliance, S.s2c_dissolve_alliance].forEach(name => this.listen(name, () => {
+            this.finish(S.c2s_leave_alliance); this.finish(S.c2s_dissolve_alliance);
+            this.membershipVersion++;
+            this.setMine(0, 0); EventMgr.emit(E.dismissUnionSuccess); this.unionList();
+        }));
+        this.listen(S.s2c_req_alliance_list, d => { this.finish(S.c2s_req_alliance_list); this.proxy.updateUnionList(d.allianceList); EventMgr.emit(E.updateUnionList, this.proxy.getUnionList()); });
+        [S.s2c_req_alliance_info, S.s2c_sync_alliance, S.s2c_set_alliance_info].forEach(name => this.listen(name, d => {
+            this.finish(S.c2s_set_alliance_info);
+            const u = this.proxy.updateInfo(d.info);
+            if (u) { EventMgr.emit(E.unionInfo, u); EventMgr.emit(E.unionNotice, { id: u.id, text: u.notice }); }
+        }));
+        this.listen(S.s2c_req_member_list, d => {
+            this.proxy.updateMemberList(d.allianceId, d.memberList); this.notifyMembers();
+        });
+        this.listen(S.s2c_sync_member_change, d => {
+            if (!d.member || !hasId(d.member.uid)) return;
+            this.proxy.updateMember(d.allianceId, d.member, d.changeType === 2 || d.changeType === 3);
+            this.notifyMembers();
+        });
+        this.listen(S.s2c_req_apply_list, d => {
+            this.finish(S.c2s_req_apply_list);
+            if (!this.proxy.canManage()) return;
+            if (this.applyAllianceId !== idKey(this.proxy.myAllianceId)) { this.unionApplyList(); return; }
+            this.proxy.updateApplyList(this.proxy.myAllianceId, d.applyList);
+            EventMgr.emit(E.updateUnionApply, this.proxy.getApplyList());
+        });
+        this.listen(S.s2c_handle_apply, d => {
+            this.finish(S.c2s_handle_apply); this.proxy.removeApply(d.uid);
+            EventMgr.emit(E.updateUnionApply, this.proxy.getApplyList()); EventMgr.emit(E.verifyUnionSuccess);
+            if (d.agree) this.unionMember();
+        });
+        this.listen(S.s2c_kick_member, d => {
+            this.finish(S.c2s_kick_member); this.proxy.updateMember(this.proxy.myAllianceId, { uid: d.uid }, true);
+            this.notifyMembers(); EventMgr.emit(E.kickUnionSuccess);
+        });
+        this.listen(S.s2c_set_member_pos, d => {
+            this.finish(S.c2s_set_member_pos); this.unionMember(); EventMgr.emit(E.unionAppoint, d);
+        });
+        this.listen(S.s2c_transfer_leader, d => {
+            this.finish(S.c2s_transfer_leader); this.requestMine(); this.unionMember(); EventMgr.emit(E.unionAbdicate, d);
+        });
+        this.listen(S.s2c_apply_alliance, d => {
+            this.finish(S.c2s_apply_alliance);
+            if (!this.proxy.isMeInUnion()) this.proxy.applications.add(idKey(d.allianceId));
+            if (this.proxy.getUnion(d.allianceId)?.joinType === 2) EventMgr.emit(E.showToast, '申请已发送，等待审批');
+            EventMgr.emit(E.updateUnionList, this.proxy.getUnionList());
+            this.requestMine();
+        });
+        this.listen(S.s2c_cancel_apply, d => {
+            this.finish(S.c2s_cancel_apply); this.proxy.applications.delete(idKey(d.allianceId));
+            EventMgr.emit(E.updateUnionList, this.proxy.getUnionList());
+        });
+        this.listen(S.s2c_invite_alliance, () => this.finish(S.c2s_invite_alliance));
+        this.listen(S.s2c_sync_alliance_invite, d => {
+            if (!hasId(d.brief?.allianceId)) return;
+            this.proxy.invitations.set(idKey(d.brief.allianceId), d); EventMgr.emit(E.allianceInvite, d);
+        });
+        this.listen(S.s2c_handle_invite, d => {
+            this.finish(S.c2s_handle_invite); this.proxy.invitations.delete(idKey(d.allianceId));
+            if (d.agree) this.requestMine();
+        });
     }
-
-    public onDestory(): void {
-        EventMgr.targetOff(this);
+    protected reset(): void { this.proxy.clearData(); this.membershipVersion = 0; this.requestedMembershipVersion = 0; this.applyAllianceId = '0'; }
+    protected onSessionReady(): void { this.requestMine(); }
+    private setMine(id: AllianceId, pos: number, info?: any): void {
+        const oldId = idKey(this.proxy.myAllianceId);
+        this.proxy.setMine(id, pos, info);
+        LoginCommand.getInstance().proxy.setAllianceId(id);
+        if (hasId(id)) this.proxy.applications.delete(idKey(id));
+        EventMgr.emit(E.unionChange, id);
+        EventMgr.emit(E.unionInfo, this.proxy.getUnion());
+        EventMgr.emit(E.updateUnionApply, this.proxy.getApplyList());
+        if (this.proxy.canManage()) this.unionApplyList();
+        if (oldId !== idKey(id)) EventMgr.emit(E.updateMyRole);
     }
-
-    public clearData(): void {
-        this._proxy.clearData();
+    private notifyMembers(): void { EventMgr.emit(E.updateUnionMember, this.proxy.getMemberList()); }
+    requestMine(): boolean {
+        if (this.isPending(S.c2s_req_my_alliance)) return false;
+        this.requestedMembershipVersion = this.membershipVersion;
+        return this.request(S.c2s_req_my_alliance, {});
     }
-
-    public get proxy(): UnionProxy {
-        return this._proxy;
+    unionCreate(name: string, flag = 0, joinType = 2, notice = ''): boolean {
+        return !this.proxy.isMeInUnion() && !!name.trim() && ([1, 2, 3].indexOf(joinType) >= 0)
+            && this.request(S.c2s_create_alliance, { name: name.trim(), flag, joinType, notice });
     }
-
-
-    protected onUnionCreate(data: any, otherData: any): void {
-        console.log("onUnionCreate", data);
-        if (data.code == 0) {
-            EventMgr.emit(LogicEvent.createUnionSuccess);
-            this.unionList();
-        }
+    unionJoin(id: AllianceId = 0): boolean { return !this.proxy.isMeInUnion() && hasId(id) && this.request(S.c2s_apply_alliance, { allianceId: id }); }
+    cancelApply(id: AllianceId): boolean { return hasId(id) && this.request(S.c2s_cancel_apply, { allianceId: id }); }
+    unionList(keyword = '', start = 1, count = 0): boolean { return this.request(S.c2s_req_alliance_list, { keyword, start: Math.max(1, start), count: Math.max(0, count) }); }
+    unionInfo(id: AllianceId = 0): boolean { return hasId(id) ? this.send(S.c2s_req_alliance_info, { allianceId: id }) : this.requestMine(); }
+    unionMember(id: AllianceId = 0): boolean { return (hasId(id) || this.proxy.isMeInUnion()) && this.send(S.c2s_req_member_list, { allianceId: id }); }
+    unionApplyList(_id: AllianceId = 0): boolean {
+        if (!this.proxy.canManage() || this.isPending(S.c2s_req_apply_list)) return false;
+        this.applyAllianceId = idKey(this.proxy.myAllianceId);
+        return this.request(S.c2s_req_apply_list, {});
     }
-
-
-    protected onUnionJoin(data: any, otherData: any): void {
-        console.log("onUnionJoin", data);
-        if (data.code == 0) {
-        }
+    unionDismiss(): boolean { return this.proxy.myPos === 1 && this.request(S.c2s_dissolve_alliance, {}); }
+    unionExit(): boolean { return this.proxy.myPos > 1 && this.request(S.c2s_leave_alliance, {}); }
+    unionVerify(uid: AllianceId = 0, decide = 0): boolean {
+        return this.proxy.canManage() && hasId(uid) && this.request(S.c2s_handle_apply, { uid, agree: decide === 1 });
     }
-
-
-    protected onUnionList(data: any, otherData: any): void {
-        console.log("onUnionList", data);
-        if (data.code == 0) {
-            this._proxy.updateUnionList(data.msg.list);
-            EventMgr.emit(LogicEvent.updateUnionList,data.msg.list);
-        }
-
+    unionKick(uid: AllianceId = 0): boolean { return this.proxy.canKick(uid) && this.request(S.c2s_kick_member, { uid }); }
+    unionAppoint(uid: AllianceId = 0, title = 1): boolean {
+        return this.proxy.myPos === 1 && this.proxy.canKick(uid) && ([1, 2].indexOf(title) >= 0)
+            && this.request(S.c2s_set_member_pos, { uid, pos: title + 1 });
     }
-
-
-    protected onUnionMember(data: any, otherData: any): void {
-        console.log("onUnionMember", data);
-        if (data.code == 0) {
-            this._proxy.updateMemberList(data.msg.id,data.msg.Members);
-            EventMgr.emit(LogicEvent.updateUnionMember,data.msg.Members);
-        }
-        
+    unionAbdicate(uid: AllianceId = 0): boolean {
+        return this.proxy.myPos === 1 && this.proxy.canKick(uid) && this.request(S.c2s_transfer_leader, { uid });
     }
-
-
-    protected onUnionDisMiss(data: any, otherData: any): void {
-        console.log("onUnionDisMiss", data);
-        if (data.code == 0) {
-            this.unionList();
-            EventMgr.emit(LogicEvent.dismissUnionSuccess);
-        }
+    setAllianceInfo(flag: number, joinType: number, notice: string, manifesto: string): boolean {
+        return this.proxy.canManage() && ([1, 2, 3].indexOf(joinType) >= 0) && this.request(S.c2s_set_alliance_info, { flag, joinType, notice, manifesto });
     }
-
-
-    protected onUnionApply(data: any, otherData: any): void {
-        console.log("onUnionApply", data);
-        if (data.code == 0) {
-            this._proxy.updateApplyList(data.msg.id, data.msg.applys);
-            EventMgr.emit(LogicEvent.updateUnionApply, data.msg.applys);
-        }
+    modNotice(notice: string): boolean {
+        const u = this.proxy.getUnion();
+        return !!u && this.setAllianceInfo(u.flag, u.joinType, notice, u.manifesto);
     }
-
-
-    protected onUnionVerify(data: any, otherData: any): void {
-        console.log("onUnionVerify", data);
-        if (data.code == 0) {
-            EventMgr.emit(LogicEvent.kickUnionSuccess);
-            EventMgr.emit(LogicEvent.verifyUnionSuccess);
-        }
+    invite(uid: AllianceId): boolean { return this.proxy.canManage() && hasId(uid) && this.request(S.c2s_invite_alliance, { uid }); }
+    handleInvite(allianceId: AllianceId, agree: boolean): boolean {
+        return hasId(allianceId) && this.request(S.c2s_handle_invite, { allianceId, agree });
     }
-
-
-    protected onUnionKick(data: any, otherData: any): void {
-        console.log("onUnionKick", data);
-        if (data.code == 0) {
-            EventMgr.emit(LogicEvent.kickUnionSuccess);
-        }
-    }
-
-    protected onUnionAppoint(data: any, otherData: any): void {
-        console.log("onUnionAppoint", data);
-        if (data.code == 0) {
-            EventMgr.emit(LogicEvent.unionAppoint, data.msg);
-        }
-    }
-
-    protected onUnionAbdicate(data: any, otherData: any): void {
-        console.log("onUnionAbdicate", data);
-        if (data.code == 0) {
-            EventMgr.emit(LogicEvent.unionAbdicate, data.msg);
-        }
-    }
-
-
-    protected onUnionNotice(data: any, otherData: any): void {
-        console.log("onUnionNotice", data);
-        if(data.code == 0){
-            this._proxy.updateNotice(data.msg.id, data.msg.text)
-            EventMgr.emit(LogicEvent.unionNotice, data.msg);
-        }
-        
-    }
-
-    protected onUnionInfo(data: any, otherData: any): void {
-        console.log("onUnionInfo", data);
-        if(data.code == 0){
-            let l = []
-            l.push(data.msg.info)
-            this._proxy.updateUnionList(l);
-
-            EventMgr.emit(LogicEvent.unionInfo, data.msg);
-        }
-    }
-
-    protected onUnionLog(data: any, otherData: any): void {
-        console.log("onUnionLog", data);
-        if(data.code == 0){
-            EventMgr.emit(LogicEvent.unionLog, data.msg.logs);
-        }
-    }
-    
-    protected onUnionApplyPush(data: any, otherData: any): void {
-        console.log("onUnionApplyPush", data);
-        let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
-        if (unionData && unionData.isMajor(city.rid)){
-            this._proxy.updateApply(city.unionId, data.msg);
-            EventMgr.emit(LogicEvent.updateUnionApply, data.msg);
-        }
-    }
-
-
-    public unionCreate(name:string):void{
-        let sendData: any = {
-            name: ServerConfig.union_create,
-            msg: {
-                name: name,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionJoin(id:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_join,
-            msg: {
-                id: id,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionList():void{
-        let sendData: any = {
-            name: ServerConfig.union_list,
-            msg: {
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    public unionInfo(id:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_info,
-            msg: {
-                id:id
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionMember(id:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_member,
-            msg: {
-                id: id,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionApplyList(id:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_applyList,
-            msg: {
-                id: id,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-
-    public unionDismiss():void{
-        let sendData: any = {
-            name: ServerConfig.union_dismiss,
-            msg: {
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionVerify(id:number = 0,decide:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_verify,
-            msg: {
-                id:id,
-                decide:decide
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    
-    public unionExit():void{
-        let sendData: any = {
-            name: ServerConfig.union_exit,
-            msg: {
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-
-    public unionKick(rid:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_kick,
-            msg: {
-                rid:rid,
-            }
-        };
-        console.log("unionKick");
-        NetManager.getInstance().send(sendData);
-    }
-
-    public unionAppoint(rid:number = 0, title=1):void{
-        let sendData: any = {
-            name: ServerConfig.union_appoint,
-            msg: {
-                rid:rid,
-                title:title
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    public unionAbdicate(rid:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_abdicate,
-            msg: {
-                rid:rid
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    public modNotice(text:string):void{
-        let sendData: any = {
-            name: ServerConfig.union_modNotice,
-            msg: {
-                text:text,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    public appoint(rid:number = 0):void{
-        let sendData: any = {
-            name: ServerConfig.union_kick,
-            msg: {
-                rid:rid,
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
-
-    public unionLog():void{
-        let sendData: any = {
-            name: ServerConfig.union_log,
-            msg: {
-            }
-        };
-        NetManager.getInstance().send(sendData);
-    }
+    appoint(uid: AllianceId = 0): boolean { return this.unionAppoint(uid); }
+    unionLog(): void { EventMgr.emit(E.unionLog, []); EventMgr.emit(E.showToast, '当前协议暂未提供联盟日志'); }
 }

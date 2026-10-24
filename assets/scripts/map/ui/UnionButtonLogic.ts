@@ -22,8 +22,7 @@ export default class WarButtonLogic extends Component {
 
 
     protected updateView():void{
-        let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let cnt = UnionCommand.getInstance().proxy.getApplyCnt(city.unionId);
+        let cnt = UnionCommand.getInstance().proxy.getApplyCnt();
         this.tipsNode.active = cnt > 0;
     }
 

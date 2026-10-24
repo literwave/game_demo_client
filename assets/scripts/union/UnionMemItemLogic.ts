@@ -36,7 +36,7 @@ export default class UnionMemItemLogic extends Component {
         this._menberData = data;
         this.titleLabel.string = "(" + this._menberData.titleDes + ")";
         this.nameLabel.string = this._menberData.name;
-        this.posLabel.string = "坐标:(" + this._menberData.x + "," + this._menberData.y+")";
+        this.posLabel.string = `等级 ${data.level} · ${data.offlineTime === 0 ? '在线' : '离线'}`;
     }
 
     protected click():void{
@@ -52,18 +52,17 @@ export default class UnionMemItemLogic extends Component {
     
     protected appoint():void{
         AudioManager.instance.playClick();
-        UnionCommand.getInstance().unionKick(this._menberData.rid);
+        UnionCommand.getInstance().unionAppoint(this._menberData.rid);
     }
 
     protected abdicate():void{
         AudioManager.instance.playClick();
-        UnionCommand.getInstance().unionKick(this._menberData.rid);
+        UnionCommand.getInstance().unionAbdicate(this._menberData.rid);
     }
     
     protected jump():void{
         AudioManager.instance.playClick();
-        EventMgr.emit(LogicEvent.closeUnion);
-        EventMgr.emit(LogicEvent.scrollToMap, this._menberData.x, this._menberData.y);
+        EventMgr.emit(LogicEvent.showToast, '暂时无法定位该成员');
     }
 
 }

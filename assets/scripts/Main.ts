@@ -1,3 +1,10 @@
+import UnionCommand from './union/UnionCommand';
+import ChatCommand from './chat/ChatCommand';
+import WorldCommand from './world/WorldCommand';
+import ProgressionCommand from './progression/ProgressionCommand';
+import BattleCommand from './battle/BattleCommand';
+import RankCommand from './rank/RankCommand';
+import BuildCommand from './build/BuildCommand';
 import { _decorator, Component, Prefab, Node, instantiate, TiledMapAsset, JsonAsset, AudioSource, assert, Camera, screen, view, director, Director } from 'cc';
 const { ccclass, property } = _decorator;
 
@@ -99,6 +106,13 @@ export default class Main extends Component {
         EventMgr.on(NetEvent.ServerReconnectSuccess, this.onServerReconnectSuccess, this);
         EventMgr.on(NetEvent.ServerReconnectFailed, this.onServerReconnectFailed, this);
 
+        UnionCommand.getInstance();
+        ChatCommand.getInstance();
+        WorldCommand.getInstance();
+        ProgressionCommand.getInstance();
+        BattleCommand.getInstance();
+        RankCommand.getInstance();
+        BuildCommand.getInstance();
         RewardCommand.getInstance();
         TroopCommand.getInstance();
 
@@ -125,6 +139,14 @@ export default class Main extends Component {
         this.disposeLoadingNow();
         GeneralCommand.getInstance().clearData();
         TroopCommand.getInstance().clearData();
+        UnionCommand.getInstance().clearData();
+        ChatCommand.getInstance().clearData();
+        WorldCommand.getInstance().clearData();
+        ProgressionCommand.getInstance().clearData();
+        BattleCommand.getInstance().clearData();
+        RankCommand.getInstance().clearData();
+        BuildCommand.getInstance().clearData();
+        MapUICommand.getInstance().proxy.clearData();
         EventMgr.targetOff(this);
     }
 
@@ -144,6 +166,14 @@ export default class Main extends Component {
         GeneralCommand.getInstance().clearData();
         ArmyCommand.getInstance().clearData();
         TroopCommand.getInstance().clearData();
+        UnionCommand.getInstance().clearData();
+        ChatCommand.getInstance().clearData();
+        WorldCommand.getInstance().clearData();
+        ProgressionCommand.getInstance().clearData();
+        BattleCommand.getInstance().clearData();
+        RankCommand.getInstance().clearData();
+        BuildCommand.getInstance().clearData();
+        MapUICommand.getInstance().proxy.clearData();
         RewardCommand.getInstance().clearData();
     }
 
@@ -289,6 +319,7 @@ export default class Main extends Component {
         const heroJson = configs.getConfig('Hero');
         LoginCommand.getInstance().headIcons.initConfig(configs.getConfig('HeadIcon'), heroJson);
         this.prepareHeadIcons();
+        MapUICommand.getInstance().proxy.setAllFacilityCfg(configAssets);
         const basicCfg = configs.getConfig('Global');
         MapUICommand.getInstance().proxy.setBasic({ json: basicCfg });
         if (heroJson) GeneralCommand.getInstance().proxy.initHeroConfig(heroJson, basicCfg);

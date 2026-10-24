@@ -1,3 +1,4 @@
+import BattleCommand from '../../battle/BattleCommand';
 import { _decorator } from 'cc';
 import { Basic, Build, Conscript, General } from "../../config/Basci";
 import LoginCommand from "../../login/LoginCommand";
@@ -111,6 +112,7 @@ export class FacilityOpenCondition {
 
 /**设施升级配置*/
 export class FacilityUpLevel {
+    conditions: FacilityOpenCondition[] = [];
     level: number = 0;
     values: number[] = [];
     wood: number = 0;
@@ -379,6 +381,8 @@ export default class MapUIProxy {
      * 全部设施配置
      * @param jsonAsset 
      */
+    public getFacilityConfigs(): FacilityConfig[] { return Array.from(this._facilityCfg.values()); }
+
     public setAllFacilityCfg(jsonAssets: any[]): void {
         this._facilityCfg = new Map();
 
@@ -395,6 +399,23 @@ export default class MapUIProxy {
             } else {
                 otherJsons.push(jsonAssets[i].json);
             }
+        }
+
+        if (Array.isArray(mainJson) && Array.isArray(additionJson)) {
+            this._facilityAdditionCfg.clear();
+            for (const row of mainJson) {
+                const cfg = new FacilityConfig();
+                cfg.type = row.Id; cfg.name = row.Name; cfg.des = row.Desc;
+                cfg.conditions = (row.CreateLimit || []).map(pair => ({ type: pair.bid, level: pair.lev }));
+                for (const level of additionJson.filter(r => r.BuildingType === row.Id)) {
+                    const up = new FacilityUpLevel();
+                    Object.assign(up, { level: level.Lv, grain: level.CostGrain, wood: level.CostWood, iron: level.CostIron,
+                        conditions: (level.UpgradeLimit || []).map(pair => ({ type: pair.bid, level: pair.lev })) });
+                    cfg.upLevels[level.Lv - 1] = up;
+                }
+                this._facilityCfg.set(cfg.type, cfg);
+            }
+            return;
         }
 
         if (mainJson != null && additionJson != null) {
@@ -725,7 +746,11 @@ export default class MapUIProxy {
     }
 
 
-    public isRead(id: number = 0): boolean {
+    public isRead(id: number | string = 0): boolean {
+        return !!BattleCommand.getInstance().reports.get(id)?.isRead;
+    }
+
+    private legacyIsRead(id: number = 0): boolean {
         var data = this._warReport.get(id);
         var roleData = LoginCommand.getInstance().proxy.getRoleData();
         if (data) {
@@ -777,15 +802,7 @@ export default class MapUIProxy {
 
 
     public isReadNum(): number {
-        var num = 0;
-        var arr = this.getWarReport();
-        for (var i = 0; i < arr.length; i++) {
-            if (!this.isRead(arr[i].id)) {
-                num++;
-            }
-        }
-
-        return num;
+        return BattleCommand.getInstance().reports.values().filter(r => !r.isRead).length;
     }
 
 }

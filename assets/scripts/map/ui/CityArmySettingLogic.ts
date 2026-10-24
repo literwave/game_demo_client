@@ -206,6 +206,11 @@ export default class CityArmySettingLogic extends Component {
                         this._totalSoldiers[i] = generalData ? generalData.level * 100 + (this._addition ? this._addition.soldierCnt : 0) : 0;
                         this._conTimes[i] = Number(this._data.conTimes && this._data.conTimes[i] || 0);
                         this._conCnts[i] = Number(this._data.conCnts && this._data.conCnts[i] || 0);
+                    } else if (troop) {
+                        const soldier = troop.getSoldier(heroIdx);
+                        this._soldiers[i] = soldier.count;
+                        // 新协议不包含旧征兵队列及按等级推导的上限。
+                        this._totalSoldiers[i] = soldier.count;
                     }
                     soldierCnt += this._soldiers[i];
                     totalSoldierCnt += this._totalSoldiers[i];
@@ -248,7 +253,8 @@ export default class CityArmySettingLogic extends Component {
         }
         this.labelId.string = "部队" + this._order;
         this.labelCost.string = "上阵 " + generalCount + "/" + this._generalCnt;
-        this.labelSoldierCnt.string = this._data ? (soldierCnt + "/" + totalSoldierCnt) : "待同步";
+        const hurtCount = troop ? troop.getSortedHeroes().reduce((sum, hero) => sum + troop.getSoldier(hero.heroIdx).hurtCount, 0) : 0;
+        this.labelSoldierCnt.string = troop ? `${soldierCnt}（伤兵 ${hurtCount}）` : this._data ? (soldierCnt + "/" + totalSoldierCnt) : "待同步";
         this.labelAddition.string = "无";
         let speed: number = 0;
         let attack: number = 0;
@@ -411,9 +417,9 @@ export default class CityArmySettingLogic extends Component {
         this._data = ArmyCommand.getInstance().proxy.getArmyByOrder(order, cityId);
         const facility = MapUICommand.getInstance().proxy.getMyFacilitys(this._cityId);
         // 新部队协议不依赖旧城建设施；未同步设施时不能把默认 armyCnt=0 当成全锁定。
-        this._addition = facility != null ? MapUICommand.getInstance().proxy.getMyCityAddition(cityId) : null;
+        this._addition = this._data && facility != null ? MapUICommand.getInstance().proxy.getMyCityAddition(cityId) : null;
         this._isUnlock = !this._addition || this._addition.armyCnt >= this._order;
-        if (facility == null && this._cityId > 0 && GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.city_facilities)) {
+        if (facility == null && this._cityId > 0 && GeneralCommand.getInstance().isProtocolAvailable(ServerConfig.c2s_create_build)) {
             MapUICommand.getInstance().qryCityFacilities(this._cityId);
         }
         TroopCommand.getInstance().requestTroops();

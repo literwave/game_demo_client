@@ -1,7 +1,7 @@
 import { ServerConfig } from "../config/ServerConfig";
 import { NetManager } from "../network/socket/NetManager";
 import { Tools } from "../utils/Tools";
-import LoginProxy, { toProtoInt } from "./LoginProxy";
+import LoginProxy, { toProtoInt, toProtoId } from "./LoginProxy";
 import { NetEvent } from "../network/socket/NetInterface";
 import MapCommand from "../map/MapCommand";
 import { LocalCache } from "../utils/LocalCache";
@@ -69,13 +69,14 @@ export default class LoginCommand {
         EventMgr.on(ServerConfig.s2c_user_create, this.onUserCreate, this);
         EventMgr.on(ServerConfig.s2c_change_head_icon, this.onHeadIconChanged, this);
         EventMgr.on(ServerConfig.s2c_client_load_ok, this.onClientLoadOk, this);
+        EventMgr.on(ServerConfig.s2c_sync_soldier, this.onSyncSoldier, this);
+        EventMgr.on(ServerConfig.s2c_sync_city_pos, this.onSyncCityPos, this);
         EventMgr.on(ServerConfig.s2c_sync_item_data, this.onSyncItemData, this);
         EventMgr.on(ServerConfig.s2c_sync_user_res_list, this.onSyncUserResList, this);
 
         EventMgr.on(ServerConfig.account_reLogin, this.onAccountRelogin, this);
         EventMgr.on(ServerConfig.account_logout, this.onAccountLogout, this);
         EventMgr.on(ServerConfig.account_robLogin, this.onAccountRobLogin, this)
-        EventMgr.on(ServerConfig.chat_login, this.onChatLogin, this)
 
     }
 
@@ -191,6 +192,19 @@ export default class LoginCommand {
             console.warn(`发送失败: ${name}`, error);
             return false;
         }
+    }
+
+    private onSyncSoldier(data: any): void {
+        if (!this._serverReady || !data?.soldierInfo) return;
+        this._proxy.setSoldierInfo(data.soldierInfo);
+        EventMgr.emit(LogicEvent.updateSoldier, this._proxy.getRoleData()?.soldierInfo);
+        EventMgr.emit(LogicEvent.updateMyRole);
+    }
+
+    private onSyncCityPos(data: any): void {
+        if (!this._serverReady || !data?.cityPos) return;
+        this._proxy.setCityPos(data.cityPos);
+        EventMgr.emit(LogicEvent.updateCityPosition, this._proxy.getRoleData()?.cityPos);
     }
 
     private onDisconnected(): void {
@@ -505,7 +519,7 @@ export default class LoginCommand {
         // 注意：这里需要根据你的 .proto 文件里的定义来写
         // 假设 login.proto 里定义的请求消息是 c2s_user_login，并且在 Login 包下
         var protoData = ProtoManager.getInstance().encode(msgName, {
-            userId: toProtoInt(loginData.userId),
+            userId: toProtoId(loginData.userId),
             passwd: loginData.passwd,
             token: loginData.token, // 根据 proto 定义补充字段
         });
@@ -544,18 +558,5 @@ export default class LoginCommand {
     }
 
 
-    public chatLogin(rid: number, token: string, nick_name: string = ''): void {
-        var api_name = ServerConfig.chat_login;
-        var send_data = {
-            name: api_name,
-            msg: {
-                rid: rid,
-                token: token,
-                nickName: nick_name
-            }
-        };
 
-        console.log("send_data:", send_data);
-        NetManager.getInstance().send(send_data);
-    }
 }

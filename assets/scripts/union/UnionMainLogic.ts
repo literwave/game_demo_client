@@ -39,18 +39,20 @@ export default class UnionMainLogic extends Component {
     }
     onEnable() {
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        UnionCommand.getInstance().unionInfo(city.unionId);
+        UnionCommand.getInstance().unionInfo(UnionCommand.getInstance().proxy.myAllianceId);
+        this.onInfo();
         this.updateRedDot()
     }
     updateRedDot(){
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let cnt = UnionCommand.getInstance().proxy.getApplyCnt(city.unionId);
+        let cnt = UnionCommand.getInstance().proxy.getApplyCnt(UnionCommand.getInstance().proxy.myAllianceId);
         this.applyRedDot.active = cnt > 0;
     }
     onInfo(){
         
         let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(city.unionId);
+        let unionData:Union = UnionCommand.getInstance().proxy.getUnion(UnionCommand.getInstance().proxy.myAllianceId);
+        if (!unionData) return;
         this.nameLab.string = "联盟:" + unionData.name;
         console.log("unionData:", unionData);
         if (unionData.notice == ""){
@@ -61,7 +63,7 @@ export default class UnionMainLogic extends Component {
         this.mengZhuLab.string = "盟主:" + unionData.getChairman().name
         this.editNode.active = false;
 
-        let ok = unionData.isMajor(city.rid);
+        let ok = UnionCommand.getInstance().proxy.canManage();
         this.modifyBtn.node.active = ok;
         this.applyBtn.node.active = ok;
     }
@@ -74,6 +76,7 @@ export default class UnionMainLogic extends Component {
     }
     
     onUnionApply(){
+        this.onInfo();
         this.updateRedDot();
     }
 

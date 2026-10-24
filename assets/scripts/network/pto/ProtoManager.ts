@@ -1,4 +1,5 @@
 import { _decorator, resources, TextAsset, JsonAsset } from 'cc';
+import Long from '../../libs/long/long.js';
 
 // 声明全局 protobuf 对象 (由 assets/scripts/3rd/protobuf.js 提供)
 declare const protobuf: any;
@@ -18,6 +19,9 @@ export class ProtoManager {
     }
 
     constructor() {
+        // 必须在类型 setup/Reader 初始化前配置，浏览器没有自动 require('long')。
+        protobuf.util.Long = Long;
+        protobuf.configure();
         // 创建 protobuf 根对象
         this._root = new protobuf.Root();
     }
@@ -165,11 +169,11 @@ export class ProtoManager {
             // 查找类型
             const Type = this._root.lookupType(typeName);
 
-            // 验证数据 (可选，开发阶段很有用)
+            data = this.normalizeLongs(Type, data);
             const errMsg = Type.verify(data);
             if (errMsg) {
                 console.error(`Proto verify error [${typeName}]:`, errMsg);
-                // return null; // 可以选择是否中断
+                return null;
             }
 
             // 创建消息对象
@@ -202,15 +206,62 @@ export class ProtoManager {
             const message = Type.decode(buffer);
 
             // 转换为普通 JS 对象
-            return Type.toObject(message, {
+            const object = Type.toObject(message, {
                 defaults: true,  // 填充默认值
                 arrays: true,    // 空数组也会存在
                 objects: true,   // 空对象也会存在
-                longs: Number,   // int64 用数字，不用字符串
+                longs: String,
             });
+            return this.restoreSafeLongs(Type, object);
         } catch (e) {
             console.error(`Proto decode error [${typeName}]:`, e);
             return null;
         }
+    }
+
+    /** 只转换声明为 int64 的字段，不把无效 uint32/string 等输入静默强转。 */
+    private normalizeLongs(type: any, data: any): any {
+        if (!data) return data;
+        const out = { ...data };
+        for (const field of type.fieldsArray) {
+            if (out[field.name] == null) continue;
+            field.resolve();
+            const convert = (value: any) => {
+                if (/^(u?int64|sint64|fixed64|sfixed64)$/.test(field.type)) {
+                    if (typeof value === 'number' && !Number.isSafeInteger(value)) throw new Error(`${field.name}: unsafe int64 number; use a decimal string`);
+                    if (typeof value === 'string' && /^-?\d+$/.test(value)) {
+                        const long = Long.fromValue(value, field.type === 'uint64' || field.type === 'fixed64');
+                        if (long.toString() !== value) throw new Error(`${field.name}: invalid or out-of-range int64`);
+                        return long;
+                    }
+                    return value;
+                }
+                return field.resolvedType?.fieldsArray ? this.normalizeLongs(field.resolvedType, value) : value;
+            };
+            if (field.map) {
+                const map = { ...out[field.name] };
+                Object.keys(map).forEach(key => map[key] = convert(map[key])); out[field.name] = map;
+            } else out[field.name] = field.repeated ? out[field.name].map(convert) : convert(out[field.name]);
+        }
+        return out;
+    }
+
+    /** 兼容现有小整数逻辑；超过安全整数范围的 ID 保持十进制字符串。 */
+    private restoreSafeLongs(type: any, object: any): any {
+        if (!object) return object;
+        for (const field of type.fieldsArray) {
+            if (object[field.name] == null) continue;
+            field.resolve();
+            const convert = (value: any) => {
+                if (/^(u?int64|sint64|fixed64|sfixed64)$/.test(field.type)) {
+                    const number = Number(value);
+                    return Number.isSafeInteger(number) ? number : String(value);
+                }
+                return field.resolvedType?.fieldsArray ? this.restoreSafeLongs(field.resolvedType, value) : value;
+            };
+            if (field.map) Object.keys(object[field.name]).forEach(key => object[field.name][key] = convert(object[field.name][key]));
+            else object[field.name] = field.repeated ? object[field.name].map(convert) : convert(object[field.name]);
+        }
+        return object;
     }
 }

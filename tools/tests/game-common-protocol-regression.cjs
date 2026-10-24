@@ -1,0 +1,290 @@
+// 离线测试：真实 protobuf 线协议，隔离网络/编辑器，不启动游戏或服务器。
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const ts = require(process.argv[2]);
+const root = path.resolve(__dirname, '../..');
+const scripts = path.join(root, 'assets/scripts');
+const protobuf = require(path.join(scripts, '3rd/protobuf.js'));
+const plain = value => JSON.parse(JSON.stringify(value));
+const big = '9007199254740993';
+const other = '9007199254740995';
+let passed = 0;
+
+function harness() {
+    const modules = new Map(), timers = new Map(), sent = [], notices = [];
+    let timerId = 0;
+    const role = { userId: big, allianceId: 0, cityPos: { x: 12, y: 20 } };
+    const login = { proxy: { getRoleData: () => role, setAllianceId: id => role.allianceId = id } };
+    const cc = { _decorator: { ccclass: () => v => v, property: () => () => {} }, JsonAsset: class {} };
+    const stubs = {
+        'login/LoginCommand': { default: { getInstance: () => login } },
+        'network/socket/NetManager': { NetManager: { getInstance: () => ({ send(packet) {
+            assert.ok(packet.msg instanceof Uint8Array, '所有新请求必须经过 protobuf 编码');
+            assert.ok(proto.getIdByMsgType(packet.name) > 0, '不能发送 ID=0 的旧消息');
+            sent.push({ name: packet.name, data: proto.decode(packet.name, packet.msg) });
+        } }) } },
+        'general/GeneralCommand': { default: { getInstance: () => ({ proxy: { getMyGeneral: id => [1001, 1002].includes(id) ? { heroType: id } : null } }) } },
+        'map/ui/MapUICommand': { default: { getInstance: () => ({ proxy: {} }) } },
+    };
+    function load(name) {
+        if (name.endsWith('.js')) return { default: require(path.resolve(scripts, name)) };
+        const file = path.resolve(scripts, name.endsWith('.ts') ? name : name + '.ts');
+        const key = path.relative(scripts, file).replace(/\\/g, '/').replace(/\.ts$/, '');
+        if (stubs[key]) return stubs[key];
+        if (modules.has(file)) return modules.get(file).exports;
+        const module = { exports: {} }; modules.set(file, module);
+        const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: {
+            target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, experimentalDecorators: true,
+        } }).outputText;
+        vm.runInNewContext(code, {
+            module, exports: module.exports, protobuf,
+            console: { log() {}, warn() {}, error() {} },
+            setTimeout: (fn, delay) => { const id = ++timerId; timers.set(id, { fn, delay }); return id; },
+            clearTimeout: id => timers.delete(id),
+            require: name => name === 'cc' ? cc : load(path.relative(scripts, path.resolve(path.dirname(file), name))),
+        }, { filename: file });
+        return module.exports;
+    }
+    const proto = load('network/pto/ProtoManager').ProtoManager.getInstance();
+    const dir = path.join(root, 'assets/resources/protbuf/pto');
+    for (const name of fs.readdirSync(dir).filter(n => n.endsWith('.proto'))) {
+        proto.mergeRoot(proto._root, protobuf.parse(fs.readFileSync(path.join(dir, name), 'utf8')).root);
+    }
+    proto.parseIdMap(JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/protbuf/net_pb.json'), 'utf8')).define);
+    proto._isReady = true;
+    const events = load('utils/EventMgr').EventMgr;
+    const S = load('config/ServerConfig').ServerConfig, E = load('common/LogicEvent').LogicEvent;
+    const net = load('network/socket/NetInterface').NetEvent;
+    const config = load('core/ConfigManager').default.getInstance();
+    config.loadConfigs([{ name: 'Global', json: [{ Id: 9, value1: 3 }] }]);
+    const commands = {
+        union: load('union/UnionCommand').default.getInstance(), chat: load('chat/ChatCommand').default.getInstance(),
+        world: load('world/WorldCommand').default.getInstance(), progress: load('progression/ProgressionCommand').default.getInstance(),
+        battle: load('battle/BattleCommand').default.getInstance(), rank: load('rank/RankCommand').default.getInstance(),
+        build: load('build/BuildCommand').default.getInstance(), troop: load('general/TroopCommand').default.getInstance(),
+    };
+    const receive = (name, data = {}) => {
+        const bytes = proto.encode(name, data); assert.ok(bytes, 'fixture 编码失败 ' + name);
+        const payload = proto.decode(name, bytes); assert.ok(payload, 'fixture 解码失败 ' + name); events.emit(name, payload);
+    };
+    for (const key of ['showToast', 'battleStarted', 'battleFinished', 'updateCityBuilds']) events.on(E[key], d => notices.push([key, d]), notices);
+    return { ...commands, proto, events, S, E, net, sent, notices, role, timers, load, receive,
+        authenticate: () => receive(S.s2c_user_login_ok),
+        loaded: () => receive(S.s2c_client_load_ok),
+        disconnect: () => events.emit(net.ServerDisconnected),
+        tick(delay) { for (const [id, t] of [...timers]) if (t.delay === delay) { timers.delete(id); t.fn(); } },
+    };
+}
+function test(name, run) { run(); passed++; console.log('PASS ' + name); }
+const info = (id = 17) => ({ brief: { allianceId: id, name: '长安', flag: 4, joinType: 2, notice: '一起出关', memberCount: 3, memberMax: 40, level: 1 }, leaderId: big, manifesto: '守望相助', createTime: 1 });
+const message = (msgId, channel = 1, senderId = big, targetId = 0) => ({ msgId, channel, senderId, targetId, senderName: '玩家', content: '消息', time: Number(msgId) || 1 });
+
+test('同步后的全部新协议均使用当前 net_pb ID，协议资产与 game_common 一致', () => {
+    const h = harness();
+    const ids = JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/protbuf/net_pb.json'), 'utf8')).define;
+    for (const pkg of ['Alliance', 'Chat', 'World', 'Battle', 'Report', 'Task', 'Activity', 'Rank', 'Build']) {
+        for (const name of Object.keys(ids[pkg])) assert.equal(h.S[name], `${pkg}.${name}`);
+    }
+    const shared = path.join(root, 'external/game_common/proto');
+    if (fs.existsSync(shared)) for (const name of ['alliance', 'chat', 'world', 'battle', 'report', 'task', 'activity', 'rank', 'build']) {
+        assert.equal(fs.readFileSync(path.join(root, 'assets/resources/protbuf/pto', name + '.proto'), 'utf8').replace(/\r/g, ''),
+            fs.readFileSync(path.join(shared, name + '.proto'), 'utf8').replace(/\r/g, ''));
+    }
+});
+test('int64 大 ID、重复 ID 数组和登录身份完整往返；非法整数拒绝发送', () => {
+    const h = harness();
+    for (const [name, data, key] of [
+        [h.S.c2s_req_alliance_info, { allianceId: big }, 'allianceId'],
+        [h.S.c2s_battle_skip, { battleId: big }, 'battleId'],
+        [h.S.c2s_req_report_replay, { reportId: big }, 'reportId'],
+    ]) assert.equal(h.proto.decode(name, h.proto.encode(name, data))[key], big);
+    assert.deepEqual(plain(h.proto.decode(h.S.c2s_read_report, h.proto.encode(h.S.c2s_read_report, { reportIdList: [big, other] }))).reportIdList, [big, other]);
+    assert.equal(h.proto.encode(h.S.c2s_battle_skip, { battleId: Number(big) }), null);
+    assert.equal(h.proto.encode(h.S.c2s_battle_skip, { battleId: '9223372036854775808' }), null);
+    assert.equal(h.proto.encode(h.S.c2s_edit_troop, { troopInfo: { troopIdx: 'bad' } }), null);
+    const LoginProxy = h.load('login/LoginProxy').default, login = new LoginProxy();
+    login.saveLoginData({ userId: big }); login.saveEnterData({ name: '角色', level: 4, exp: 8, cityPos: { x: 10, y: 20 }, soldierInfo: { count: 900, hurtCount: 40 }, allianceId: other });
+    assert.equal(login.getRoleData().userId, big); assert.equal(login.getRoleData().allianceId, other);
+    login.setSoldierInfo({ count: 700, hurtCount: 50 }); login.setCityPos({ x: 30, y: 40 });
+    assert.deepEqual(plain(login.getRoleData().soldierInfo), { count: 700, hurtCount: 50 });
+    assert.equal(login.getRoleData().name, '角色');
+});
+test('联盟身份、职位权限、设置全字段和退出后的清理', () => {
+    const h = harness(); h.authenticate();
+    h.receive(h.S.s2c_req_my_alliance, { info: info(other), myPos: 1 });
+    assert.equal(h.union.proxy.myAllianceId, other); assert.equal(h.role.allianceId, other);
+    h.receive(h.S.s2c_req_member_list, { allianceId: other, memberList: [{ uid: big, pos: 1 }, { uid: 2, pos: 2 }, { uid: 3, pos: 3 }, { uid: 4, pos: 2 }] });
+    assert.equal(h.union.proxy.canKick(2), true);
+    assert.equal(h.union.unionAppoint(2, 2), true); assert.equal(h.sent.at(-1).data.pos, 3);
+    assert.equal(h.union.modNotice('新公告'), true);
+    assert.deepEqual(plain(h.sent.at(-1).data), { flag: 4, joinType: 2, notice: '新公告', manifesto: '守望相助' });
+    h.receive(h.S.s2c_sync_my_alliance, { allianceId: other, myPos: 2, info: info(other) });
+    assert.equal(h.union.proxy.canKick(2), false); assert.equal(h.union.proxy.canKick(3), true);
+    assert.equal(h.union.unionAbdicate(3), false); assert.equal(h.union.unionAppoint(3, 1), false);
+    h.receive(h.S.s2c_req_apply_list, { applyList: [{ uid: 90, name: '申请者' }] });
+    assert.equal(h.union.proxy.getApplyCnt(), 1);
+    h.receive(h.S.s2c_sync_my_alliance, { allianceId: 0, myPos: 0 });
+    assert.equal(h.role.allianceId, 0); assert.equal(h.union.proxy.getApplyCnt(), 0); assert.equal(h.union.proxy.getMemberList().length, 0);
+    assert.equal(h.union.unionKick(3), false); assert.equal(h.chat.chat('联盟消息', 1), false);
+});
+test('联盟详情不覆盖推荐列表，申请 ACK 不假装已入盟，邀请确认保留服务器权限', () => {
+    const h = harness(); h.authenticate();
+    h.receive(h.S.s2c_req_alliance_list, { allianceList: [info(10).brief, info(20).brief] });
+    h.receive(h.S.s2c_req_alliance_info, { info: info(30) });
+    assert.deepEqual(Array.from(h.union.proxy.getUnionList(), u => u.id), [10, 20]);
+    h.receive(h.S.s2c_apply_alliance, { allianceId: 10 }); assert.equal(h.union.proxy.isMeInUnion(), false);
+    h.receive(h.S.s2c_sync_alliance_invite, { brief: info(20).brief, inviterId: big, inviterName: '盟主' });
+    assert.equal(h.union.proxy.invitations.size, 1); assert.equal(h.union.handleInvite(20, true), true);
+    h.receive(h.S.s2c_handle_invite, { allianceId: 20, agree: true }); assert.equal(h.union.proxy.invitations.size, 0);
+});
+test('换盟途中旧身份快照、旧频道历史及旧申请列表不能覆盖新联盟', () => {
+    const h = harness(); h.authenticate();
+    h.union.requestMine();
+    h.receive(h.S.s2c_sync_my_alliance, { allianceId: 10, myPos: 1, info: info(10) });
+    h.receive(h.S.s2c_req_my_alliance, { myPos: 0 });
+    assert.equal(h.union.proxy.myAllianceId, 10);
+    h.receive(h.S.s2c_sync_my_alliance, { allianceId: 20, myPos: 1, info: info(20) });
+    h.receive(h.S.s2c_req_chat_list, { channel: 2, msgList: [message(100, 2)] });
+    assert.equal(h.chat.proxy.getUnionChatList().length, 0);
+    assert.equal(h.sent.at(-1).name, h.S.c2s_req_chat_list);
+    h.receive(h.S.s2c_req_chat_list, { channel: 2, msgList: [message(200, 2)] });
+    assert.deepEqual(Array.from(h.chat.proxy.getUnionChatList(), m => m.msgId), [200]);
+    h.receive(h.S.s2c_req_apply_list, { applyList: [{ uid: 9, name: '旧盟申请' }] });
+    assert.equal(h.union.proxy.getApplyCnt(), 0);
+    h.receive(h.S.s2c_req_apply_list, { applyList: [{ uid: 8, name: '新盟申请' }] });
+    assert.equal(h.union.proxy.getApplyList()[0].id, 8);
+});
+test('聊天 ACK/推送去重、空历史替换、查询途中推送保留、私聊会话隔离', () => {
+    const h = harness(); h.authenticate(); h.loaded();
+    h.receive(h.S.s2c_chat, { msg: message(1) }); h.receive(h.S.s2c_sync_chat, { msg: message(1) });
+    assert.equal(h.chat.proxy.getWorldChatList().length, 1);
+    h.receive(h.S.s2c_req_chat_list, { channel: 1, msgList: [] });
+    assert.equal(h.chat.proxy.getWorldChatList().length, 1, '请求期间到达的消息仍保留');
+    h.chat.chatHistory(0); h.receive(h.S.s2c_req_chat_list, { channel: 1, msgList: [] });
+    assert.equal(h.chat.proxy.getWorldChatList().length, 0);
+    for (let i = 2; i < 7; i++) h.receive(h.S.s2c_sync_chat, { msg: message(i) });
+    assert.deepEqual(Array.from(h.chat.proxy.getWorldChatList(), m => m.msgId), [4, 5, 6]);
+    h.receive(h.S.s2c_sync_chat, { msg: message(8, 3, other, big) });
+    h.receive(h.S.s2c_chat, { msg: message(9, 3, big, other) });
+    assert.equal(h.chat.proxy.getHistory(3, other).length, 2);
+    assert.equal(h.chat.proxy.getHistory(3, '9007199254740994').length, 0);
+    assert.equal(h.chat.chat('你好', 2, other), true); assert.equal(h.sent.at(-1).data.targetId, other);
+    h.disconnect(); assert.equal(h.chat.proxy.getWorldChatList().length, 0);
+    assert.equal(h.chat.chat('断线消息'), false);
+});
+test('行军召回、全量与推送竞态、AOI 进入/更新/离开及视野节流', () => {
+    const h = harness(); h.authenticate();
+    const march = { troopIdx: 1, targetType: 2, targetId: other, startTime: 1, endTime: 10, state: 1, path: [{ x: 0, y: 0 }, { x: 20, y: 20 }] };
+    h.world.requestMarches(); h.receive(h.S.s2c_sync_march, { marchInfo: march }); h.receive(h.S.s2c_req_march_list, { marchList: [] });
+    assert.equal(h.world.marches.values().length, 1);
+    assert.equal(h.world.cancelMarch(1), true);
+    h.receive(h.S.s2c_cancel_march, { troopIdx: 1 }); assert.equal(h.world.marches.values().length, 0);
+    h.receive(h.S.s2c_aoi_enter, { entities: [{ entityId: other, entityType: 3, pos: { x: 1, y: 2 } }] });
+    h.receive(h.S.s2c_aoi_update, { entities: [{ entityId: other, entityType: 3, pos: { x: 3, y: 4 } }] });
+    assert.equal(h.world.entities.get(other).pos.x, 3);
+    h.receive(h.S.s2c_aoi_leave, { entityIds: [other] }); assert.equal(h.world.entities.size, 0);
+    h.world.focus({ x: 10, y: 10 }); h.world.focus({ x: 11, y: 11 }); h.world.focus({ x: 12, y: 12 }); h.tick(250);
+    assert.equal(h.sent.filter(p => p.name === h.S.c2s_aoi_focus).length, 1);
+    assert.equal(h.sent.at(-1).data.pos.x, 12);
+    assert.equal(h.world.march(1, 2, other, { x: 30, y: 40 }), true);
+    assert.equal(h.sent.at(-1).data.targetId, other);
+    h.disconnect(); assert.equal(h.world.entities.size, 0); assert.equal(h.world.march(1, 2, other, { x: 30, y: 40 }), false);
+});
+test('任务领奖仅在可领取状态发送；活动 ACK 不重复累加兑换次数', () => {
+    const h = harness(); h.authenticate();
+    h.progress.requestTasks(); h.receive(h.S.s2c_sync_task, { taskInfo: { taskId: 1, taskType: 1, state: 1, progress: 10 } });
+    h.receive(h.S.s2c_req_task_list, { taskList: [] });
+    assert.equal(h.progress.tasks.get(1).state, 1); assert.equal(h.progress.claimTask(1), true); assert.equal(h.progress.claimTask(1), false);
+    h.receive(h.S.s2c_get_task_reward, { taskId: 1 }); assert.equal(h.progress.tasks.get(1).state, 2);
+    assert.equal(h.progress.claimTask(1), false);
+    h.receive(h.S.s2c_sync_activity, { activityInfo: { activityId: 2, state: 1, extraMap: { 0: 4 } } });
+    assert.equal(h.progress.exchange(2, 0, 1), true);
+    h.receive(h.S.s2c_sync_activity, { activityInfo: { activityId: 2, state: 1, extraMap: { 0: 5 } } });
+    h.receive(h.S.s2c_activity_exchange, { activityId: 2, index: 0, count: 1 });
+    assert.equal(h.progress.activities.get(2).extraMap[0], 5);
+    assert.equal(h.sent.at(-1).name, h.S.c2s_req_activity_list);
+    h.receive(h.S.s2c_req_activity_list, { activityList: [] }); assert.equal(h.progress.activities.values().length, 0);
+    h.receive(h.S.s2c_sync_activity, { activityInfo: { activityId: 3, state: 2 } });
+    assert.equal(h.progress.claimActivity(3, 0), true, '已结束活动仍可向服务器请求结算奖励');
+    h.receive(h.S.s2c_get_activity_reward, { activityId: 3, index: 0 });
+    assert.equal(h.progress.claimActivity(3, 0), false, '领奖确认后不可重复领取');
+});
+test('战斗结果去重；战报详情/回放、全部已读和删除使用新数据', () => {
+    const h = harness(); h.authenticate();
+    h.receive(h.S.s2c_battle_start, { battleId: big }); h.receive(h.S.s2c_battle_result, { battleId: big, result: 1, reportId: other });
+    h.receive(h.S.s2c_battle_result, { battleId: big, result: 1, reportId: other });
+    assert.equal(h.notices.filter(n => n[0] === 'battleFinished').length, 1);
+    h.battle.requestReports(); h.receive(h.S.s2c_sync_report, { reportBrief: { reportId: other, result: 1 } });
+    h.receive(h.S.s2c_req_report_list, { reportList: [] }); assert.equal(h.battle.reports.values().length, 1);
+    h.receive(h.S.s2c_req_report_detail, { reportInfo: { brief: { reportId: other, result: 1 }, atkSide: { name: '攻方' } } });
+    assert.equal(h.battle.details.get(other).atkSide.name, '攻方');
+    h.receive(h.S.s2c_req_report_replay, { reportId: other, replay: { maxRound: 1, actions: [{ round: 1, actType: 6, effects: [{ value: 50, afterSoldier: 100 }] }] } });
+    assert.equal(h.battle.replays.get(other).actions[0].effects[0].afterSoldier, 100);
+    h.battle.readReports(); h.receive(h.S.s2c_read_report, { reportIdList: [] }); assert.equal(h.battle.reports.get(other).isRead, true);
+    h.battle.deleteReports([other]); h.receive(h.S.s2c_del_report, { reportIdList: [other] });
+    assert.equal(h.battle.reports.values().length, 0); assert.equal(h.battle.details.size, 0); assert.equal(h.battle.replays.size, 0);
+    h.receive(h.S.s2c_req_report_detail, { reportInfo: { brief: { reportId: other } } });
+    h.receive(h.S.s2c_req_report_replay, { reportId: other, replay: { maxRound: 1 } });
+    assert.equal(h.battle.reports.values().length, 0, '删除后的迟到详情不得恢复战报');
+    assert.equal(h.battle.details.size, 0); assert.equal(h.battle.replays.size, 0);
+});
+test('榜单按类型/页缓存，未上榜 rank=0 保留；建筑只在推送后升级', () => {
+    const h = harness(); h.authenticate();
+    assert.equal(h.rank.requestRank(1, 1, 20), true); assert.equal(h.rank.requestRank(1, 21, 20), false);
+    h.receive(h.S.s2c_req_rank_list, { rankType: 1, rankList: [], selfRank: { uid: big, rank: 0, score: other } });
+    assert.equal(h.rank.pages.get('1:1:20').selfRank.score, other); assert.equal(h.rank.requestRank(1, 21, 20), true);
+    assert.equal(h.build.upgrade(2), true); assert.equal(h.build.upgrade(2), false); assert.equal(h.build.levels.has(2), false);
+    h.receive(h.S.s2c_sync_build, { bid: 2, level: 8 }); assert.equal(h.build.levels.get(2), 8);
+});
+test('posMap 兵力完整保存，战后同步不误解锁尚未确认的编队编辑', () => {
+    const h = harness(); h.authenticate(); h.troop.requestTroops();
+    h.receive(h.S.s2c_req_troop, { troopList: [{ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 900, hurtCount: 30 } } } }] });
+    assert.equal(h.troop.editTroop(1, { 1001: 1, 1002: 2 }), true);
+    const packet = h.sent.at(-1).data;
+    assert.deepEqual(plain(packet.troopInfo.posMap[1].soldier), { count: 900, hurtCount: 30 });
+    h.receive(h.S.s2c_sync_troop, { troopInfo: { troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count: 700, hurtCount: 50 } } } } });
+    assert.equal(h.troop.editingTroopIdx, 1); assert.equal(h.troop.proxy.getTroop(1).getSoldier(1001).count, 700);
+});
+test('编队列表不能覆盖查询途中的战后兵力，配兵请求保留伤兵', () => {
+    const h = harness(); h.authenticate(); h.troop.requestTroops();
+    const troop = count => ({ troopIdx: 1, posMap: { 0: { heroIdx: 1001, soldier: { count, hurtCount: 50 } } } });
+    h.receive(h.S.s2c_sync_troop, { troopInfo: troop(700) });
+    h.receive(h.S.s2c_req_troop, { troopList: [troop(900)] });
+    assert.equal(h.troop.proxy.getTroop(1).getSoldier(1001).count, 700);
+    assert.equal(h.troop.editTroop(1, { 1001: 0 }, { 1001: 850 }), true);
+    assert.deepEqual(plain(h.sent.at(-1).data.troopInfo.posMap[0].soldier), { count: 850, hurtCount: 50 });
+    h.receive(h.S.s2c_edit_troop, h.sent.at(-1).data);
+    assert.equal(h.troop.editTroop(1, { 1001: 0 }, { 1001: -1 }), false);
+});
+test('建筑配置按建筑 Id 关联等级表，保留建造/升级前置及即时完成语义', () => {
+    const h = harness();
+    const Proxy = h.load('map/ui/MapUIProxy').default;
+    const proxy = new Proxy();
+    const table = name => JSON.parse(fs.readFileSync(path.join(root, 'assets/resources/config', name + '.json'), 'utf8'));
+    const buildings = table('BuildingDetail'), levels = table('BuildingLv');
+    proxy.setAllFacilityCfg([{ name: 'BuildingDetail', json: buildings }, { name: 'BuildingLv', json: levels }]);
+    for (const b of buildings) {
+        const cfg = proxy.getFacilityCfgByType(b.Id);
+        assert.equal(cfg.name, b.Name);
+        assert.deepEqual(plain(cfg.conditions), b.CreateLimit.map(c => ({ type: c.bid, level: c.lev })));
+        for (const l of levels.filter(l => l.BuildingType === b.Id)) {
+            const up = cfg.upLevels[l.Lv - 1];
+            assert.equal(up.grain, l.CostGrain); assert.equal(up.wood, l.CostWood); assert.equal(up.iron, l.CostIron); assert.equal(up.time, 0);
+            assert.deepEqual(plain(up.conditions), l.UpgradeLimit.map(c => ({ type: c.bid, level: c.lev })));
+        }
+    }
+});
+test('断线清理、重连重取只读快照，绝不自动重发领奖/行军/联盟写请求', () => {
+    const h = harness(); h.authenticate(); h.loaded();
+    h.build.create(1); h.union.unionCreate('联盟'); h.world.march(1, 2, other, { x: 30, y: 40 });
+    h.disconnect(); assert.equal(h.timers.size, 0);
+    const start = h.sent.length; h.authenticate(); h.loaded();
+    const names = h.sent.slice(start).map(p => p.name);
+    assert.ok(names.includes(h.S.c2s_req_my_alliance)); assert.ok(names.includes(h.S.c2s_req_march_list));
+    assert.ok(names.includes(h.S.c2s_req_task_list)); assert.ok(names.includes(h.S.c2s_req_activity_list));
+    assert.ok(names.includes(h.S.c2s_req_report_list));
+    assert.ok(!names.includes(h.S.c2s_create_build)); assert.ok(!names.includes(h.S.c2s_create_alliance)); assert.ok(!names.includes(h.S.c2s_march));
+});
+console.log(`通过 ${passed} 项 game_common 新协议回归`);

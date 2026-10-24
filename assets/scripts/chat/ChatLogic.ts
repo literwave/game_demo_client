@@ -24,7 +24,7 @@ export default class ChatLogic extends Component {
 
     _type:number = 0;
 
-    protected onLoad():void{
+    private subscribe():void{
         EventMgr.on(LogicEvent.updateChatHistory, this.updateChat, this);
         EventMgr.on(LogicEvent.unionChange, this.updateChat, this);
     }
@@ -34,19 +34,12 @@ export default class ChatLogic extends Component {
     }
 
     protected onEnable():void{
-        console.log("onEnable")
+        this.subscribe();
         this.updateUnion();
         this.updateView();
     }
 
     protected updateUnion():void{
-        let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-        if (city.unionId > 0){
-            //加入联盟频道
-            ChatCommand.getInstance().join(1, city.unionId);
-        }else{
-            ChatCommand.getInstance().exit(1, 0);
-        }
     }
 
     protected updateChat(data:any[]){
@@ -69,6 +62,7 @@ export default class ChatLogic extends Component {
 
     public updateView():void{
         console.log("type:", this._type)
+        this.updateChat([]);
         ChatCommand.getInstance().chatHistory(this._type);
     }
 
@@ -79,15 +73,11 @@ export default class ChatLogic extends Component {
             return;
         }
 
-        if (this._type == 0){
-            ChatCommand.getInstance().chat(this.editConent.string, this._type);
-        }else if (this._type == 1){
-            let city:MapCityData = MapCommand.getInstance().cityProxy.getMyMainCity();
-            if (city.unionId > 0){
-                ChatCommand.getInstance().chat(this.editConent.string, this._type);
-            }
+        if (ChatCommand.getInstance().chat(this.editConent.string, this._type)) {
+            this.editConent.string = "";
+        } else {
+            EventMgr.emit(LogicEvent.showToast, '消息未发送，请检查连接及联盟身份');
         }
-        this.editConent.string = "";
     }
 
     protected onClickWorld(): void {
