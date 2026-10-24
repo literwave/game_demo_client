@@ -1,76 +1,58 @@
-import { _decorator, Component, Sprite, SpriteAtlas } from 'cc';
+import { _decorator, Color, Component, Graphics, Node, Sprite, UITransform } from 'cc';
+import { MapResData, MapResType } from '../MapProxy';
+import WorldMapArt from '../WorldMapArt';
+import WorldCampaign from '../WorldCampaign';
+import MapUtil from '../MapUtil';
+import { resourceFootprint } from '../ResourceFootprint';
+import { caption, ManagementColors } from '../ui/ManagementStyle';
+import { Label } from 'cc';
 const { ccclass, property } = _decorator;
-
-import {MapResData, MapResType } from "../MapProxy";
 
 @ccclass('ResLogic')
 export default class ResLogic extends Component {
     @property(Sprite)
     spr: Sprite = null;
-    @property(SpriteAtlas)
-    resourceAtlas1: SpriteAtlas = null;
-
-    @property(SpriteAtlas)
-    resourceAtlas2: SpriteAtlas = null;
-
     protected _data: MapResData = null;
-
-    protected onLoad(): void {
-
-    }
-
-    protected onDestroy(): void {
-
-    }
 
     public setResourceData(data: MapResData): void {
         this._data = data;
-        
-        
-        if (data.type == MapResType.WOOD) {
-            //木头
-            if(data.level == 1){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_1_1");
-            }else if(data.level == 2){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_2_1");
-            }else{
-                this.spr.spriteFrame = this.resourceAtlas2.getSpriteFrame("land_2_" + (data.level-2));
+        const art = { [MapResType.WOOD]: 'forest', [MapResType.IRON]: 'iron',
+            [MapResType.STONE]: 'quarry', [MapResType.GRAIN]: 'grain', [MapResType.SYS_FORTRESS]: 'fort' }[data.type];
+        if (!art) { this.spr.spriteFrame = null; return; }
+        const level = Math.min(9, Math.max(1, data.level));
+        const wild = level <= 3 && data.type !== MapResType.SYS_FORTRESS;
+        const width = data.type === MapResType.SYS_FORTRESS ? 138 : wild ? 60 + level * 8 : 80 + level * 5;
+        WorldMapArt.apply(this.spr, wild ? 'wild_' + art : art, width);
+        this.spr.color = wild ? new Color(225, 229, 212, 245) : new Color(238, 237, 220, 255);
+        if (data.type >= MapResType.WOOD && data.type <= MapResType.GRAIN) {
+            const frame = this.spr.spriteFrame;
+            const size = resourceFootprint(frame.originalSize.width, frame.originalSize.height,
+                MapUtil.tileSize.width, MapUtil.tileSize.height, level);
+            // 资源图片完整收进单格，不让树冠/矿堆穿出选中边界；不裁切原图。
+            this.spr.trim = false;
+            this.spr.node.getComponent(UITransform).setContentSize(size.width, size.height);
+            this.spr.node.getComponent(UITransform).setAnchorPoint(.5, .5);
+            this.spr.node.setPosition(0, 0, 0);
+            this.spr.node.setScale(1, 1, 1);
+            this.hideLegacyDecorations();
+        } else {
+            for (const name of ['ResourceRank', 'ResourceGrade', 'ResourceCluster0', 'ResourceCluster1', 'ResourceCluster2']) {
+                const old = this.node.getChildByName(name); if (old) old.active = false;
             }
-           
-        } else if (data.type == MapResType.IRON) {
-            //铁
-            if(data.level == 1){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_1_1");
-            }else if(data.level == 2){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_2_1");
-            }else{
-                this.spr.spriteFrame = this.resourceAtlas2.getSpriteFrame("land_4_" + (data.level-2));
-            }
-            
-        } else if (data.type == MapResType.STONE) {
-            //石头
-            if(data.level == 1){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_1_1");
-            }else if(data.level == 2){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_2_1");
-            }else{
-                this.spr.spriteFrame = this.resourceAtlas2.getSpriteFrame("land_2_" + (data.level-2));
-            }
-        } else if (data.type == MapResType.GRAIN) {
-            //田
-            if(data.level == 1){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_1_1");
-            }else if(data.level == 2){
-                this.spr.spriteFrame = this.resourceAtlas1.getSpriteFrame("land_ground_2_1");
-            }else{
-                this.spr.spriteFrame = this.resourceAtlas2.getSpriteFrame("land_1_" + (data.level-2));
-            }
-        } else if (data.type == MapResType.SYS_FORTRESS) {
-            //系统要塞
-            this.spr.spriteFrame = this.resourceAtlas2.getSpriteFrame("sys_fortress");
-        }else {
-            this.spr.spriteFrame = null;
+            this.spr.trim = true;
+            this.spr.node.getComponent(UITransform).setAnchorPoint(.5, .25);
+            this.spr.node.setPosition(0, -3, 0);
         }
-       
+        const gate = WorldCampaign.gateAt(data.x, data.y);
+        const title = this.node.getChildByName('CampaignGateName');
+        if (title) title.active = !!gate;
+        if (title) title.active = false;
     }
+
+    private hideLegacyDecorations(): void {
+        for (const name of ['ResourceRank', 'ResourceGrade', 'ResourceCluster0', 'ResourceCluster1', 'ResourceCluster2']) {
+            const node = this.node.getChildByName(name); if (node) node.active = false;
+        }
+    }
+
 }

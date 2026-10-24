@@ -1,5 +1,6 @@
-import { _decorator, Component, Label, Sprite, SpriteAtlas, Node } from 'cc';
+import { _decorator, Component, Label, Sprite, Node, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
+import WorldMapArt from '../WorldMapArt';
 
 import DateUtil from "../../utils/DateUtil";
 import { MapCityData } from "../MapCityProxy";
@@ -15,8 +16,6 @@ export default class CityLogic extends Component {
     upSpr: Sprite | null = null;
     @property(Sprite)
     downSpr: Sprite | null = null;
-    @property(SpriteAtlas)
-    resourceAtlas: SpriteAtlas | null = null;
     @property(Node)
     mianNode: Node | null = null;
     protected _data: MapCityData = null;
@@ -36,6 +35,7 @@ export default class CityLogic extends Component {
         EventMgr.targetOff(this);
     }
     protected onUnionChange(rid: number, unionId: number, parentId: number): void {
+        if (!this._data) return;
         if (this._data.rid == rid ){
         this._data.unionId = unionId;
         this._data.parentId = parentId;
@@ -51,22 +51,15 @@ export default class CityLogic extends Component {
         if (this._data) {
         this.labelName.string = this._data.name;
 
-        if (this._data.rid == MapCommand.getInstance().buildProxy.myId) {
-        this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("blue_2_3");
-        this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("blue_1_3");
-        } else if (this._data.unionId > 0 && this._data.unionId == MapCommand.getInstance().buildProxy.myUnionId) {
-        this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("green_2_3");
-        this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("green_1_3");
-        }else if (this._data.unionId > 0 && this._data.unionId == MapCommand.getInstance().buildProxy.myParentId) {
-        this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("purple_2_3");
-        this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("purple_1_3");
-        } else if (this._data.parentId > 0 && this._data.parentId == MapCommand.getInstance().buildProxy.myUnionId) {
-        this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("yellow_2_3");
-        this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("yellow_1_3");
-        }else {
-        this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("red_2_3");
-        this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("red_1_3");
+        const icon = this.node.getChildByName('sprite')?.getComponent(Sprite);
+        if (icon) {
+            icon.node.setScale(1, 1, 1); icon.node.setPosition(0, 0, 0);
+            icon.node.getComponent(UITransform).setAnchorPoint(.5, .3);
+            WorldMapArt.apply(icon, 'county', WorldMapArt.playerCityWidth);
         }
+        WorldMapArt.ownership(this.node, this.upSpr, this.downSpr,
+            WorldMapArt.factionColor(this._data, MapCommand.getInstance().buildProxy), 380);
+        this.mianNode?.setPosition(120, 30, 0);
 
         var diff = DateUtil.getServerTime() - this._data.occupyTime;
         console.log("diff", diff, this._limitTime);

@@ -11,6 +11,7 @@ import MapUtil from "./MapUtil";
 import MapUICommand from "./ui/MapUICommand";
 import { EventMgr } from '../utils/EventMgr';
 import { LogicEvent } from '../common/LogicEvent';
+import WorldCampaign from './WorldCampaign';
 
 export default class MapCommand {
     //单例
@@ -236,7 +237,32 @@ export default class MapCommand {
         return false
     }
 
+    public campaignReachable(): Set<number> {
+        const home = this.cityProxy.getMyMainCity();
+        const owner = this.cityProxy;
+        return WorldCampaign.reachable(home ? WorldCampaign.regionAt(home.x, home.y) : -1, gate => {
+            const build = this.buildProxy.getBuild(MapUtil.getIdByCellPoint(gate.x, gate.y));
+            return !!build && (build.rid > 0 && build.rid === owner.myId
+                || owner.myUnionId > 0 && build.unionId === owner.myUnionId);
+        });
+    }
+
+    public campaignBlockReason(x: number, y: number, attackGate = true): string {
+        if (!WorldCampaign.config) return '';
+        if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0
+            || x >= MapUtil.mapSize.width || y >= MapUtil.mapSize.height) return '目标坐标无效';
+        const res = this.proxy.getResData(MapUtil.getIdByCellPoint(x, y));
+        if (!res || res.type === 0 && !res.isEmpty && !this.proxy.getSysCityResData(x, y)
+            && !this.cityProxy.getCity(MapUtil.getIdByCellPoint(x, y))) return '山脉和河流不可通行，请寻找关隘或渡口';
+        if (!WorldCampaign.canTarget(x, y, this.campaignReachable(), attackGate)) {
+            const region = WorldCampaign.config.regions[WorldCampaign.regionAt(x, y)];
+            return `尚未打通前往${region?.name || '该州'}的路线，请与同盟先攻占沿途关隘`;
+        }
+        return '';
+    }
+
     public isCanOccupyCell(x: number, y: number): boolean {
+        if (this.campaignBlockReason(x, y)) return false;
         var radius = 0;
         let id: number = MapUtil.getIdByCellPoint(x, y);
         let cityData: MapCityData = this.cityProxy.getCity(id);
@@ -246,7 +272,6 @@ export default class MapCommand {
             }
             radius = cityData.getCellRadius();
         }
-
         let buildData: MapBuildData = this.buildProxy.getBuild(id);
         if (buildData) {
             if (this.isBuildWarFree(id)) {

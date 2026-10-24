@@ -387,10 +387,7 @@
     "downSpr": {
       "__id__": 11
     },
-    "resourceAtlas": {
-      "__uuid__": "9dfc1ac6-bb9b-40de-b57a-32f4841b3202",
-      "__expectedType__": "cc.SpriteAtlas"
-    },
+    "resourceAtlas": null,
     "_id": ""
   },
   {

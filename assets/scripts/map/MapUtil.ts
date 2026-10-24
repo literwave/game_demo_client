@@ -49,6 +49,7 @@ export default class MapUtil {
     public static get mapSize(): Size {
         return this._mapSize;
     }
+    public static get tileSize(): Size { return this._tileSize; }
 
     /**格子数量*/
     public static get mapCellCount(): number {
@@ -177,6 +178,31 @@ export default class MapUtil {
 
     public static getAreaPointByCellPoint(x: number, y: number): Vec2 {
         return v2(Math.floor(x / this._areaCellSize.width), Math.floor(y / this._areaCellSize.height));
+    }
+
+    /** 按相机实际视野取区域，包含边缘建筑的余量；缩远时不再局限于九宫格。 */
+    public static getVisibleAreaIds(center: Vec2, halfWidth: number, halfHeight: number): number[] {
+        const padding = 320;
+        const corners: Vec2[] = [];
+        for (const x of [-1, 1]) for (const y of [-1, 1]) {
+            corners.push(this.mapPixelToCellPoint(v2(center.x + x * (halfWidth + padding), center.y + y * (halfHeight + padding))));
+        }
+        const minX = Math.max(0, Math.floor(Math.min(...corners.map(p => p.x)) / this._areaCellSize.width));
+        const maxX = Math.min(this._areaSize.width - 1, Math.floor(Math.max(...corners.map(p => p.x)) / this._areaCellSize.width));
+        const minY = Math.max(0, Math.floor(Math.min(...corners.map(p => p.y)) / this._areaCellSize.height));
+        const maxY = Math.min(this._areaSize.height - 1, Math.floor(Math.max(...corners.map(p => p.y)) / this._areaCellSize.height));
+        const areas: { id: number; distance: number }[] = [];
+        const extentX = (this._areaCellSize.width + this._areaCellSize.height) * this._tileSize.width / 4;
+        const extentY = (this._areaCellSize.width + this._areaCellSize.height) * this._tileSize.height / 4;
+        for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
+            const p = this.mapCellToPixelPoint(v2((x + .5) * this._areaCellSize.width - .5,
+                (y + .5) * this._areaCellSize.height - .5));
+            const dx = p.x - center.x, dy = p.y - center.y;
+            if (Math.abs(dx) <= halfWidth + padding + extentX && Math.abs(dy) <= halfHeight + padding + extentY) {
+                areas.push({ id: this.getIdByAreaPoint(x, y), distance: dx * dx + dy * dy });
+            }
+        }
+        return areas.sort((a, b) => a.distance - b.distance).map(a => a.id);
     }
 
     /**获取区域id*/

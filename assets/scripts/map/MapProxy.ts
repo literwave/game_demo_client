@@ -30,6 +30,7 @@ export class MapResType {
 
 /**地图资源数据*/
 export class MapResData {
+    isEmpty = false;
     id: number = 0;
     type: number = 0;
     level: number = 0;
@@ -93,8 +94,15 @@ export default class MapProxy {
     protected _curCenterPoint: Vec2 = null;
     //当前展示区域
     protected _curCenterAreaId: number = -1;
+    public visibleAreaIds: number[] = [];
+    public overview = false;
+    public strategic = false;
     protected _mapAreaDatas: MapAreaData[] = [];
-    protected _mapResDatas: MapResData[] = [];
+    private _resourceTypes = new Uint8Array(0);
+    private _resourceLevels = new Uint8Array(0);
+    private _resourceWidth = 0;
+    private _emptyCells = new Uint8Array(0);
+    private _resourceCache = new Map<number, MapResData>();
     protected _mapSysCityResDatas: MapResData[] = [];
     protected _mapPosTags: MapTagPos[] = [];
 
@@ -111,6 +119,9 @@ export default class MapProxy {
     public clearData(): void {
         this._curCenterPoint = null;
         this._curCenterAreaId = -1;
+        this.visibleAreaIds = [];
+        this.overview = false;
+        this.strategic = false;
         this._mapAreaDatas.length = 0;
         this.qryAreaIds.length = 0;
     }
@@ -123,7 +134,7 @@ export default class MapProxy {
             cfg.type = configList[i].type;
             cfg.level = configList[i].level;
             cfg.name = configList[i].name;
-            cfg.wood = configList[i].Wood;
+            cfg.wood = configList[i].wood ?? configList[i].Wood ?? 0;
             cfg.iron = configList[i].iron;
             cfg.stone = configList[i].stone;
             cfg.grain = configList[i].grain;
@@ -148,26 +159,24 @@ export default class MapProxy {
 
     /** 每批最多 2048 格 / 4ms；全部完成后才发布，取消加载不会留下半张地图。 */
     public *initMapResConfigBatched(jsonData: any): Generator<number, void, unknown> {
-        if (!jsonData || !Number.isInteger(jsonData.w) || jsonData.w <= 0 || !Array.isArray(jsonData.list)) {
+        if (!jsonData || !Number.isInteger(jsonData.w) || jsonData.w <= 0
+            || !Number.isInteger(jsonData.h) || jsonData.h <= 0 || !Array.isArray(jsonData.list)
+            || jsonData.list.length !== jsonData.w * jsonData.h) {
             throw new Error('地图资源数据格式无效');
         }
         const w: number = jsonData.w;
         const list: Array<Array<number>> = jsonData.list;
-        const resDatas: MapResData[] = [];
+        const types = new Uint8Array(list.length), levels = new Uint8Array(list.length);
         const sysCityDatas: MapResData[] = [];
         let batchStart = Date.now();
         let batchCount = 0;
         for (let i = 0; i < list.length; i++) {
             if (!Array.isArray(list[i]) || list[i].length < 2) throw new Error(`地图格 ${i} 数据缺失`);
-            let data: MapResData = new MapResData();
-            data.id = i;
-            data.type = list[i][0];
-            data.level = list[i][1];
-            data.x = i % w;
-            data.y = Math.floor(i / w);
-            resDatas.push(data);
-
-            if (data.type == MapResType.SYS_CITY) {
+            types[i] = list[i][0]; levels[i] = list[i][1];
+            if (types[i] == MapResType.SYS_CITY) {
+                const data = new MapResData();
+                data.id = i; data.type = types[i]; data.level = levels[i];
+                data.x = i % w; data.y = Math.floor(i / w);
                 sysCityDatas.push(data);
             }
             batchCount++;
@@ -177,7 +186,12 @@ export default class MapProxy {
                 batchCount = 0;
             }
         }
-        this._mapResDatas = resDatas;
+        this._resourceTypes = types; this._resourceLevels = levels; this._resourceWidth = w;
+        this._resourceCache.clear();
+        this._emptyCells = new Uint8Array(list.length);
+        for (const id of jsonData.emptyCells || []) {
+            if (Number.isInteger(id) && id >= 0 && id < list.length && types[id] === 0) this._emptyCells[id] = 1;
+        }
         this._mapSysCityResDatas = sysCityDatas;
         yield 1;
     }
@@ -207,76 +221,30 @@ export default class MapProxy {
 
 
     /**设置地图当前中心点的信息*/
-    public setCurCenterPoint(point: Vec2, pixelPoint: Vec2): boolean {
-        if (this._curCenterPoint == null
-            || this._curCenterPoint.x != point.x
-            || this._curCenterPoint.y != point.y) {
-            this._curCenterPoint = point;
-            let areaPoint: Vec2 = MapUtil.getAreaPointByCellPoint(point.x, point.y);
-            let areaId: number = MapUtil.getIdByAreaPoint(areaPoint.x, areaPoint.y);
-
-            EventMgr.emit(LogicEvent.mapEenterChange, this._curCenterPoint);
-            if (this._curCenterAreaId == -1 || this._curCenterAreaId != areaId) {
-                //展示区域变化
-                let areaData: MapAreaData = this.getMapAreaData(areaId);
-                const oldIds = this._curCenterAreaId === -1 ? [] : MapUtil.get9GridVaildAreaIds(this._curCenterAreaId);
-                let newIds: number[] = MapUtil.get9GridVaildAreaIds(areaData.id);
-                const addIds = newIds.filter(id => oldIds.indexOf(id) < 0);
-                const removeIds = oldIds.filter(id => newIds.indexOf(id) < 0);
-                let firstAreaIds: number[] = null;
-                let otherAreaIds: number[] = [];
-                if (this._curCenterAreaId == -1
-                    || this.getMapAreaData(this._curCenterAreaId).fuzzyEquals(areaData, 3) == false) {
-                    // 首次进入或远距离跳转只改变优先级，旧区域仍必须按差集移除。
-                    //计算四个角所在的区域 用于判断需要优先请求的区域
-                    let temp = pixelPoint.clone();
-                    let leftTopPixelPoint: Vec2 = temp.add(new Vec2(-view.getVisibleSize().width * 0.5, view.getVisibleSize().height * 0.5));
-                    temp = pixelPoint.clone();
-
-                    let leftDownPixelPoint: Vec2 = temp.add(new Vec2(-view.getVisibleSize().width * 0.5, -view.getVisibleSize().height * 0.5));
-                    temp = pixelPoint.clone();
-
-                    let rightTopPixelPoint: Vec2 = temp.add(new Vec2(view.getVisibleSize().width * 0.5, view.getVisibleSize().height * 0.5));
-                    temp = pixelPoint.clone();
-
-                    let rightDownPixelPoint: Vec2 = temp.add(new Vec2(view.getVisibleSize().width * 0.5, -view.getVisibleSize().height * 0.5));
-                    temp = pixelPoint.clone();
-
-                    firstAreaIds = MapUtil.getVaildAreaIdsByPixelPoints(temp, leftTopPixelPoint, leftDownPixelPoint, rightTopPixelPoint, rightDownPixelPoint);
-                } else {
-                    //其他情况优先请求中心区域
-                    if (addIds.indexOf(areaData.id) >= 0) {
-                        firstAreaIds = [areaData.id];
-                    }
-                }
-
-                if (firstAreaIds) firstAreaIds = firstAreaIds.filter(id => addIds.indexOf(id) >= 0);
-
-                if (firstAreaIds && firstAreaIds.length > 0) {
-                    for (let i: number = 0; i < addIds.length; i++) {
-                        if (firstAreaIds.indexOf(addIds[i]) == -1) {
-                            otherAreaIds.push(addIds[i]);
-                        }
-                    }
-                } else {
-                    otherAreaIds = addIds;
-                }
-
-                let qryIndexs: number[] = null;
-                if (firstAreaIds && firstAreaIds.length > 0) {
-                    qryIndexs = firstAreaIds.concat(otherAreaIds);
-                } else {
-                    qryIndexs = otherAreaIds;
-                }
-                this.qryAreaIds = qryIndexs.concat(this.qryAreaIds)
-                    .filter((id, index, ids) => newIds.indexOf(id) >= 0 && ids.indexOf(id) === index);
-
-                this._curCenterAreaId = areaId;
-                EventMgr.emit(LogicEvent.mapShowAreaChange, point, this._curCenterAreaId, addIds, removeIds);
-            }
-            return true;
+    public setCurCenterPoint(point: Vec2, pixelPoint: Vec2, halfSize?: Vec2): boolean {
+        const centerChanged = !this._curCenterPoint || this._curCenterPoint.x !== point.x || this._curCenterPoint.y !== point.y;
+        this._curCenterPoint = point;
+        if (centerChanged) EventMgr.emit(LogicEvent.mapEenterChange, point);
+        const size = view.getVisibleSize();
+        const half = halfSize || new Vec2(size.width / 2, size.height / 2);
+        const wasOverview = this.overview;
+        const wasStrategic = this.strategic;
+        // 回差避免在临界滚轮位置反复切换细节。
+        this.overview = half.y > (wasOverview ? 650 : 750);
+        this.strategic = half.y > (wasStrategic ? 2800 : 3200);
+        const detailChanged = wasOverview !== this.overview || wasStrategic !== this.strategic;
+        // 战略层不扫描百万格或请求全图区域。
+        const newIds = this.strategic ? [] : MapUtil.getVisibleAreaIds(pixelPoint, half.x, half.y);
+        const previous = new Set(this.visibleAreaIds), next = new Set(newIds);
+        const addIds = newIds.filter(id => !previous.has(id));
+        const removeIds = this.visibleAreaIds.filter(id => !next.has(id));
+        this.visibleAreaIds = newIds;
+        this._curCenterAreaId = MapUtil.getAreaIdByCellPoint(point.x, point.y);
+        if (addIds.length || removeIds.length || detailChanged) {
+            this.qryAreaIds = [...new Set(addIds.concat(this.qryAreaIds))].filter(id => next.has(id));
+            EventMgr.emit(LogicEvent.mapShowAreaChange, point, this._curCenterAreaId, addIds, removeIds, detailChanged);
         }
-        return false;
+        return centerChanged || addIds.length > 0 || removeIds.length > 0 || detailChanged;
     }
 
     public getCurCenterPoint(): Vec2 {
@@ -298,8 +266,8 @@ export default class MapProxy {
             data.y = point.y;
             data.startCellX = startCellPoint.x;
             data.startCellY = startCellPoint.y;
-            data.endCellX = startCellPoint.x + MapUtil.areaCellSize.width;
-            data.endCellY = startCellPoint.y + MapUtil.areaCellSize.width;
+            data.endCellX = Math.min(MapUtil.mapSize.width, startCellPoint.x + MapUtil.areaCellSize.width);
+            data.endCellY = Math.min(MapUtil.mapSize.height, startCellPoint.y + MapUtil.areaCellSize.height);
             data.len = MapUtil.areaCellSize.width;
             this._mapAreaDatas[id] = data;
             return data;
@@ -310,35 +278,28 @@ export default class MapProxy {
     /*获取产量描述**/
     public getResYieldDesList(cfg: MapResConfig): string[] {
         let list: string[] = [];
-        // if (cfg &&cfg.grain > 0) {
-        //     list.push("粮食 +" + cfg.grain + "/小时");
-        // }
-        // if (cfg.wood > 0) {
-        //     list.push("木材 +" + cfg.wood + "/小时");
-        // }
-        // if (cfg.iron > 0) {
-        //     list.push("铁矿 +" + cfg.iron + "/小时");
-        // }
-        // if (cfg.stone > 0) {
-        //     list.push("石料 +" + cfg.stone + "/小时");
-        // }
-
-        list.push("粮食 +" + 500 + "/小时");
-
-
-        list.push("木材 +" + 600 + "/小时");
-
-
-        list.push("铁矿 +" + 700 + "/小时");
-
-
-        list.push("石料 +" + 800 + "/小时");
+        if (!cfg) return list;
+        for (const [key, name] of [['grain', '粮食'], ['wood', '木材'], ['iron', '铁矿'], ['stone', '石料']]) {
+            const amount = Number(cfg[key]);
+            if (amount > 0) list.push(name + ' +' + amount + '/小时');
+        }
 
         return list;
     }
 
     public getResData(id: number): MapResData {
-        return this._mapResDatas[id];
+        if (!Number.isInteger(id) || id < 0 || id >= this._resourceTypes.length) return null;
+        let data = this._resourceCache.get(id);
+        if (!data) {
+            data = new MapResData(); data.id = id;
+            data.type = this._resourceTypes[id]; data.level = this._resourceLevels[id];
+            data.isEmpty = this._emptyCells[id] === 1;
+            data.x = id % this._resourceWidth; data.y = Math.floor(id / this._resourceWidth);
+            // 百万格仅保留两份字节表和有限的可见格对象，避免预先创建百万个对象。
+            if (this._resourceCache.size >= 8192) this._resourceCache.delete(this._resourceCache.keys().next().value);
+            this._resourceCache.set(id, data);
+        }
+        return data;
     }
 
     /**根据类型获取配置数据*/
@@ -351,7 +312,7 @@ export default class MapProxy {
     }
 
     public hasResDatas(): boolean {
-        return this._mapResDatas.length > 0;
+        return this._resourceTypes.length > 0;
     }
 
     public hasResConfig(): boolean {

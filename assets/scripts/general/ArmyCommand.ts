@@ -339,6 +339,10 @@ export default class ArmyCommand {
 
     /**出兵*/
     public generalAssignArmy(armyId: number = 0, cmd: number = 0, x: number = 0, y: Number = 0, otherData: any = null): void {
+        if ([ArmyCmd.Attack, ArmyCmd.Garrison, ArmyCmd.Reclaim, ArmyCmd.Transfer].indexOf(cmd) >= 0) {
+            const reason = MapCommand.getInstance().campaignBlockReason(x, Number(y), cmd === ArmyCmd.Attack);
+            if (reason) { EventMgr.emit(LogicEvent.showTip, reason, null); return; }
+        }
         let sendData: any = {
             name: ServerConfig.army_assign,
             msg: {

@@ -219,7 +219,7 @@ export default class MapBuildProxy {
 
     public setMapScanBlock(scanDatas: any, areaId: number = 0): void {
         let rBuilds: any[] = scanDatas.mr_builds;
-        if (rBuilds.length > 0) {
+        if (Array.isArray(rBuilds)) {
             let lastBuildCellIds: number[] = null;
             if (this._lastBuildCellIds.has(areaId)) {
                 lastBuildCellIds = this._lastBuildCellIds.get(areaId);
@@ -241,7 +241,7 @@ export default class MapBuildProxy {
                     let index: number = lastBuildCellIds.indexOf(cellId);
                     if (index != -1) {
                         //存在就列表中 就代表是已存在的数据
-                        if (this._mapBuilds[cellId].equalsServerData(rBuilds[i]) == false) {
+                        if (!this._mapBuilds[cellId] || this._mapBuilds[cellId].equalsServerData(rBuilds[i]) == false) {
                             //代表数据不一样需要刷新
                             this._mapBuilds[cellId] = MapBuildData.createBuildData(rBuilds[i], cellId, this._mapBuilds[cellId]);
                             updateBuildCellIds.push(cellId);

@@ -147,10 +147,7 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "9dfc1ac6-bb9b-40de-b57a-32f4841b3202@8ec13",
-      "__expectedType__": "cc.SpriteFrame"
-    },
+    "_spriteFrame": null,
     "_type": 1,
     "_fillType": 0,
     "_sizeMode": 0,
@@ -304,10 +301,7 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "9dfc1ac6-bb9b-40de-b57a-32f4841b3202@ef69b",
-      "__expectedType__": "cc.SpriteFrame"
-    },
+    "_spriteFrame": null,
     "_type": 1,
     "_fillType": 0,
     "_sizeMode": 0,
@@ -776,10 +770,7 @@
       "b": 255,
       "a": 255
     },
-    "_spriteFrame": {
-      "__uuid__": "364b74de-e71f-4123-aa8b-d14bf938d540@f9941",
-      "__expectedType__": "cc.SpriteFrame"
-    },
+    "_spriteFrame": null,
     "_type": 0,
     "_fillType": 0,
     "_sizeMode": 2,
@@ -871,10 +862,7 @@
     "downSpr": {
       "__id__": 3
     },
-    "resourceAtlas": {
-      "__uuid__": "9dfc1ac6-bb9b-40de-b57a-32f4841b3202",
-      "__expectedType__": "cc.SpriteAtlas"
-    },
+    "resourceAtlas": null,
     "mianNode": {
       "__id__": 19
     },

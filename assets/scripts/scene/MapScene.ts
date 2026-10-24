@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Vec2, TiledMap } from 'cc';
+import { _decorator, Camera, Component, Node, Vec2, TiledMap } from 'cc';
 const { ccclass, property } = _decorator;
 
 import MapResBuildLogic from "../map/MapResBuildLogic";
@@ -17,6 +17,9 @@ import MapBaseLayerLogic from "../map/MapBaseLayerLogic";
 import { EventMgr } from '../utils/EventMgr';
 import { LogicEvent } from '../common/LogicEvent';
 import { CoreEvent } from '../core/CoreEvent';
+import WorldMapArt from '../map/WorldMapArt';
+import WorldLandscape from '../map/WorldLandscape';
+import WorldCampaign from '../map/WorldCampaign';
 
 interface PendingMapArea {
     id: number;
@@ -36,6 +39,7 @@ export default class MapScene extends Component {
     protected _centerX: number = 0;
     protected _centerY: number = 0;
     protected _lastUpPosTime: number = 0;
+    private _lastCampaignScanTime = 0;
     private _pendingAreas: PendingMapArea[] = [];
     private _initialCellTotal = 0;
     private _initialCellDone = 0;
@@ -53,11 +57,9 @@ export default class MapScene extends Component {
 
     protected onLoad(): void {
         this._cmd = MapCommand.getInstance();
-        try {
-            this.initializeMap();
-        } catch (error) {
-            this.failInitialization(error);
-        }
+        WorldMapArt.prepare().then(() => {
+            if (this.isValid && this.node.isValid) this.initializeMap();
+        }).catch(error => { if (this.isValid) this.failInitialization(error); });
     }
 
     private initializeMap(): void {
@@ -67,6 +69,9 @@ export default class MapScene extends Component {
         tiledMap.tmxAsset = this._cmd.proxy.tiledMapAsset;
 
         MapUtil.initMapConfig(tiledMap);
+        const camera = this.node.parent.getChildByName('Map Camera')?.getComponent(Camera);
+        if (!camera) throw new Error('地图相机缺失');
+        this.mapLayer.addComponent(WorldLandscape).initialize(tiledMap, camera);
         this._cmd.initData();
         EventMgr.on(LogicEvent.mapShowAreaChange, this.onMapShowAreaChange, this);
         EventMgr.on(LogicEvent.scrollToMap, this.onScrollToMap, this);
@@ -108,8 +113,9 @@ export default class MapScene extends Component {
                 if (!didRecycle) break;
             }
             let processed = 0;
-            // 回收与生成合计 4ms；生成仍限制为每帧最多 16 格。
-            while (this._pendingAreas.length > 0 && processed < 16 && Date.now() - started < 4) {
+            // 回收与生成合计 4ms；概览跳过逐格资源 Sprite，允许加快区域扫描。
+            const cellBudget = this._cmd.proxy.overview ? 256 : 24;
+            while (this._pendingAreas.length > 0 && processed < cellBudget && Date.now() - started < 4) {
                 const area = this._pendingAreas[0];
                 this.addMapCell(area.id, area.x, area.y);
                 processed++;
@@ -179,12 +185,18 @@ export default class MapScene extends Component {
     }
 
     protected onTimer(): void {
-
+        // 关隘可能在远处；通过已有区域协议定期获取归属，不能只依赖当前视口。
+        const now = Date.now();
+        if (WorldCampaign.config && now - this._lastCampaignScanTime > 30000) {
+            this._lastCampaignScanTime = now;
+            const gateAreas = WorldCampaign.config.gates.map(gate => MapUtil.getAreaIdByCellPoint(gate.x, gate.y));
+            this._cmd.proxy.qryAreaIds = [...new Set(this._cmd.proxy.qryAreaIds.concat(gateAreas))];
+        }
         if (this._cmd.proxy.qryAreaIds && this._cmd.proxy.qryAreaIds.length > 0) {
             let qryIndex: number = this._cmd.proxy.qryAreaIds.shift();
             let qryData: MapAreaData = this._cmd.proxy.getMapAreaData(qryIndex);
             if (qryData.checkAndUpdateQryTime()) {
-                // this._cmd.qryNationMapScanBlock(qryData);
+                this._cmd.qryNationMapScanBlock(qryData);
             }
         }
         let nowTime: number = Date.now();
@@ -200,7 +212,7 @@ export default class MapScene extends Component {
         }
     }
 
-    protected onMapShowAreaChange(centerPoint: Vec2, centerAreaId: number, addIds: number[], removeIds: number[]): void {
+    protected onMapShowAreaChange(centerPoint: Vec2, centerAreaId: number, addIds: number[], removeIds: number[], detailChanged = false): void {
 
 
         let resLogic: MapResLogic = this.node.getComponent(MapResLogic);
@@ -222,6 +234,15 @@ export default class MapScene extends Component {
         buildTipsLogic.udpateShowAreas(addIds, removeIds);
         cityLogic.udpateShowAreas(addIds, removeIds);
         sysCityLogic.udpateShowAreas(addIds, removeIds);
+        resLogic.refreshOverview(this._cmd.proxy.overview);
+        // 切入战略层时立即隐藏仍在分帧回收的近景对象。
+        for (const layer of this._recycleLayers) {
+            let containsTerrain = false;
+            for (let parent = this.mapLayer; parent; parent = parent.parent) {
+                if (parent === layer.parentLayer) containsTerrain = true;
+            }
+            if (layer.parentLayer && !containsTerrain) layer.parentLayer.active = !this._cmd.proxy.strategic;
+        }
 
         // 移走的区域必须取消排队，避免分帧后又向已移除区域填充节点。
         this._pendingAreas = this._pendingAreas.filter((area) => {
@@ -229,7 +250,9 @@ export default class MapScene extends Component {
             if (!this._ready) this._initialCellTotal -= (area.endX - area.x - 1) * (area.endY - area.startY) + area.endY - area.y;
             return false;
         });
-        for (const id of addIds) {
+        // 从概览拉近时补回细节；已加载的城池与业务节点由 addItem 复用。
+        const enqueueIds = detailChanged && !this._cmd.proxy.overview ? this._cmd.proxy.visibleAreaIds : addIds;
+        for (const id of enqueueIds) {
             if (this._pendingAreas.some((area) => area.id === id)) continue;
             const area: MapAreaData = this._cmd.proxy.getMapAreaData(id);
             if (!area || area.endCellX <= area.startCellX || area.endCellY <= area.startCellY) continue;
@@ -248,8 +271,8 @@ export default class MapScene extends Component {
         const city = this._cmd.cityProxy.getCity(cellId);
         if (resource) {
             // 空地、城池等没有 ResLogic 图像，不创建空的资源节点。
-            if (resource.type === MapResType.SYS_FORTRESS
-                || (resource.type >= MapResType.WOOD && resource.type <= MapResType.GRAIN)) {
+            if (!city && !this._cmd.proxy.getSysCityResData(x, y) && (resource.type === MapResType.SYS_FORTRESS
+                || (resource.type >= MapResType.WOOD && resource.type <= MapResType.GRAIN))) {
                 layers.res.addItem(areaId, resource);
             }
             if (resource.type === MapResType.SYS_CITY) layers.sysCity.addItem(areaId, resource);

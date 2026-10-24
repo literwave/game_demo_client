@@ -1,0 +1,23 @@
+# 文本在仓库和工作区都使用 LF，避免 core.autocrlf 在下次检出时把 LF 改成 CRLF。
+* text=auto eol=lf
+
+# 二进制资源不做换行转换。后写的规则覆盖上面的 text=auto。
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.zip binary
+*.pyc binary
+*.bin binary
+*.fbx binary
+*.ttf binary
+*.otf binary
+*.pvr binary
+*.astc binary
+*.skel binary
+*.DS_Store binary

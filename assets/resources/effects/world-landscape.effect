@@ -1,0 +1,93 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: landscape-vs:vert
+      frag: landscape-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        mapMetrics: { value: [200, 200, 200, 100] }
+        surfaceMetrics: { value: [46000, 26000, 0, 0] }
+        waterTexture: { value: white }
+        riverTexture: { value: black }
+}%
+CCProgram landscape-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+  out vec2 uv0;
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+    uv0 = a_texCoord;
+    return cc_matViewProj * pos;
+  }
+}%
+CCProgram landscape-fs %{
+  precision highp float;
+  in vec2 uv0;
+  uniform Landscape {
+    vec4 mapMetrics;
+    vec4 surfaceMetrics;
+  };
+  uniform sampler2D waterTexture;
+  uniform sampler2D riverTexture;
+  #pragma builtin(local)
+  layout(set = 2, binding = 12) uniform sampler2D cc_spriteTexture;
+  vec2 mirrored(vec2 p) { return 1.0 - abs(mod(p, 2.0) - 1.0); }
+  float border(float t, float phase) {
+    return 4.1 + 2.0 * sin(t * .22 + phase) + sin(t * .58 + phase * 2.0) + .5 * sin(t * 1.1 + phase);
+  }
+  float smoothMinimum(float a, float b) {
+    float h = max(1.5 - abs(a - b), 0.0) / 1.5;
+    return min(a, b) - h * h * 1.5 * .25;
+  }
+  vec4 frag () {
+    vec2 p = (uv0 - .5) * surfaceMetrics.xy;
+    p.y = -p.y;
+    float row = ((mapMetrics.y - 1.0) * mapMetrics.w * .5 - p.y) / mapMetrics.w;
+    vec2 cell = vec2(row + p.x / mapMetrics.z, row - p.x / mapMetrics.z);
+    float d = smoothMinimum(smoothMinimum(cell.x + .5 + border(cell.y, 0.0), mapMetrics.x - .5 - cell.x + border(cell.y, 1.7)),
+                  smoothMinimum(cell.y + .5 + border(cell.x, 3.4), mapMetrics.y - .5 - cell.y + border(cell.x, 5.1)));
+    vec3 grass = texture(cc_spriteTexture, mirrored(p / vec2(920.0, 560.0))).rgb;
+    vec3 variation = texture(cc_spriteTexture, mirrored(p.yx / vec2(1730.0, 1310.0) + .31)).rgb;
+    grass = mix(grass, variation, .32);
+    float meadow = sin(cell.x * .19 + sin(cell.y * .09) * 2.0) * sin(cell.y * .13);
+    grass *= .96 + meadow * .06;
+    vec3 water = texture(waterTexture, mirrored(p / vec2(600.0, 360.0))).rgb;
+    water = mix(water, vec3(.30, .40, .37), .28);
+    vec2 dataUV = (cell + .5) / mapMetrics.xy;
+    // 边界河道继续延伸至外侧海岸，避免在逻辑地图边缘被一条陆地封口。
+    float river = texture(riverTexture, clamp(dataUV, vec2(0.0), vec2(1.0))).r;
+    float inlandWater = smoothstep(.22, .63, river);
+    float shore = 1.0 - smoothstep(-.16, .52, d);
+    float bank = max(smoothstep(.08, .25, river) * (1.0 - inlandWater), (1.0 - smoothstep(.5, 1.0, d)) * (1.0 - shore));
+    vec3 ground = mix(grass, vec3(.57, .53, .37), bank * .48);
+    // 连续岩质山脊底色连接重叠山体，阻挡不再表现为零散的装饰物。
+    float mountain = smoothstep(.18, .68, texture(riverTexture, clamp(dataUV, vec2(0.0), vec2(1.0))).g);
+    float ridgeShade = .96 + .04 * sin(cell.x * .23 + cell.y * .17);
+    ground = mix(ground, vec3(.43, .44, .34) * ridgeShade, mountain * .65);
+    vec3 col = mix(ground, water, max(inlandWater, shore));
+    float shallows = max(shore * (1.0 - smoothstep(.4, 1.6, -d)), inlandWater * (1.0 - smoothstep(.60, .9, river)));
+    col = mix(col, vec3(.57, .64, .52), shallows * .28);
+    float fog = smoothstep(1.7, 6.5, -d + sin(p.x * .005 + sin(p.y * .008)) * .55);
+    col = mix(col, vec3(.68, .72, .68), fog);
+    return vec4(col, 1.0 - smoothstep(4.0, 8.0, -d));
+  }
+}%

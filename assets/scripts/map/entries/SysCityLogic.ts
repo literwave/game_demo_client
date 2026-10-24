@@ -1,5 +1,9 @@
-import { _decorator, Component, Sprite, SpriteAtlas, Node, Vec3 } from 'cc';
+import { _decorator, Component, Sprite, Node, Vec3, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
+import WorldMapArt from '../WorldMapArt';
+import WorldCampaign from '../WorldCampaign';
+import { caption, ManagementColors } from '../ui/ManagementStyle';
+import { Label } from 'cc';
 
 import DateUtil from "../../utils/DateUtil";
 import MapCommand from "../MapCommand";
@@ -15,9 +19,6 @@ export default class SysCityLogic extends Component {
 
     @property(Sprite)
     downSpr: Sprite = null;
-
-    @property(SpriteAtlas)
-    resourceAtlas: SpriteAtlas = null;
 
     @property(Node)
     mianNode: Node = null;
@@ -47,6 +48,7 @@ export default class SysCityLogic extends Component {
     }
 
     protected onUnionChange(rid: number, unionId: number, parentId: number): void {
+        if (!this._data) return;
         if (this._data.rid == rid ){
             this._data.unionId = unionId;
             this._data.parentId = parentId;
@@ -56,6 +58,7 @@ export default class SysCityLogic extends Component {
 
 
     public updateUI(): void {
+        if (!this._data) return;
         if(this._data.type != MapResType.SYS_CITY){
             this.node.active = false;
             return
@@ -63,33 +66,20 @@ export default class SysCityLogic extends Component {
             this.node.active = true;
         }
 
-        if(this._data.level >= 8){
-            this.node.scale = new Vec3(1.5, 1.5, 1.5);
-        }else if(this._data.level >= 5){
-            this.node.scale = new Vec3(1, 1, 1);
-        }else {
-            this.node.scale = new Vec3(0.5, 0.5, 0.5);
-        }
+        this.node.setScale(1, 1, 1);
+        const width = WorldMapArt.cityWidth(this._data.level);
 
-        if(!this._data.rid){
-            this.upSpr.spriteFrame = null;
-            this.downSpr.spriteFrame = null;
-        }else if (this._data.rid == MapCommand.getInstance().buildProxy.myId) {
-            this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("blue_2_3");
-            this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("blue_1_3");
-        } else if (this._data.unionId > 0 && this._data.unionId == MapCommand.getInstance().buildProxy.myUnionId) {
-            this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("green_2_3");
-            this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("green_1_3");
-        }else if (this._data.unionId > 0 && this._data.unionId == MapCommand.getInstance().buildProxy.myParentId) {
-            this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("purple_2_3");
-            this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("purple_1_3");
-        } else if (this._data.parentId > 0 && this._data.parentId == MapCommand.getInstance().buildProxy.myUnionId) {
-            this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("yellow_2_3");
-            this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("yellow_1_3");
-        }else {
-            this.upSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("red_2_3");
-            this.downSpr.spriteFrame = this.resourceAtlas.getSpriteFrame("red_1_3");
+        const icon = this.node.getChildByName('cityicon')?.getComponent(Sprite);
+        if (icon) {
+            icon.node.getComponent(UITransform).setAnchorPoint(.5, .3);
+            icon.node.setPosition(0, 0, 0);
+            WorldMapArt.apply(icon, this._data.level >= 8 ? 'capital' : this._data.level >= 5 ? 'county' : 'town', width);
         }
+        WorldMapArt.ownership(this.node, this.upSpr, this.downSpr,
+            WorldMapArt.factionColor(this._data, MapCommand.getInstance().buildProxy), width * 1.15);
+        this.mianNode?.setPosition(width * .38, 30, 0);
+        const name = WorldCampaign.landmark(this._data.x, this._data.y);
+        const title = this.node.getChildByName('CampaignCityName'); if (title) title.active = false;
 
         var diff = DateUtil.getServerTime() - this._data.occupyTime;
         console.log("diff", diff, this._limitTime);

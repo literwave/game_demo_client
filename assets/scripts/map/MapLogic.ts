@@ -1,5 +1,5 @@
-import { _decorator, Component, TiledMap, Camera, Node, Vec2, Event, game, UITransform, EventMouse, EventTouch, Vec3, view } from 'cc';
-const { ccclass, property } = _decorator;
+import { _decorator, Component, TiledMap, Camera, Node, Vec2, UITransform, EventMouse, EventTouch, Vec3, view } from 'cc';
+const { ccclass } = _decorator;
 
 import MapCommand from "./MapCommand";
 import MapUtil from "./MapUtil";
@@ -13,15 +13,17 @@ export default class MapLogic extends Component {
     protected _mapCamera: Camera = null;
     protected _isTouch: boolean = false;
     protected _isMove: boolean = false;
-    //地图相机缩放倍率边界
-    protected _minZoomRatio: number = 1;
-    protected _maxZoomRatio: number = 0.8;
-    protected _changeZoomRadix: number = 200;
     protected _orthoHeight:number = 360;
+    private _targetHeight = 360;
+    private _zooming = false;
+    private _zoomAnchor = new Vec2();
+    private _cityReturnHeight: number = null;
 
-    //地图相机移动边界
-    protected _maxMapX: number = 1;
-    protected _maxMapY: number = 1;
+    // 相机中心限制在四个角格的连线内，边缘地块仍然可以完整查看。
+    private _cameraBoundary: Vec2[] = [];
+    private _clampedCameraPoint: Vec2 = new Vec2();
+    private _activeTouchId: number = null;
+    private _inputNode: Node = null;
 
     protected _touchAniNode: Node = null;
     protected _centerPoint: Vec2 = null;
@@ -40,6 +42,7 @@ export default class MapLogic extends Component {
         this._mapCamera = this.node.parent.getChildByName("Map Camera").getComponent(Camera);
    
         this._orthoHeight = this._mapCamera.orthoHeight;
+        this._targetHeight = this._orthoHeight;
 
         EventMgr.on(LogicEvent.openCityAbout, this.openCityAbout, this);
         EventMgr.on(LogicEvent.closeCityAbout, this.closeCityAbout, this);
@@ -48,62 +51,106 @@ export default class MapLogic extends Component {
 
     protected onDestroy(): void {
         EventMgr.targetOff(this);
-
+        this._inputNode?.targetOff(this);
+        view.off('canvas-resize', this.onViewportResize, this);
+        view.off('design-resolution-changed', this.onViewportResize, this);
         this._cmd = null;
     }
 
     public setTiledMap(tiledMap: TiledMap): void {
+        this._inputNode?.targetOff(this);
         this._tiledMap = tiledMap;
+        // 原创底图向外延展；雾区和岸线也能开始拖动，坐标换算仍使用逻辑地图尺寸。
+        this._inputNode = tiledMap.node.getChildByName('OriginalGround') || tiledMap.node;
         this._tiledMap.enableCulling = true;
-
+        const size = tiledMap.getMapSize();
+        this._cameraBoundary = [new Vec2(0, 0), new Vec2(size.width - 1, 0),
+            new Vec2(size.width - 1, size.height - 1), new Vec2(0, size.height - 1)]
+            .map(point => MapUtil.mapCellToPixelPoint(point));
+        view.off('canvas-resize', this.onViewportResize, this);
+        view.off('design-resolution-changed', this.onViewportResize, this);
+        view.on('canvas-resize', this.onViewportResize, this);
+        view.on('design-resolution-changed', this.onViewportResize, this);
         this.updateCulling();
-        
-        var uit = this._tiledMap.node.getComponent(UITransform);
-        this._maxMapX = (uit.width - view.getVisibleSize().width) * 0.5;
-        this._maxMapY = (uit.height - view.getVisibleSize().height) * 0.5;
-        this._tiledMap.node.on(Node.EventType.MOUSE_WHEEL, this.onMouseWheel, this);
-        this._tiledMap.node.on(Node.EventType.TOUCH_START, this.onTouchBegan, this);
-        this._tiledMap.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        this._tiledMap.node.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
-        this._tiledMap.node.on(Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        this._inputNode.on(Node.EventType.MOUSE_WHEEL, this.onMouseWheel, this);
+        this._inputNode.on(Node.EventType.TOUCH_START, this.onTouchBegan, this);
+        this._inputNode.on(Node.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        this._inputNode.on(Node.EventType.TOUCH_END, this.onTouchEnd, this);
+        this._inputNode.on(Node.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
     }
 
     protected openCityAbout(data: any): void {
-        this._mapCamera.orthoHeight = this._orthoHeight * this._maxZoomRatio;
+        this._cityReturnHeight = this._mapCamera.orthoHeight;
+        this._zooming = false;
+        this._mapCamera.orthoHeight = this._orthoHeight * .8;
+        this._targetHeight = this._mapCamera.orthoHeight;
         this.updateCulling();
     }
 
     protected closeCityAbout(): void {
-        this._mapCamera.orthoHeight = this._orthoHeight * this._minZoomRatio;
+        this._mapCamera.orthoHeight = this._cityReturnHeight ?? this._orthoHeight;
+        this._targetHeight = this._mapCamera.orthoHeight;
+        this._cityReturnHeight = null;
         this.updateCulling();
+        this.syncCenterMapCellPoint();
     }
 
     protected onMouseWheel(event: EventMouse): void {
-        let scrollY: number = event.getScrollY();
-        let changeRatio: number = Number((scrollY / this._changeZoomRadix).toFixed(1));
-        let newZoomRatio: number = Math.min(this._minZoomRatio, Math.max(this._maxZoomRatio, this._mapCamera.orthoHeight/this._orthoHeight + changeRatio));
-
-        this._mapCamera.orthoHeight = this._orthoHeight * newZoomRatio;
-        this.updateCulling();
+        const scroll = event.getScrollY();
+        if (!scroll || !this._mapCamera || this._isTouch || this._cityReturnHeight !== null) return;
+        this.flushPendingCameraMove();
+        if (!this._zooming) this._targetHeight = this._mapCamera.orthoHeight;
+        // Creator Web 的滚轮量是 DOM deltaY 的 -5 倍；向上放大，触控板小增量也保留。
+        const step = Math.max(-.38, Math.min(.38, -scroll * .00055));
+        this._targetHeight = Math.max(this._orthoHeight * 2 / 3,
+            Math.min(this.maximumZoomHeight(), this._targetHeight * Math.exp(step)));
+        const anchor = event.getUILocation();
+        this._zoomAnchor.set(anchor.x, anchor.y);
+        this._zooming = Math.abs(this._targetHeight - this._mapCamera.orthoHeight) > .01;
+        if (this._zooming) EventMgr.emit(LogicEvent.moveMap);
+        event.propagationStopped = true;
     }
 
-    protected update(): void {
-        if (!this._moveDirty || !this._mapCamera) {
-            return;
-        }
-        this.applyPendingCameraMove();
+    protected update(dt = 1 / 60): void {
+        if (!this._mapCamera) return;
+        const zoomChanged = this.stepZoom(dt);
+        if (!this._moveDirty && !zoomChanged) return;
+        if (this._moveDirty) this.applyPendingCameraMove();
 
         const now = Date.now();
-        if (now - this._lastCenterSyncTime >= 80) {
+        if (now - this._lastCenterSyncTime >= 80 || (zoomChanged && !this._zooming)) {
             this._lastCenterSyncTime = now;
             this.syncCenterMapCellPoint();
         }
+    }
+
+    private stepZoom(dt: number): boolean {
+        if (!this._zooming) return false;
+        const before = this.viewPointToWorldPoint(this._zoomAnchor);
+        const current = this._mapCamera.orthoHeight;
+        let height = current + (this._targetHeight - current) * (1 - Math.exp(-14 * Math.min(dt, .1)));
+        if (Math.abs(height - this._targetHeight) < .15) { height = this._targetHeight; this._zooming = false; }
+        this._mapCamera.orthoHeight = height;
+        const after = this.viewPointToWorldPoint(this._zoomAnchor);
+        const camera = this._mapCamera.node.position;
+        const clamped = this.clampCameraPoint(camera.x + before.x - after.x, camera.y + before.y - after.y);
+        // 接近全图档时逐步居中，保证最大档看到整张地图而非只看到一侧。
+        const whole = Math.max(0, Math.min(1, (height / this.maximumZoomHeight() - .65) / .35));
+        if (whole > 0) {
+            const cells = this._tiledMap.getMapSize();
+            const center = MapUtil.mapCellToPixelPoint(new Vec2((cells.width - 1) / 2, (cells.height - 1) / 2));
+            clamped.x += (center.x - clamped.x) * whole;
+            clamped.y += (center.y - clamped.y) * whole;
+        }
+        this._pendingCameraX = clamped.x; this._pendingCameraY = clamped.y; this._moveDirty = true;
+        return true;
     }
 
     private applyPendingCameraMove(): void {
         this._moveDirty = false;
         this._tempCameraPos.set(this._pendingCameraX, this._pendingCameraY, this._mapCamera.node.position.z);
         this._mapCamera.node.setPosition(this._tempCameraPos);
+        this.updateCulling();
     }
 
     private syncCenterMapCellPoint(): void {
@@ -121,19 +168,26 @@ export default class MapLogic extends Component {
     }
 
     protected onTouchMove(event: EventTouch): void {
-        if (this._isTouch) {
-            let delta: Vec2 = event.getDelta();
+        if (this._isTouch && event.getID() === this._activeTouchId) {
+            const delta = event.getUIDelta();
             if (delta.x != 0 || delta.y != 0) {
                 this._isMove = true;
-                this._pendingCameraX = Math.min(this._maxMapX, Math.max(-this._maxMapX, this._pendingCameraX - delta.x));
-                this._pendingCameraY = Math.min(this._maxMapY, Math.max(-this._maxMapY, this._pendingCameraY - delta.y));
+                const scale = this.worldUnitsPerUIUnit();
+                const point = this.clampCameraPoint(this._pendingCameraX - delta.x * scale,
+                    this._pendingCameraY - delta.y * scale);
+                this._pendingCameraX = point.x;
+                this._pendingCameraY = point.y;
                 this._moveDirty = true;
             }
         }
     }
 
     protected onTouchBegan(event: EventTouch): void {
+        if (this._isTouch) return;
+        this._activeTouchId = event.getID();
         this._isTouch = true;
+        this._zooming = false;
+        this._targetHeight = this._mapCamera.orthoHeight;
         this._isMove = false;
         this._moveDirty = false;
         let pos = this._mapCamera.node.position;
@@ -142,17 +196,30 @@ export default class MapLogic extends Component {
     }
 
     protected onTouchEnd(event: EventTouch): void {
+        if (!this._isTouch || event.getID() !== this._activeTouchId) return;
         this._isTouch = false;
+        this._activeTouchId = null;
         this.flushPendingCameraMove();
         if (this._isMove == false) {
             let touchLocation: Vec2 = event.touch.getUILocation();
             let touchLocation1 = this.viewPointToWorldPoint(touchLocation);
             let mapPoint: Vec2 = MapUtil.worldPixelToMapCellPoint(touchLocation1);
+            // 云层区域不派发地图地块点击。
+            if (!MapUtil.isVaildCellPoint(mapPoint)) return;
+            if (this._cmd.proxy.strategic) {
+                const next = Math.max(2400, this._mapCamera.orthoHeight / 4);
+                this.scrollToMapPoint(mapPoint);
+                const size = view.getVisibleSize(), origin = view.getVisibleOrigin();
+                this._zoomAnchor.set(origin.x + size.width / 2, origin.y + size.height / 2);
+                this._targetHeight = next; this._zooming = true;
+                EventMgr.emit(LogicEvent.moveMap);
+                return;
+            }
             let clickCenterPoint: Vec2 = MapUtil.mapCellToPixelPoint(mapPoint);
             //派发事件
             // console.log("onTouchEnd:", touchLocation1, clickCenterPoint);
 
-            EventMgr.emit(LogicEvent.touchMap, mapPoint, clickCenterPoint);
+            EventMgr.emit(LogicEvent.touchMap, mapPoint, clickCenterPoint, this.worldToMapPixelPoint(touchLocation1));
         } else {
             EventMgr.emit(LogicEvent.moveMap);
         }
@@ -160,24 +227,65 @@ export default class MapLogic extends Component {
     }
 
     protected onTouchCancel(event: EventTouch): void {
+        if (event.getID() !== this._activeTouchId) return;
         this._isTouch = false;
+        this._activeTouchId = null;
         this.flushPendingCameraMove();
         this._isMove = false;
     }
 
     //界面坐标转世界坐标
     protected viewPointToWorldPoint(point: Vec2): Vec2 {
-        // console.log("viewPointToWorldPoint in", point.x, point.y);
+        const uit = this._tiledMap.node.getComponent(UITransform);
+        const visible = view.getVisibleSize();
+        const origin = view.getVisibleOrigin();
+        const scale = this.worldUnitsPerUIUnit();
+        const camera = this._mapCamera.node.position;
+        return new Vec2(uit.width * uit.anchorX + camera.x + (point.x - origin.x - visible.width * 0.5) * scale,
+            uit.height * uit.anchorY + camera.y + (point.y - origin.y - visible.height * 0.5) * scale);
+    }
 
-        let canvasNode: Node = this.node.parent;
-        let cuit = canvasNode.getComponent(UITransform);
-        let uit = this._tiledMap.node.getComponent(UITransform);
+    private worldUnitsPerUIUnit(): number {
+        return this._mapCamera.orthoHeight * 2 / Math.max(1, view.getVisibleSize().height);
+    }
 
+    /** 最远容纳整张菱形地图，横竖屏均留出HUD边距。 */
+    public maximumZoomHeight(): number {
+        if (!this._tiledMap) return this._orthoHeight * 4;
+        const cells = this._tiledMap.getMapSize(), tile = this._tiledMap.getTileSize();
+        const viewport = view.getVisibleSize(), aspect = viewport.width / Math.max(1, viewport.height);
+        const width = (cells.width + cells.height) * tile.width * .5;
+        const height = (cells.width + cells.height) * tile.height * .5;
+        return Math.max(this._orthoHeight * 4, Math.max(height / 2, width / 2 / aspect) * 1.16);
+    }
 
-        let cameraWorldX: number = uit.width * uit.anchorX - view.getVisibleSize().width * cuit.anchorX + this._mapCamera.node.position.x;
-        let cameraWorldY: number = uit.height * uit.anchorY - view.getVisibleSize().height * cuit.anchorY + this._mapCamera.node.position.y;
-
-        return new Vec2(point.x + cameraWorldX, point.y + cameraWorldY);
+    private clampCameraPoint(x: number, y: number): Vec2 {
+        const result = this._clampedCameraPoint;
+        result.set(x, y);
+        if (this._cameraBoundary.length !== 4) return result;
+        let inside = true;
+        let nearestDistance = Infinity;
+        let nearestX = x;
+        let nearestY = y;
+        for (let i = 0; i < 4; i++) {
+            const a = this._cameraBoundary[i];
+            const b = this._cameraBoundary[(i + 1) % 4];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            // 四条边为顺时针；越界后投影到最近边，拖动可沿斜边自然滑动。
+            if (dx * (y - a.y) - dy * (x - a.x) > 0.001) inside = false;
+            const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / Math.max(1, dx * dx + dy * dy)));
+            const px = a.x + t * dx;
+            const py = a.y + t * dy;
+            const distance = (x - px) ** 2 + (y - py) ** 2;
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestX = px;
+                nearestY = py;
+            }
+        }
+        if (!inside) result.set(nearestX, nearestY);
+        return result;
     }
 
 
@@ -191,6 +299,8 @@ export default class MapLogic extends Component {
     }
 
     public scrollToMapPoint(point: Vec2): void {
+        this._zooming = false;
+        this._targetHeight = this._mapCamera.orthoHeight;
         let temp = this.toCameraPoint(point);
         this._mapCamera.node.setPosition(temp.x, temp.y, this._mapCamera.node.position.z);
         // 相机监听尚未绑定时（进图首帧）也要立刻重算一次裁剪区
@@ -201,19 +311,30 @@ export default class MapLogic extends Component {
         this._moveDirty = false;
         this._lastCenterSyncTime = Date.now();
 
-        let pixelPoint: Vec2 = MapUtil.mapCellToPixelPoint(point);
-        this.setCenterMapCellPoint(point, pixelPoint);
+        this.syncCenterMapCellPoint();
     }
 
     protected setCenterMapCellPoint(point: Vec2, pixelPoint: Vec2): void {
-        this._cmd.proxy.setCurCenterPoint(point, pixelPoint);
+        const visible = view.getVisibleSize();
+        const halfHeight = this._mapCamera.orthoHeight;
+        this._cmd.proxy.setCurCenterPoint(point, pixelPoint,
+            new Vec2(halfHeight * visible.width / Math.max(1, visible.height), halfHeight));
     }
 
     private updateCulling() {
         if (this._tiledMap) {
-            // 只派发一次，让 TiledLayer 绑定当前相机并完成一次裁剪。
+            // 节点位置事件先于渲染相机矩阵更新，必须先更新投影再裁剪，避免快拖时整块地面消失。
+            this._mapCamera?.camera?.update(true);
             this._tiledMap.node.emit(Node.EventType.TRANSFORM_CHANGED);
         }
+    }
+
+    private onViewportResize(): void {
+        this.updateCulling();
+        if (!this._tiledMap || !this._mapCamera || !this._cmd) return;
+        const position = this._mapCamera.node.position;
+        this._pendingCameraX = position.x; this._pendingCameraY = position.y;
+        this.syncCenterMapCellPoint();
     }
 
  
@@ -225,8 +346,6 @@ export default class MapLogic extends Component {
 
     public toCameraPoint(point: Vec2) {
         let pixelPoint: Vec2 = MapUtil.mapCellToPixelPoint(point);
-        let positionX: number = Math.min(this._maxMapX, Math.max(-this._maxMapX, pixelPoint.x));
-        let positionY: number = Math.min(this._maxMapY, Math.max(-this._maxMapY, pixelPoint.y));
-        return new Vec2(positionX, positionY);
+        return this.clampCameraPoint(pixelPoint.x, pixelPoint.y).clone();
     }
 }

@@ -1,5 +1,6 @@
-import { _decorator, Component, Sprite, Label, SpriteAtlas, Vec2 } from 'cc';
+import { _decorator, Component, Sprite, Label, Vec2, UITransform } from 'cc';
 const { ccclass, property } = _decorator;
+import WorldMapArt from '../WorldMapArt';
 
 import DateUtil from "../../utils/DateUtil";
 import { MapBuildData } from "../MapBuildProxy";
@@ -15,8 +16,6 @@ export default class FacilityBuildLogic extends Component {
     nameLab: Label | null = null;
     @property(Label)
     tipsLab: Label | null = null;
-    @property(SpriteAtlas)
-    buildAtlas: SpriteAtlas | null = null;
     protected _data: MapBuildData = null;
     protected _cmd: MapCommand = null;
     protected onLoad(): void {
@@ -40,7 +39,8 @@ export default class FacilityBuildLogic extends Component {
 
         if (this._data) {
         if (this._data.type == MapResType.FORTRESS){
-        this.spr.spriteFrame = this.buildAtlas.getSpriteFrame("component_119");
+        WorldMapArt.apply(this.spr, 'fort', 185);
+        this.spr.node.getComponent(UITransform).setAnchorPoint(.5, .25);
 
         let resData: MapResData = MapCommand.getInstance().proxy.getResData(this._data.id);
         let resCfg: MapResConfig = MapCommand.getInstance().proxy.getResConfig(resData.type, resData.level);
