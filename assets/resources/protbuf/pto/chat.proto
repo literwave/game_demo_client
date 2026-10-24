@@ -1,12 +1,45 @@
 syntax = "proto3";
 
 package Chat;
-// 聊天相关
+// 聊天
+// 单频道最大历史条数见 Global.Id=9（value1）
 
+// channel → ChatChannel.Id（1世界 2联盟 3私聊）
+message p_chat_msg {
+	int64 msgId = 1;
+	uint32 channel = 2;
+	int64 senderId = 3;
+	string senderName = 4;
+	int32 headIcon = 5;
+	string content = 6;
+	int32 time = 7;
+	int64 targetId = 8;  // 私聊目标 uid，其他频道为 0
+}
+
+// 发送；私聊需填 targetId
 message c2s_chat {
-	string content = 1;  // 聊天内容
+	uint32 channel = 1;
+	string content = 2;
+	int64 targetId = 3;
 }
 
 message s2c_chat {
-	string content = 1;  // 聊天内容
+	p_chat_msg msg = 1;  // 发送成功回执
+}
+
+// 打开频道时拉历史（最多 Global.Id=9 条）
+message c2s_req_chat_list {
+	uint32 channel = 1;
+	int64 targetId = 2;  // 私聊会话对方，其他频道为 0
+}
+
+message s2c_req_chat_list {
+	uint32 channel = 1;
+	int64 targetId = 2;
+	repeated p_chat_msg msgList = 3;  // 按时间升序
+}
+
+// 新消息推送（同频道在线玩家 / 私聊双方）
+message s2c_sync_chat {
+	p_chat_msg msg = 1;
 }

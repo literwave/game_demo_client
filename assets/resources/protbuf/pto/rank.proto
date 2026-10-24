@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package Rank;
+// 排行榜（打开时拉取最新快照，无实时推送）
+
+// rankType → RankType.Id（1战力 2主城等级）
+message p_rank_item {
+	uint32 rank = 1;       // 名次，0=未上榜
+	int64 uid = 2;
+	string name = 3;
+	int32 headIcon = 4;
+	int64 score = 5;       // 分值（战力/主城等级等，含义由 rankType 决定）
+}
+
+// 打开排行榜时请求；服务端返回当前快照
+// start 从 1 起；0 等同 1。count=0 用服务端默认条数
+message c2s_req_rank_list {
+	uint32 rankType = 1;
+	uint32 start = 2;
+	uint32 count = 3;
+}
+
+message s2c_req_rank_list {
+	uint32 rankType = 1;
+	repeated p_rank_item rankList = 2;
+	p_rank_item selfRank = 3;  // 自己的名次（未上榜时 rank=0，仍带 score）
+}

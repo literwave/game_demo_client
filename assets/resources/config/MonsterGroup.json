@@ -485,7 +485,7 @@
       },
       {
         "reward_type": 1,
-        "item_id": 5,
+        "item_id": 6,
         "item_count": 1
       }
     ],
@@ -539,7 +539,7 @@
       },
       {
         "reward_type": 1,
-        "item_id": 5,
+        "item_id": 6,
         "item_count": 2
       }
     ],
@@ -651,7 +651,7 @@
       },
       {
         "reward_type": 1,
-        "item_id": 5,
+        "item_id": 6,
         "item_count": 3
       }
     ],

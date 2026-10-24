@@ -1,0 +1,72 @@
+[
+  {
+    "Id": 1,
+    "Lv": 1,
+    "MemberMax": 30,
+    "OfficerMax": 2,
+    "Exp": 1000
+  },
+  {
+    "Id": 2,
+    "Lv": 2,
+    "MemberMax": 35,
+    "OfficerMax": 2,
+    "Exp": 2000
+  },
+  {
+    "Id": 3,
+    "Lv": 3,
+    "MemberMax": 40,
+    "OfficerMax": 3,
+    "Exp": 3500
+  },
+  {
+    "Id": 4,
+    "Lv": 4,
+    "MemberMax": 45,
+    "OfficerMax": 3,
+    "Exp": 5000
+  },
+  {
+    "Id": 5,
+    "Lv": 5,
+    "MemberMax": 50,
+    "OfficerMax": 3,
+    "Exp": 7000
+  },
+  {
+    "Id": 6,
+    "Lv": 6,
+    "MemberMax": 55,
+    "OfficerMax": 4,
+    "Exp": 10000
+  },
+  {
+    "Id": 7,
+    "Lv": 7,
+    "MemberMax": 60,
+    "OfficerMax": 4,
+    "Exp": 14000
+  },
+  {
+    "Id": 8,
+    "Lv": 8,
+    "MemberMax": 65,
+    "OfficerMax": 4,
+    "Exp": 20000
+  },
+  {
+    "Id": 9,
+    "Lv": 9,
+    "MemberMax": 70,
+    "OfficerMax": 5,
+    "Exp": 28000
+  },
+  {
+    "Id": 10,
+    "Lv": 10,
+    "MemberMax": 80,
+    "OfficerMax": 5,
+    "Exp": 0
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "Id": 1,
+    "Name": "战力",
+    "Enum": "POWER",
+    "Desc": "势力战力榜（对齐 Activity.Params.rank_type）"
+  },
+  {
+    "Id": 2,
+    "Name": "主城等级",
+    "Enum": "CITY_LEVEL",
+    "Desc": "主城等级榜"
+  }
+]

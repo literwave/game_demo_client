@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package Battle;
+// SLG 战斗（行军到达后服务端结算，客户端可观看/跳过）
+
+import "common.proto";
+
+// 战斗阵位单位
+message p_battle_unit {
+	uint32 pos = 1;
+	uint32 cfgId = 2;              // Hero.Id / Monster.Id
+	uint32 level = 3;
+	Common.p_soldier_info soldier = 4;
+}
+
+// 战斗单方
+message p_battle_side {
+	int64 ownerId = 1;             // 玩家 uid，NPC/怪物为 0
+	string name = 2;
+	uint32 power = 3;
+	repeated p_battle_unit units = 4;
+}
+
+// 战斗开始（行军到达触发；客户端可播开战/进回放）
+// reportType → ReportType.Id
+// targetType → TargetType.Id
+message s2c_battle_start {
+	int64 battleId = 1;
+	uint32 reportType = 2;
+	uint32 targetType = 3;
+	int64 targetId = 4;
+	Common.p_pos pos = 5;
+	p_battle_side atkSide = 6;
+	p_battle_side defSide = 7;
+}
+
+// 战斗结算
+// result: 1胜 2负
+message s2c_battle_result {
+	int64 battleId = 1;
+	uint32 result = 2;
+	int64 reportId = 3;            // 对应战报，可再拉详情/回放
+	repeated Common.p_reward_info rewardList = 4;
+}
+
+// 跳过观战（不看回放，直接看结果）
+message c2s_battle_skip {
+	int64 battleId = 1;
+}
+
+message s2c_battle_skip {
+	int64 battleId = 1;
+}

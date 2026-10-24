@@ -16,6 +16,7 @@ message s2c_user_base_info {
     int32 exp = 6;
 	Common.p_soldier_info soldierInfo = 7;  // 城中兵力
 	Common.p_pos cityPos = 8;               // 主城坐标
+	int64 allianceId = 9;                   // 联盟 id，0=无联盟
 }
 
 // 同步城中兵力

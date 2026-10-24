@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package Report;
+// 战报
+
+import "common.proto";
+
+// 战报简要（列表 / 推送）
+// reportType → ReportType.Id（1打怪 2攻打玩家 3防守）
+// targetType → TargetType.Id（行军目标，当前主要是打怪）
+// result: 1胜 2负
+message p_report_brief {
+	int64 reportId = 1;
+	uint32 reportType = 2;
+	uint32 targetType = 3;
+	int64 targetId = 4;            // 目标配置/实例 id（如 MonsterGroup）
+	uint32 result = 5;
+	int32 time = 6;
+	bool isRead = 7;
+	Common.p_pos pos = 8;          // 战斗坐标
+	uint32 atkPower = 9;
+	uint32 defPower = 10;
+}
+
+// 战报阵位单位（英雄或怪物）
+message p_report_unit {
+	uint32 pos = 1;
+	uint32 cfgId = 2;              // Hero.Id / Monster.Id
+	uint32 level = 3;
+	Common.p_soldier_info beforeSoldier = 4;
+	Common.p_soldier_info afterSoldier = 5;
+}
+
+// 战报单方
+message p_report_side {
+	int64 ownerId = 1;             // 玩家 uid，NPC/怪物为 0
+	string name = 2;
+	uint32 power = 3;
+	repeated p_report_unit units = 4;
+}
+
+// ---------- 回放 ----------
+// actType: 1普攻 2主动 3被动 4追击 5指挥 6治疗 7状态
+// side: 1攻方 2守方
+message p_replay_effect {
+	uint32 targetSide = 1;
+	uint32 targetPos = 2;
+	int32 value = 3;               // 伤害/治疗量（正负由 actType 解释）
+	uint32 afterSoldier = 4;       // 生效后目标剩余兵力
+	uint32 flags = 5;              // bit: 1暴击 2闪避 3未命中
+}
+
+message p_replay_action {
+	uint32 round = 1;
+	uint32 actType = 2;
+	uint32 fromSide = 3;
+	uint32 fromPos = 4;
+	uint32 skillId = 5;            // 普攻为 0
+	repeated p_replay_effect effects = 6;
+}
+
+message p_report_replay {
+	uint32 maxRound = 1;
+	repeated p_replay_action actions = 2;
+}
+
+// 战报详情
+message p_report_info {
+	p_report_brief brief = 1;
+	p_report_side atkSide = 2;
+	p_report_side defSide = 3;
+	repeated Common.p_reward_info rewardList = 4;
+	p_report_replay replay = 5;
+}
+
+// 请求战报列表（reportType=0 全部）
+message c2s_req_report_list {
+	uint32 reportType = 1;
+}
+
+message s2c_req_report_list {
+	repeated p_report_brief reportList = 1;
+}
+
+// 请求战报详情
+message c2s_req_report_detail {
+	int64 reportId = 1;
+}
+
+message s2c_req_report_detail {
+	p_report_info reportInfo = 1;
+}
+
+// 单独拉回放（详情可不带 replay 时用）
+message c2s_req_report_replay {
+	int64 reportId = 1;
+}
+
+message s2c_req_report_replay {
+	int64 reportId = 1;
+	p_report_replay replay = 2;
+}
+
+// 新战报推送（战斗结束后）
+message s2c_sync_report {
+	p_report_brief reportBrief = 1;
+}
+
+// 标记已读（空列表=全部已读）
+message c2s_read_report {
+	repeated int64 reportIdList = 1;
+}
+
+message s2c_read_report {
+	repeated int64 reportIdList = 1;
+}
+
+// 删除战报
+message c2s_del_report {
+	repeated int64 reportIdList = 1;
+}
+
+message s2c_del_report {
+	repeated int64 reportIdList = 1;
+}

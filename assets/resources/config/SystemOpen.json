@@ -9,5 +9,16 @@
         "level": 1
       }
     ]
+  },
+  {
+    "Id": 2,
+    "Name": "创建联盟",
+    "Enum": "CREATE_ALLIANCE",
+    "Desc": "开启后可创建联盟",
+    "Cond": [
+      {
+        "level": 5
+      }
+    ]
   }
 ]

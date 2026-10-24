@@ -2,9 +2,7 @@ syntax = "proto3";
 
 package Build;
 
-message s2c_req_all_build_end {
-}
-
+// 建造/升级即时完成，无队列、无时间；结果用 s2c_sync_build 同步
 message s2c_sync_build {
 	int32 bid = 1;
 	int32 level = 2;
@@ -12,10 +10,8 @@ message s2c_sync_build {
 
 message c2s_create_build {
 	int32 bid = 1;
-	bool isInstant = 2;
 }
 
 message c2s_up_build {
 	int32 bid = 1;
-	bool isInstant = 2;
 }

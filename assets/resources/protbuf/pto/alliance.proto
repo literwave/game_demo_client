@@ -1,0 +1,227 @@
+syntax = "proto3";
+
+package Alliance;
+// 联盟
+
+// pos → AlliancePos.Id（1盟主 2官员 3成员）
+// joinType → AllianceJoinType.Id（1自由加入 2需审批 3禁止加入）
+// changeType：1加入 2离开 3踢出 4职位变更
+
+message p_alliance_brief {
+	int64 allianceId = 1;
+	string name = 2;
+	int32 flag = 3;           // 旗帜
+	int32 level = 4;
+	int32 memberCount = 5;
+	int32 memberMax = 6;      // 取 AllianceLv.MemberMax（当前等级）
+	int64 power = 7;          // 总战力
+	uint32 joinType = 8;
+	string notice = 9;
+	string leaderName = 10;
+}
+
+message p_alliance_info {
+	p_alliance_brief brief = 1;
+	string manifesto = 2;     // 宣言
+	int64 leaderId = 3;
+	int32 createTime = 4;
+}
+
+message p_alliance_member {
+	int64 uid = 1;
+	string name = 2;
+	int32 headIcon = 3;
+	uint32 pos = 4;           // AlliancePos
+	int32 level = 5;
+	int64 power = 6;
+	int32 joinTime = 7;
+	int32 offlineTime = 8;    // 0=在线，否则上次离线时间
+}
+
+message p_alliance_apply {
+	int64 uid = 1;
+	string name = 2;
+	int32 headIcon = 3;
+	int32 level = 4;
+	int64 power = 5;
+	int32 time = 6;
+}
+
+// 拉自己的联盟；无联盟时 brief.allianceId=0、myPos=0
+message c2s_req_my_alliance {
+}
+
+message s2c_req_my_alliance {
+	p_alliance_info info = 1;
+	uint32 myPos = 2;
+}
+
+// 按 id 查详情
+message c2s_req_alliance_info {
+	int64 allianceId = 1;
+}
+
+message s2c_req_alliance_info {
+	p_alliance_info info = 1;
+}
+
+// 搜索/列表；keyword 空为推荐列表；start 从 1 起，count=0 用服务端默认
+message c2s_req_alliance_list {
+	string keyword = 1;
+	uint32 start = 2;
+	uint32 count = 3;
+}
+
+message s2c_req_alliance_list {
+	repeated p_alliance_brief allianceList = 1;
+}
+
+message c2s_create_alliance {
+	string name = 1;
+	int32 flag = 2;
+	uint32 joinType = 3;
+	string notice = 4;
+}
+
+message s2c_create_alliance {
+	p_alliance_info info = 1;
+}
+
+message c2s_dissolve_alliance {
+}
+
+message s2c_dissolve_alliance {
+}
+
+message c2s_leave_alliance {
+}
+
+message s2c_leave_alliance {
+}
+
+message c2s_kick_member {
+	int64 uid = 1;
+}
+
+message s2c_kick_member {
+	int64 uid = 1;
+}
+
+// 申请加入；joinType=自由加入时直接入盟
+message c2s_apply_alliance {
+	int64 allianceId = 1;
+}
+
+message s2c_apply_alliance {
+	int64 allianceId = 1;
+}
+
+message c2s_cancel_apply {
+	int64 allianceId = 1;
+}
+
+message s2c_cancel_apply {
+	int64 allianceId = 1;
+}
+
+message c2s_req_apply_list {
+}
+
+message s2c_req_apply_list {
+	repeated p_alliance_apply applyList = 1;
+}
+
+message c2s_handle_apply {
+	int64 uid = 1;
+	bool agree = 2;
+}
+
+message s2c_handle_apply {
+	int64 uid = 1;
+	bool agree = 2;
+}
+
+message c2s_invite_alliance {
+	int64 uid = 1;
+}
+
+message s2c_invite_alliance {
+	int64 uid = 1;
+}
+
+// 被邀请方收到
+message s2c_sync_alliance_invite {
+	p_alliance_brief brief = 1;
+	int64 inviterId = 2;
+	string inviterName = 3;
+}
+
+message c2s_handle_invite {
+	int64 allianceId = 1;
+	bool agree = 2;
+}
+
+message s2c_handle_invite {
+	int64 allianceId = 1;
+	bool agree = 2;
+}
+
+// allianceId=0 表示自己的联盟
+message c2s_req_member_list {
+	int64 allianceId = 1;
+}
+
+message s2c_req_member_list {
+	int64 allianceId = 1;
+	repeated p_alliance_member memberList = 2;
+}
+
+// 设置页一次提交当前值（盟主/官员）
+message c2s_set_alliance_info {
+	int32 flag = 1;
+	uint32 joinType = 2;
+	string notice = 3;
+	string manifesto = 4;
+}
+
+message s2c_set_alliance_info {
+	p_alliance_info info = 1;
+}
+
+// 调整职位；不可直接设为盟主（转让走 transfer_leader）
+message c2s_set_member_pos {
+	int64 uid = 1;
+	uint32 pos = 2;
+}
+
+message s2c_set_member_pos {
+	int64 uid = 1;
+	uint32 pos = 2;
+}
+
+message c2s_transfer_leader {
+	int64 uid = 1;
+}
+
+message s2c_transfer_leader {
+	int64 uid = 1;
+}
+
+// 联盟信息变化（公告/旗帜/人数/战力等）推给成员
+message s2c_sync_alliance {
+	p_alliance_info info = 1;
+}
+
+// 成员变动推给盟内在线玩家
+message s2c_sync_member_change {
+	int64 allianceId = 1;
+	uint32 changeType = 2;       // 1加入 2离开 3踢出 4职位变更
+	p_alliance_member member = 3; // 离开/踢出时至少填 uid
+}
+
+// 自己入盟/退盟/被踢/职位变化
+message s2c_sync_my_alliance {
+	int64 allianceId = 1;        // 0=当前无联盟
+	uint32 myPos = 2;
+	p_alliance_info info = 3;    // 有联盟时带详情
+}
