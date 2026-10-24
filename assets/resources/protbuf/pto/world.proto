@@ -3,18 +3,18 @@ syntax = "proto3";
 package World;
 // 大世界
 
-// // 请求进入大世界
-// message c2s_enter_big_world {
-// }
+import "common.proto";
 
-// // 进入大世界返回
-// message s2c_enter_big_world {
-// }
+// 部队位置：一个位置对应一个英雄及其带兵
+message p_troop_pos {
+	uint32 heroIdx = 1;
+	Common.p_soldier_info soldier = 2;
+}
 
 // 部队信息
 message p_troop_info {
 	uint32 troopIdx = 1;
-	map<uint32, uint32> pos2HeroMap = 2;  // 位置 -> 英雄idx
+	map<uint32, p_troop_pos> posMap = 2;  // 位置 -> 英雄+兵力
 }
 
 // 请求部队数据
@@ -36,4 +36,81 @@ message s2c_edit_troop {
 	p_troop_info troopInfo = 1;
 }
 
+// ---------- 行军 ----------
+// targetType → TargetType.Id（1回城 2打怪，预留扩展）
+// state: 1行军中 2已到达
+message p_march_info {
+	uint32 troopIdx = 1;
+	uint32 targetType = 2;
+	int64 targetId = 3;            // 目标实体 id（怪物组实例等），回城可 0
+	Common.p_pos startPos = 4;
+	Common.p_pos endPos = 5;
+	int32 startTime = 6;
+	int32 endTime = 7;
+	uint32 state = 8;
+}
 
+// 发起行军
+message c2s_march {
+	uint32 troopIdx = 1;
+	uint32 targetType = 2;
+	int64 targetId = 3;
+	Common.p_pos targetPos = 4;
+}
+
+message s2c_march {
+	p_march_info marchInfo = 1;
+}
+
+// 取消行军（召回，一般转为回城行军）
+message c2s_cancel_march {
+	uint32 troopIdx = 1;
+}
+
+message s2c_cancel_march {
+	uint32 troopIdx = 1;
+	p_march_info marchInfo = 2;    // 召回后的行军（如回城），无则空
+}
+
+// 同步行军（进度/状态变化）
+message s2c_sync_march {
+	p_march_info marchInfo = 1;
+}
+
+// 请求自己的行军列表
+message c2s_req_march_list {
+}
+
+message s2c_req_march_list {
+	repeated p_march_info marchList = 1;
+}
+
+// ---------- AOI ----------
+// 视野内实体；entityType → EntityType.Id（1主城 2行军部队 3怪物组）
+message p_aoi_entity {
+	int64 entityId = 1;
+	uint32 entityType = 2;
+	Common.p_pos pos = 3;
+	int64 ownerId = 4;             // 主城/部队所属玩家，怪物为 0
+	uint32 cfgId = 5;              // 配置 id（如 MonsterGroup.Id）
+}
+
+// 客户端上报视野中心（拖地图等）
+message c2s_aoi_focus {
+	Common.p_pos pos = 1;
+}
+
+// 进入视野
+message s2c_aoi_enter {
+	repeated p_aoi_entity entities = 1;
+}
+
+// 离开视野
+message s2c_aoi_leave {
+	repeated int64 entityIds = 1;
+}
+
+// 实体更新（主要是 pos）
+message s2c_aoi_update {
+	repeated p_aoi_entity entities = 1;
+}

@@ -3,585 +3,2358 @@
     "Id": 101,
     "BuildingType": 1,
     "Lv": 1,
-    "Time": 1,
-    "Power": 418
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 130,
+    "Effect": 1
   },
   {
     "Id": 102,
     "BuildingType": 1,
     "Lv": 2,
-    "Time": 6,
-    "upgradeCostElectricity": 40,
-    "ItemLimit": [
+    "CostGrain": 600,
+    "CostWood": 600,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
       {
-        "bid": 103001,
+        "bid": 10,
+        "lev": 1
+      },
+      {
+        "bid": 11,
         "lev": 1
       }
     ],
-    "Power": 905
+    "Power": 325,
+    "Effect": 2
   },
   {
     "Id": 103,
     "BuildingType": 1,
     "Lv": 3,
+    "CostGrain": 1440,
+    "CostWood": 1440,
+    "CostIron": 240,
     "Time": 60,
-    "upgradeCostElectricity": 160,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 104001,
-        "lev": 2
+        "bid": 13,
+        "lev": 1
+      },
+      {
+        "bid": 3,
+        "lev": 1
       }
     ],
-    "Power": 1476
+    "Power": 585,
+    "Effect": 3
   },
   {
     "Id": 104,
     "BuildingType": 1,
     "Lv": 4,
+    "CostGrain": 3000,
+    "CostWood": 3000,
+    "CostIron": 720,
     "Time": 180,
-    "upgradeCostElectricity": 360,
-    "upgradeCostIron": 80,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 110001,
-        "lev": 3
+        "bid": 2,
+        "lev": 2
+      },
+      {
+        "bid": 4,
+        "lev": 1
       }
     ],
-    "Power": 2144
+    "Power": 910,
+    "Effect": 4
   },
   {
     "Id": 105,
     "BuildingType": 1,
     "Lv": 5,
+    "CostGrain": 6000,
+    "CostWood": 6000,
+    "CostIron": 1440,
     "Time": 600,
-    "upgradeCostElectricity": 1470,
-    "upgradeCostIron": 300,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 111001,
-        "lev": 4
+        "bid": 12,
+        "lev": 3
+      },
+      {
+        "bid": 14,
+        "lev": 1
       }
     ],
-    "Power": 2926
+    "Power": 1300,
+    "Effect": 5
   },
   {
     "Id": 106,
     "BuildingType": 1,
     "Lv": 6,
+    "CostGrain": 10800,
+    "CostWood": 10800,
+    "CostIron": 3000,
     "Time": 1800,
-    "upgradeCostElectricity": 3920,
-    "upgradeCostIron": 790,
-    "upgradeCostOil": 160,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 109001,
-        "lev": 5
+        "bid": 5,
+        "lev": 1
       },
       {
-        "bid": 108001,
-        "lev": 5
+        "bid": 6,
+        "lev": 1
       }
     ],
-    "Power": 3840
+    "Power": 1820,
+    "Effect": 6
   },
   {
     "Id": 107,
     "BuildingType": 1,
     "Lv": 7,
+    "CostGrain": 19200,
+    "CostWood": 19200,
+    "CostIron": 6000,
     "Time": 3600,
-    "upgradeCostElectricity": 13720,
-    "upgradeCostIron": 2750,
-    "upgradeCostOil": 550,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 113001,
-        "lev": 6
+        "bid": 7,
+        "lev": 5
       },
       {
-        "bid": 112001,
-        "lev": 6
+        "bid": 8,
+        "lev": 1
       }
     ],
-    "Power": 4910
+    "Power": 2470,
+    "Effect": 7
   },
   {
     "Id": 108,
     "BuildingType": 1,
     "Lv": 8,
+    "CostGrain": 33600,
+    "CostWood": 33600,
+    "CostIron": 10800,
     "Time": 7200,
-    "upgradeCostElectricity": 23520,
-    "upgradeCostIron": 4710,
-    "upgradeCostOil": 950,
-    "ItemLimit": [
+    "UpgradeLimit": [
       {
-        "bid": 115001,
-        "lev": 7
+        "bid": 9,
+        "lev": 3
       },
       {
-        "bid": 107001,
-        "lev": 7
+        "bid": 2,
+        "lev": 6
       }
     ],
-    "Power": 6161
+    "Power": 3250,
+    "Effect": 8
   },
   {
     "Id": 109,
     "BuildingType": 1,
     "Lv": 9,
-    "Time": 18000,
-    "upgradeCostElectricity": 48990,
-    "upgradeCostIron": 9800,
-    "upgradeCostOil": 1960,
-    "ItemLimit": [
+    "CostGrain": 54000,
+    "CostWood": 54000,
+    "CostIron": 19200,
+    "Time": 14400,
+    "UpgradeLimit": [
       {
-        "bid": 106001,
-        "lev": 8
+        "bid": 4,
+        "lev": 7
       },
       {
-        "bid": 114001,
-        "lev": 8
+        "bid": 13,
+        "lev": 7
       }
     ],
-    "Power": 7626
+    "Power": 4160,
+    "Effect": 9
   },
   {
     "Id": 110,
     "BuildingType": 1,
     "Lv": 10,
-    "Time": 34740,
-    "upgradeCostElectricity": 88180,
-    "upgradeCostIron": 17640,
-    "upgradeCostOil": 3530,
-    "ItemLimit": [
+    "CostGrain": 84000,
+    "CostWood": 84000,
+    "CostIron": 33600,
+    "Time": 28800,
+    "UpgradeLimit": [
       {
-        "bid": 110001,
+        "bid": 5,
+        "lev": 8
+      },
+      {
+        "bid": 6,
+        "lev": 8
+      }
+    ],
+    "Power": 5200,
+    "Effect": 10
+  },
+  {
+    "Id": 201,
+    "BuildingType": 2,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 100,
+    "Effect": 1000
+  },
+  {
+    "Id": 202,
+    "BuildingType": 2,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 250,
+    "Effect": 1500
+  },
+  {
+    "Id": 203,
+    "BuildingType": 2,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 450,
+    "Effect": 2000
+  },
+  {
+    "Id": 204,
+    "BuildingType": 2,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 700,
+    "Effect": 2500
+  },
+  {
+    "Id": 205,
+    "BuildingType": 2,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 1000,
+    "Effect": 3000
+  },
+  {
+    "Id": 206,
+    "BuildingType": 2,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1400,
+    "Effect": 3500
+  },
+  {
+    "Id": 207,
+    "BuildingType": 2,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1900,
+    "Effect": 4000
+  },
+  {
+    "Id": 208,
+    "BuildingType": 2,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2500,
+    "Effect": 4500
+  },
+  {
+    "Id": 209,
+    "BuildingType": 2,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
         "lev": 9
-      },
+      }
+    ],
+    "Power": 3200,
+    "Effect": 5000
+  },
+  {
+    "Id": 210,
+    "BuildingType": 2,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
       {
-        "bid": 111001,
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 4000,
+    "Effect": 5500
+  },
+  {
+    "Id": 301,
+    "BuildingType": 3,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 2
+  },
+  {
+    "Id": 302,
+    "BuildingType": 3,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 3
+  },
+  {
+    "Id": 303,
+    "BuildingType": 3,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 4
+  },
+  {
+    "Id": 304,
+    "BuildingType": 3,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 5
+  },
+  {
+    "Id": 305,
+    "BuildingType": 3,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 6
+  },
+  {
+    "Id": 306,
+    "BuildingType": 3,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 7
+  },
+  {
+    "Id": 307,
+    "BuildingType": 3,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 8
+  },
+  {
+    "Id": 308,
+    "BuildingType": 3,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 9
+  },
+  {
+    "Id": 309,
+    "BuildingType": 3,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
         "lev": 9
       }
     ],
-    "Power": 9339
+    "Power": 2560,
+    "Effect": 10
   },
   {
-    "Id": 111,
-    "BuildingType": 1,
-    "Lv": 11,
-    "Time": 41640,
-    "upgradeCostElectricity": 244930,
-    "upgradeCostIron": 48990,
-    "upgradeCostOil": 9800,
-    "upgradeCostWater": 244930,
-    "ItemLimit": [
+    "Id": 310,
+    "BuildingType": 3,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
       {
-        "bid": 113001,
-        "lev": 10
-      },
-      {
-        "bid": 112001,
+        "bid": 1,
         "lev": 10
       }
     ],
-    "Power": 11344
+    "Power": 3200,
+    "Effect": 11
   },
   {
-    "Id": 112,
-    "BuildingType": 1,
-    "Lv": 12,
-    "Time": 46200,
-    "upgradeCostElectricity": 293910,
-    "upgradeCostIron": 58790,
-    "upgradeCostOil": 11760,
-    "upgradeCostWater": 293910,
-    "ItemLimit": [
-      {
-        "bid": 115001,
-        "lev": 11
-      },
-      {
-        "bid": 107001,
-        "lev": 11
-      }
-    ],
-    "Power": 13689
+    "Id": 401,
+    "BuildingType": 4,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 100,
+    "Effect": 500
   },
   {
-    "Id": 113,
-    "BuildingType": 1,
-    "Lv": 13,
-    "Time": 51540,
-    "upgradeCostElectricity": 440860,
-    "upgradeCostIron": 88180,
-    "upgradeCostOil": 17640,
-    "upgradeCostWater": 440860,
-    "ItemLimit": [
+    "Id": 402,
+    "BuildingType": 4,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
       {
-        "bid": 106001,
-        "lev": 12
-      },
-      {
-        "bid": 114001,
-        "lev": 12
+        "bid": 1,
+        "lev": 2
       }
     ],
-    "Power": 16433
+    "Power": 250,
+    "Effect": 700
   },
   {
-    "Id": 114,
-    "BuildingType": 1,
-    "Lv": 14,
-    "Time": 60900,
-    "upgradeCostElectricity": 587820,
-    "upgradeCostIron": 117570,
-    "upgradeCostOil": 23520,
-    "upgradeCostWater": 587820,
-    "ItemLimit": [
+    "Id": 403,
+    "BuildingType": 4,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
       {
-        "bid": 109001,
-        "lev": 13
-      },
-      {
-        "bid": 108001,
-        "lev": 13
+        "bid": 1,
+        "lev": 3
       }
     ],
-    "Power": 19644
+    "Power": 450,
+    "Effect": 900
   },
   {
-    "Id": 115,
-    "BuildingType": 1,
-    "Lv": 15,
-    "Time": 71040,
-    "upgradeCostElectricity": 881720,
-    "upgradeCostIron": 176350,
-    "upgradeCostOil": 35270,
-    "upgradeCostWater": 881720,
-    "ItemLimit": [
+    "Id": 404,
+    "BuildingType": 4,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
       {
-        "bid": 110001,
-        "lev": 14
-      },
-      {
-        "bid": 111001,
-        "lev": 14
+        "bid": 1,
+        "lev": 4
       }
     ],
-    "Power": 23400
+    "Power": 700,
+    "Effect": 1100
   },
   {
-    "Id": 116,
-    "BuildingType": 1,
-    "Lv": 16,
-    "Time": 108570,
-    "upgradeCostElectricity": 1175630,
-    "upgradeCostIron": 235130,
-    "upgradeCostOil": 47030,
-    "upgradeCostWater": 1175630,
-    "ItemLimit": [
+    "Id": 405,
+    "BuildingType": 4,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
       {
-        "bid": 113001,
-        "lev": 15
-      },
-      {
-        "bid": 112001,
-        "lev": 15
+        "bid": 1,
+        "lev": 5
       }
     ],
-    "Power": 27795
+    "Power": 1000,
+    "Effect": 1300
   },
   {
-    "Id": 117,
-    "BuildingType": 1,
-    "Lv": 17,
-    "Time": 115650,
-    "upgradeCostElectricity": 1763440,
-    "upgradeCostIron": 352690,
-    "upgradeCostOil": 70540,
-    "upgradeCostWater": 1763440,
-    "ItemLimit": [
+    "Id": 406,
+    "BuildingType": 4,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
       {
-        "bid": 115001,
-        "lev": 16
-      },
-      {
-        "bid": 107001,
-        "lev": 16
+        "bid": 1,
+        "lev": 6
       }
     ],
-    "Power": 32937
+    "Power": 1400,
+    "Effect": 1500
   },
   {
-    "Id": 118,
-    "BuildingType": 1,
-    "Lv": 18,
-    "Time": 121440,
-    "upgradeCostElectricity": 2449220,
-    "upgradeCostIron": 489850,
-    "upgradeCostOil": 97970,
-    "upgradeCostWater": 2449220,
-    "ItemLimit": [
+    "Id": 407,
+    "BuildingType": 4,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
       {
-        "bid": 106001,
-        "lev": 17
-      },
-      {
-        "bid": 114001,
-        "lev": 17
+        "bid": 1,
+        "lev": 7
       }
     ],
-    "Power": 38953
+    "Power": 1900,
+    "Effect": 1700
   },
   {
-    "Id": 119,
-    "BuildingType": 1,
-    "Lv": 19,
-    "Time": 156600,
-    "upgradeCostElectricity": 2939060,
-    "upgradeCostIron": 587820,
-    "upgradeCostOil": 117570,
-    "upgradeCostWater": 2939060,
-    "ItemLimit": [
+    "Id": 408,
+    "BuildingType": 4,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
       {
-        "bid": 109001,
-        "lev": 18
-      },
-      {
-        "bid": 108001,
-        "lev": 18
+        "bid": 1,
+        "lev": 8
       }
     ],
-    "Power": 45992
+    "Power": 2500,
+    "Effect": 1900
   },
   {
-    "Id": 120,
-    "BuildingType": 1,
-    "Lv": 20,
-    "Time": 169650,
-    "upgradeCostElectricity": 3918750,
-    "upgradeCostIron": 783750,
-    "upgradeCostOil": 156750,
-    "upgradeCostWater": 3918750,
-    "ItemLimit": [
+    "Id": 409,
+    "BuildingType": 4,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
       {
-        "bid": 110001,
-        "lev": 19
-      },
-      {
-        "bid": 111001,
-        "lev": 19
+        "bid": 1,
+        "lev": 9
       }
     ],
-    "Power": 54228
+    "Power": 3200,
+    "Effect": 2100
   },
   {
-    "Id": 121,
-    "BuildingType": 1,
-    "Lv": 21,
-    "Time": 194910,
-    "upgradeCostElectricity": 4898430,
-    "upgradeCostIron": 979690,
-    "upgradeCostOil": 195940,
-    "upgradeCostWater": 4898430,
-    "ItemLimit": [
+    "Id": 410,
+    "BuildingType": 4,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
       {
-        "bid": 113001,
-        "lev": 20
-      },
-      {
-        "bid": 112001,
-        "lev": 20
+        "bid": 1,
+        "lev": 10
       }
     ],
-    "Power": 63864
+    "Power": 4000,
+    "Effect": 2300
   },
   {
-    "Id": 122,
-    "BuildingType": 1,
-    "Lv": 22,
-    "Time": 254400,
-    "upgradeCostElectricity": 6857800,
-    "upgradeCostIron": 1371560,
-    "upgradeCostOil": 274320,
-    "upgradeCostWater": 6857800,
-    "ItemLimit": [
-      {
-        "bid": 115001,
-        "lev": 21
-      },
-      {
-        "bid": 107001,
-        "lev": 21
-      }
-    ],
-    "Power": 75137
+    "Id": 501,
+    "BuildingType": 5,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 100,
+    "Effect": 500
   },
   {
-    "Id": 123,
-    "BuildingType": 1,
-    "Lv": 23,
-    "Time": 320550,
-    "upgradeCostElectricity": 8817170,
-    "upgradeCostIron": 1763440,
-    "upgradeCostOil": 352690,
-    "upgradeCostWater": 8817170,
-    "ItemLimit": [
+    "Id": 502,
+    "BuildingType": 5,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
       {
-        "bid": 106001,
-        "lev": 22
-      },
-      {
-        "bid": 114001,
-        "lev": 22
+        "bid": 1,
+        "lev": 2
       }
     ],
-    "Power": 88328
+    "Power": 250,
+    "Effect": 700
   },
   {
-    "Id": 124,
-    "BuildingType": 1,
-    "Lv": 24,
-    "Time": 398850,
-    "upgradeCostElectricity": 11756230,
-    "upgradeCostIron": 2351250,
-    "upgradeCostOil": 470250,
-    "upgradeCostWater": 11756230,
-    "ItemLimit": [
+    "Id": 503,
+    "BuildingType": 5,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
       {
-        "bid": 109001,
-        "lev": 23
-      },
-      {
-        "bid": 108001,
-        "lev": 23
+        "bid": 1,
+        "lev": 3
       }
     ],
-    "Power": 103760
+    "Power": 450,
+    "Effect": 900
   },
   {
-    "Id": 125,
-    "BuildingType": 1,
-    "Lv": 25,
-    "Time": 523560,
-    "upgradeCostElectricity": 15674970,
-    "upgradeCostIron": 3135000,
-    "upgradeCostOil": 627000,
-    "upgradeCostWater": 15674970,
-    "ItemLimit": [
+    "Id": 504,
+    "BuildingType": 5,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
       {
-        "bid": 110001,
-        "lev": 24
-      },
-      {
-        "bid": 111001,
-        "lev": 24
+        "bid": 1,
+        "lev": 4
       }
     ],
-    "Power": 121816
+    "Power": 700,
+    "Effect": 1100
   },
   {
-    "Id": 126,
-    "BuildingType": 1,
-    "Lv": 26,
-    "Time": 561960,
-    "upgradeCostElectricity": 20573390,
-    "upgradeCostIron": 4114680,
-    "upgradeCostOil": 822940,
-    "upgradeCostWater": 20573390,
-    "ItemLimit": [
+    "Id": 505,
+    "BuildingType": 5,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
       {
-        "bid": 113001,
-        "lev": 25
-      },
-      {
-        "bid": 112001,
-        "lev": 25
+        "bid": 1,
+        "lev": 5
       }
     ],
-    "Power": 142942
+    "Power": 1000,
+    "Effect": 1300
   },
   {
-    "Id": 127,
-    "BuildingType": 1,
-    "Lv": 27,
-    "Time": 626190,
-    "upgradeCostElectricity": 29390560,
-    "upgradeCostIron": 5878120,
-    "upgradeCostOil": 1175630,
-    "upgradeCostWater": 29390560,
-    "ItemLimit": [
+    "Id": 506,
+    "BuildingType": 5,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
       {
-        "bid": 115001,
-        "lev": 26
-      },
-      {
-        "bid": 107001,
-        "lev": 26
+        "bid": 1,
+        "lev": 6
       }
     ],
-    "Power": 167659
+    "Power": 1400,
+    "Effect": 1500
   },
   {
-    "Id": 128,
-    "BuildingType": 1,
-    "Lv": 28,
-    "Time": 664830,
-    "upgradeCostElectricity": 34288980,
-    "upgradeCostIron": 6857800,
-    "upgradeCostOil": 1371560,
-    "upgradeCostWater": 34288980,
-    "ItemLimit": [
+    "Id": 507,
+    "BuildingType": 5,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
       {
-        "bid": 106001,
-        "lev": 27
-      },
-      {
-        "bid": 114001,
-        "lev": 27
+        "bid": 1,
+        "lev": 7
       }
     ],
-    "Power": 196578
+    "Power": 1900,
+    "Effect": 1700
   },
   {
-    "Id": 129,
-    "BuildingType": 1,
-    "Lv": 29,
-    "Time": 700650,
-    "upgradeCostElectricity": 44085830,
-    "upgradeCostIron": 8817170,
-    "upgradeCostOil": 1763440,
-    "upgradeCostWater": 44085830,
-    "ItemLimit": [
+    "Id": 508,
+    "BuildingType": 5,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
       {
-        "bid": 109001,
-        "lev": 28
-      },
-      {
-        "bid": 108001,
-        "lev": 28
+        "bid": 1,
+        "lev": 8
       }
     ],
-    "Power": 230413
+    "Power": 2500,
+    "Effect": 1900
   },
   {
-    "Id": 130,
-    "BuildingType": 1,
-    "Lv": 30,
-    "Time": 764460,
-    "upgradeCostElectricity": 58781110,
-    "upgradeCostIron": 11756230,
-    "upgradeCostOil": 2351250,
-    "upgradeCostWater": 58781110,
-    "ItemLimit": [
+    "Id": 509,
+    "BuildingType": 5,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
       {
-        "bid": 110001,
-        "lev": 29
-      },
-      {
-        "bid": 111001,
-        "lev": 29
+        "bid": 1,
+        "lev": 9
       }
     ],
-    "Power": 270000
+    "Power": 3200,
+    "Effect": 2100
+  },
+  {
+    "Id": 510,
+    "BuildingType": 5,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 4000,
+    "Effect": 2300
+  },
+  {
+    "Id": 601,
+    "BuildingType": 6,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 100,
+    "Effect": 500
+  },
+  {
+    "Id": 602,
+    "BuildingType": 6,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 250,
+    "Effect": 700
+  },
+  {
+    "Id": 603,
+    "BuildingType": 6,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 450,
+    "Effect": 900
+  },
+  {
+    "Id": 604,
+    "BuildingType": 6,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 700,
+    "Effect": 1100
+  },
+  {
+    "Id": 605,
+    "BuildingType": 6,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 1000,
+    "Effect": 1300
+  },
+  {
+    "Id": 606,
+    "BuildingType": 6,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1400,
+    "Effect": 1500
+  },
+  {
+    "Id": 607,
+    "BuildingType": 6,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1900,
+    "Effect": 1700
+  },
+  {
+    "Id": 608,
+    "BuildingType": 6,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2500,
+    "Effect": 1900
+  },
+  {
+    "Id": 609,
+    "BuildingType": 6,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 3200,
+    "Effect": 2100
+  },
+  {
+    "Id": 610,
+    "BuildingType": 6,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 4000,
+    "Effect": 2300
+  },
+  {
+    "Id": 701,
+    "BuildingType": 7,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 300
+  },
+  {
+    "Id": 702,
+    "BuildingType": 7,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 450
+  },
+  {
+    "Id": 703,
+    "BuildingType": 7,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 600
+  },
+  {
+    "Id": 704,
+    "BuildingType": 7,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 750
+  },
+  {
+    "Id": 705,
+    "BuildingType": 7,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 900
+  },
+  {
+    "Id": 706,
+    "BuildingType": 7,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 1050
+  },
+  {
+    "Id": 707,
+    "BuildingType": 7,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 1200
+  },
+  {
+    "Id": 708,
+    "BuildingType": 7,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 1350
+  },
+  {
+    "Id": 709,
+    "BuildingType": 7,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 1500
+  },
+  {
+    "Id": 710,
+    "BuildingType": 7,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 1650
+  },
+  {
+    "Id": 801,
+    "BuildingType": 8,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 5
+  },
+  {
+    "Id": 802,
+    "BuildingType": 8,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 7
+  },
+  {
+    "Id": 803,
+    "BuildingType": 8,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 9
+  },
+  {
+    "Id": 804,
+    "BuildingType": 8,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 11
+  },
+  {
+    "Id": 805,
+    "BuildingType": 8,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 13
+  },
+  {
+    "Id": 806,
+    "BuildingType": 8,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 15
+  },
+  {
+    "Id": 807,
+    "BuildingType": 8,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 17
+  },
+  {
+    "Id": 808,
+    "BuildingType": 8,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 19
+  },
+  {
+    "Id": 809,
+    "BuildingType": 8,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 21
+  },
+  {
+    "Id": 810,
+    "BuildingType": 8,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 23
+  },
+  {
+    "Id": 901,
+    "BuildingType": 9,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 2000
+  },
+  {
+    "Id": 902,
+    "BuildingType": 9,
+    "Lv": 2,
+    "CostGrain": 450,
+    "CostWood": 450,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 3000
+  },
+  {
+    "Id": 903,
+    "BuildingType": 9,
+    "Lv": 3,
+    "CostGrain": 1080,
+    "CostWood": 1080,
+    "CostIron": 180,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 4000
+  },
+  {
+    "Id": 904,
+    "BuildingType": 9,
+    "Lv": 4,
+    "CostGrain": 2250,
+    "CostWood": 2250,
+    "CostIron": 540,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 5000
+  },
+  {
+    "Id": 905,
+    "BuildingType": 9,
+    "Lv": 5,
+    "CostGrain": 4500,
+    "CostWood": 4500,
+    "CostIron": 1080,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 6000
+  },
+  {
+    "Id": 906,
+    "BuildingType": 9,
+    "Lv": 6,
+    "CostGrain": 8100,
+    "CostWood": 8100,
+    "CostIron": 2250,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 7000
+  },
+  {
+    "Id": 907,
+    "BuildingType": 9,
+    "Lv": 7,
+    "CostGrain": 14400,
+    "CostWood": 14400,
+    "CostIron": 4500,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 8000
+  },
+  {
+    "Id": 908,
+    "BuildingType": 9,
+    "Lv": 8,
+    "CostGrain": 25200,
+    "CostWood": 25200,
+    "CostIron": 8100,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 9000
+  },
+  {
+    "Id": 909,
+    "BuildingType": 9,
+    "Lv": 9,
+    "CostGrain": 40500,
+    "CostWood": 40500,
+    "CostIron": 14400,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 10000
+  },
+  {
+    "Id": 910,
+    "BuildingType": 9,
+    "Lv": 10,
+    "CostGrain": 63000,
+    "CostWood": 63000,
+    "CostIron": 25200,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 11000
+  },
+  {
+    "Id": 1001,
+    "BuildingType": 10,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 100
+  },
+  {
+    "Id": 1002,
+    "BuildingType": 10,
+    "Lv": 2,
+    "CostGrain": 350,
+    "CostWood": 350,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 150
+  },
+  {
+    "Id": 1003,
+    "BuildingType": 10,
+    "Lv": 3,
+    "CostGrain": 840,
+    "CostWood": 840,
+    "CostIron": 140,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 200
+  },
+  {
+    "Id": 1004,
+    "BuildingType": 10,
+    "Lv": 4,
+    "CostGrain": 1750,
+    "CostWood": 1750,
+    "CostIron": 420,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 250
+  },
+  {
+    "Id": 1005,
+    "BuildingType": 10,
+    "Lv": 5,
+    "CostGrain": 3500,
+    "CostWood": 3500,
+    "CostIron": 840,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 300
+  },
+  {
+    "Id": 1006,
+    "BuildingType": 10,
+    "Lv": 6,
+    "CostGrain": 6300,
+    "CostWood": 6300,
+    "CostIron": 1750,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 350
+  },
+  {
+    "Id": 1007,
+    "BuildingType": 10,
+    "Lv": 7,
+    "CostGrain": 11200,
+    "CostWood": 11200,
+    "CostIron": 3500,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 400
+  },
+  {
+    "Id": 1008,
+    "BuildingType": 10,
+    "Lv": 8,
+    "CostGrain": 19600,
+    "CostWood": 19600,
+    "CostIron": 6300,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 450
+  },
+  {
+    "Id": 1009,
+    "BuildingType": 10,
+    "Lv": 9,
+    "CostGrain": 31499,
+    "CostWood": 31499,
+    "CostIron": 11200,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 500
+  },
+  {
+    "Id": 1010,
+    "BuildingType": 10,
+    "Lv": 10,
+    "CostGrain": 49000,
+    "CostWood": 49000,
+    "CostIron": 19600,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 550
+  },
+  {
+    "Id": 1101,
+    "BuildingType": 11,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 100
+  },
+  {
+    "Id": 1102,
+    "BuildingType": 11,
+    "Lv": 2,
+    "CostGrain": 350,
+    "CostWood": 350,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 150
+  },
+  {
+    "Id": 1103,
+    "BuildingType": 11,
+    "Lv": 3,
+    "CostGrain": 840,
+    "CostWood": 840,
+    "CostIron": 140,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 200
+  },
+  {
+    "Id": 1104,
+    "BuildingType": 11,
+    "Lv": 4,
+    "CostGrain": 1750,
+    "CostWood": 1750,
+    "CostIron": 420,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 250
+  },
+  {
+    "Id": 1105,
+    "BuildingType": 11,
+    "Lv": 5,
+    "CostGrain": 3500,
+    "CostWood": 3500,
+    "CostIron": 840,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 300
+  },
+  {
+    "Id": 1106,
+    "BuildingType": 11,
+    "Lv": 6,
+    "CostGrain": 6300,
+    "CostWood": 6300,
+    "CostIron": 1750,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 350
+  },
+  {
+    "Id": 1107,
+    "BuildingType": 11,
+    "Lv": 7,
+    "CostGrain": 11200,
+    "CostWood": 11200,
+    "CostIron": 3500,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 400
+  },
+  {
+    "Id": 1108,
+    "BuildingType": 11,
+    "Lv": 8,
+    "CostGrain": 19600,
+    "CostWood": 19600,
+    "CostIron": 6300,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 450
+  },
+  {
+    "Id": 1109,
+    "BuildingType": 11,
+    "Lv": 9,
+    "CostGrain": 31499,
+    "CostWood": 31499,
+    "CostIron": 11200,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 500
+  },
+  {
+    "Id": 1110,
+    "BuildingType": 11,
+    "Lv": 10,
+    "CostGrain": 49000,
+    "CostWood": 49000,
+    "CostIron": 19600,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 550
+  },
+  {
+    "Id": 1201,
+    "BuildingType": 12,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 100
+  },
+  {
+    "Id": 1202,
+    "BuildingType": 12,
+    "Lv": 2,
+    "CostGrain": 350,
+    "CostWood": 350,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 150
+  },
+  {
+    "Id": 1203,
+    "BuildingType": 12,
+    "Lv": 3,
+    "CostGrain": 840,
+    "CostWood": 840,
+    "CostIron": 140,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 200
+  },
+  {
+    "Id": 1204,
+    "BuildingType": 12,
+    "Lv": 4,
+    "CostGrain": 1750,
+    "CostWood": 1750,
+    "CostIron": 420,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 250
+  },
+  {
+    "Id": 1205,
+    "BuildingType": 12,
+    "Lv": 5,
+    "CostGrain": 3500,
+    "CostWood": 3500,
+    "CostIron": 840,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 300
+  },
+  {
+    "Id": 1206,
+    "BuildingType": 12,
+    "Lv": 6,
+    "CostGrain": 6300,
+    "CostWood": 6300,
+    "CostIron": 1750,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 350
+  },
+  {
+    "Id": 1207,
+    "BuildingType": 12,
+    "Lv": 7,
+    "CostGrain": 11200,
+    "CostWood": 11200,
+    "CostIron": 3500,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 400
+  },
+  {
+    "Id": 1208,
+    "BuildingType": 12,
+    "Lv": 8,
+    "CostGrain": 19600,
+    "CostWood": 19600,
+    "CostIron": 6300,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 450
+  },
+  {
+    "Id": 1209,
+    "BuildingType": 12,
+    "Lv": 9,
+    "CostGrain": 31499,
+    "CostWood": 31499,
+    "CostIron": 11200,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 500
+  },
+  {
+    "Id": 1210,
+    "BuildingType": 12,
+    "Lv": 10,
+    "CostGrain": 49000,
+    "CostWood": 49000,
+    "CostIron": 19600,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 550
+  },
+  {
+    "Id": 1301,
+    "BuildingType": 13,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 5000
+  },
+  {
+    "Id": 1302,
+    "BuildingType": 13,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 7500
+  },
+  {
+    "Id": 1303,
+    "BuildingType": 13,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 10000
+  },
+  {
+    "Id": 1304,
+    "BuildingType": 13,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 12500
+  },
+  {
+    "Id": 1305,
+    "BuildingType": 13,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 15000
+  },
+  {
+    "Id": 1306,
+    "BuildingType": 13,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 17500
+  },
+  {
+    "Id": 1307,
+    "BuildingType": 13,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 20000
+  },
+  {
+    "Id": 1308,
+    "BuildingType": 13,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 22500
+  },
+  {
+    "Id": 1309,
+    "BuildingType": 13,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 25000
+  },
+  {
+    "Id": 1310,
+    "BuildingType": 13,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 27500
+  },
+  {
+    "Id": 1401,
+    "BuildingType": 14,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 1
+  },
+  {
+    "Id": 1402,
+    "BuildingType": 14,
+    "Lv": 2,
+    "CostGrain": 500,
+    "CostWood": 500,
+    "CostIron": 0,
+    "Time": 10,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "Power": 200,
+    "Effect": 2
+  },
+  {
+    "Id": 1403,
+    "BuildingType": 14,
+    "Lv": 3,
+    "CostGrain": 1200,
+    "CostWood": 1200,
+    "CostIron": 200,
+    "Time": 60,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "Power": 360,
+    "Effect": 3
+  },
+  {
+    "Id": 1404,
+    "BuildingType": 14,
+    "Lv": 4,
+    "CostGrain": 2500,
+    "CostWood": 2500,
+    "CostIron": 600,
+    "Time": 180,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "Power": 560,
+    "Effect": 4
+  },
+  {
+    "Id": 1405,
+    "BuildingType": 14,
+    "Lv": 5,
+    "CostGrain": 5000,
+    "CostWood": 5000,
+    "CostIron": 1200,
+    "Time": 600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "Power": 800,
+    "Effect": 5
+  },
+  {
+    "Id": 1406,
+    "BuildingType": 14,
+    "Lv": 6,
+    "CostGrain": 9000,
+    "CostWood": 9000,
+    "CostIron": 2500,
+    "Time": 1800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "Power": 1120,
+    "Effect": 6
+  },
+  {
+    "Id": 1407,
+    "BuildingType": 14,
+    "Lv": 7,
+    "CostGrain": 16000,
+    "CostWood": 16000,
+    "CostIron": 5000,
+    "Time": 3600,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 7
+      }
+    ],
+    "Power": 1520,
+    "Effect": 7
+  },
+  {
+    "Id": 1408,
+    "BuildingType": 14,
+    "Lv": 8,
+    "CostGrain": 28000,
+    "CostWood": 28000,
+    "CostIron": 9000,
+    "Time": 7200,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "Power": 2000,
+    "Effect": 8
+  },
+  {
+    "Id": 1409,
+    "BuildingType": 14,
+    "Lv": 9,
+    "CostGrain": 45000,
+    "CostWood": 45000,
+    "CostIron": 16000,
+    "Time": 14400,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 9
+      }
+    ],
+    "Power": 2560,
+    "Effect": 9
+  },
+  {
+    "Id": 1410,
+    "BuildingType": 14,
+    "Lv": 10,
+    "CostGrain": 70000,
+    "CostWood": 70000,
+    "CostIron": 28000,
+    "Time": 28800,
+    "UpgradeLimit": [
+      {
+        "bid": 1,
+        "lev": 10
+      }
+    ],
+    "Power": 3200,
+    "Effect": 10
+  },
+  {
+    "Id": 1501,
+    "BuildingType": 15,
+    "Lv": 1,
+    "CostGrain": 0,
+    "CostWood": 0,
+    "CostIron": 0,
+    "Time": 0,
+    "UpgradeLimit": [],
+    "Power": 80,
+    "Effect": 1
   }
 ]

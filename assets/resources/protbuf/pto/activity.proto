@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package Activity;
+
+// 活动状态：0未开启 1进行中 2已结束
+message p_activity_info {
+	int32 activityId = 1;
+	int32 state = 2;
+	int32 progress = 3;          // 通用进度（登录天数/在线分钟/冲榜值等）
+	int32 startTime = 4;
+	int32 endTime = 5;
+	repeated int32 gotList = 6;  // 已领取的阶段/天数/名次段下标
+	map<int32, int32> extraMap = 7; // 扩展（如兑换已用次数：k=下标 v=次数）
+}
+
+// 请求活动列表
+message c2s_req_activity_list {
+}
+
+message s2c_req_activity_list {
+	repeated p_activity_info activityList = 1;
+}
+
+// 同步单个活动
+message s2c_sync_activity {
+	p_activity_info activityInfo = 1;
+}
+
+// 领取活动奖励（登录/在线/冲榜/礼包等）
+message c2s_get_activity_reward {
+	int32 activityId = 1;
+	int32 index = 2; // 天/阶段/名次段等，无分段时传 0
+}
+
+message s2c_get_activity_reward {
+	int32 activityId = 1;
+	int32 index = 2;
+}
+
+// 活动兑换
+message c2s_activity_exchange {
+	int32 activityId = 1;
+	int32 index = 2; // 兑换项下标
+	int32 count = 3;
+}
+
+message s2c_activity_exchange {
+	int32 activityId = 1;
+	int32 index = 2;
+	int32 count = 3;
+}

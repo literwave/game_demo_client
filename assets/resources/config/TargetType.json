@@ -1,0 +1,14 @@
+[
+  {
+    "Id": 1,
+    "Name": "回城",
+    "Enum": "RETURN_CITY",
+    "Desc": "行军返回主城"
+  },
+  {
+    "Id": 2,
+    "Name": "打怪",
+    "Enum": "ATTACK_MONSTER",
+    "Desc": "行军攻击怪物组"
+  }
+]

@@ -1,27 +1,267 @@
 [
   {
     "Id": 1,
+    "Name": "主城",
+    "Desc": "势力核心，提升主城等级可解锁更多建筑与功能",
+    "Icon": "",
     "Type": 1,
-    "Name": 600001,
-    "Desc": 600101,
-    "Icon": 1,
-    "EffectSize": 100,
-    "BuildEffectSize": [
-      1,
-      1,
-      0,
-      0
-    ],
-    "ClickEffect": 1,
-    "MaxLevel": 1,
-    "LevelUp": 1,
+    "MaxLevel": 30,
     "LimitNum": 1,
-    "InitLev": {
-      "1001": 1
-    },
-    "ModelObjName": {
-      "50": "bangongshi/bangongshi"
-    },
-    "rubbishCnt": 1
+    "InitLev": 1,
+    "CreateLimit": [],
+    "OutputItem": 0,
+    "EffectType": 1
+  },
+  {
+    "Id": 2,
+    "Name": "校场",
+    "Desc": "训练场地，提升出征带兵上限",
+    "Icon": "",
+    "Type": 2,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 1
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 2
+  },
+  {
+    "Id": 3,
+    "Name": "聚贤府",
+    "Desc": "广纳贤才，提升可上阵武将数量",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 3
+  },
+  {
+    "Id": 4,
+    "Name": "步兵营",
+    "Desc": "训练步兵，提升步兵训练上限与效率",
+    "Icon": "",
+    "Type": 2,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 4
+  },
+  {
+    "Id": 5,
+    "Name": "骑兵营",
+    "Desc": "训练骑兵，提升骑兵训练上限与效率",
+    "Icon": "",
+    "Type": 2,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 4
+  },
+  {
+    "Id": 6,
+    "Name": "弓兵营",
+    "Desc": "训练弓兵，提升弓兵训练上限与效率",
+    "Icon": "",
+    "Type": 2,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 5
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 4
+  },
+  {
+    "Id": 7,
+    "Name": "医馆",
+    "Desc": "救治伤兵，提升伤兵收容与治疗效率",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 4
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 5
+  },
+  {
+    "Id": 8,
+    "Name": "太学",
+    "Desc": "研究科技，解锁并加速内政与军事科技",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 6
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 6
+  },
+  {
+    "Id": 9,
+    "Name": "城墙",
+    "Desc": "加固城防，提升主城耐久与防御",
+    "Icon": "",
+    "Type": 5,
+    "MaxLevel": 10,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 9
+  },
+  {
+    "Id": 10,
+    "Name": "农场",
+    "Desc": "开垦农田，持续产出粮草",
+    "Icon": "",
+    "Type": 3,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 1,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 1
+      }
+    ],
+    "OutputItem": 1,
+    "EffectType": 7
+  },
+  {
+    "Id": 11,
+    "Name": "伐木场",
+    "Desc": "采伐木材，持续产出木材",
+    "Icon": "",
+    "Type": 3,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 1,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 1
+      }
+    ],
+    "OutputItem": 2,
+    "EffectType": 7
+  },
+  {
+    "Id": 12,
+    "Name": "铁矿",
+    "Desc": "开采矿脉，持续产出铁矿",
+    "Icon": "",
+    "Type": 3,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "OutputItem": 3,
+    "EffectType": 7
+  },
+  {
+    "Id": 13,
+    "Name": "仓库",
+    "Desc": "囤积物资，提升资源保护与存储上限",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 2
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 8
+  },
+  {
+    "Id": 14,
+    "Name": "点将台",
+    "Desc": "招贤纳士，用于武将招募",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 30,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 3
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 10
+  },
+  {
+    "Id": 15,
+    "Name": "商行",
+    "Desc": "互通有无，开放资源兑换与贸易",
+    "Icon": "",
+    "Type": 4,
+    "MaxLevel": 1,
+    "LimitNum": 1,
+    "InitLev": 0,
+    "CreateLimit": [
+      {
+        "bid": 1,
+        "lev": 8
+      }
+    ],
+    "OutputItem": 0,
+    "EffectType": 1
   }
 ]

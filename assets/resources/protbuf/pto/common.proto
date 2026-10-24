@@ -8,6 +8,18 @@ message p_reward_info {
 	int32 itemCount = 3;
 }
 
+// 通用坐标（主城、地图点等）
+message p_pos {
+	int32 x = 1;
+	int32 y = 2;
+}
+
+// 兵力（无兵种）
+message p_soldier_info {
+	uint32 count = 1;      // 可用兵力
+	uint32 hurtCount = 2;  // 伤兵
+}
+
 message p_common_info {
 	int32 k = 1;
 	int32 v = 2;

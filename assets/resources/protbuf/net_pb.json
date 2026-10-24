@@ -1,83 +1,112 @@
 {
     "define": {
+        "Activity": {
+            "c2s_req_activity_list": 1,
+            "s2c_req_activity_list": 2,
+            "s2c_sync_activity": 3,
+            "c2s_get_activity_reward": 4,
+            "s2c_get_activity_reward": 5,
+            "c2s_activity_exchange": 6,
+            "s2c_activity_exchange": 7
+        },
         "Build": {
-            "s2c_req_all_build_end": 1,
-            "s2c_sync_build": 2,
-            "c2s_create_build": 3,
-            "c2s_up_build": 4
+            "s2c_req_all_build_end": 8,
+            "s2c_sync_build": 9,
+            "c2s_create_build": 10,
+            "c2s_up_build": 11
         },
         "Chat": {
-            "c2s_chat": 5,
-            "s2c_chat": 6
+            "c2s_chat": 12,
+            "s2c_chat": 13
         },
         "Heartbeat": {
-            "c2s_heart_beat": 7,
-            "s2c_heart_beat": 8
+            "c2s_heart_beat": 14,
+            "s2c_heart_beat": 15
         },
         "Hero": {
-            "s2c_sync_hero_base_info": 9,
-            "c2s_req_all_hero_base_info": 10,
-            "s2c_req_all_hero_base_info": 11
+            "s2c_sync_hero_base_info": 16,
+            "c2s_req_all_hero_base_info": 17,
+            "s2c_req_all_hero_base_info": 18
         },
         "Item": {
-            "s2c_sync_item_data": 12
+            "s2c_sync_item_data": 19
         },
         "Login": {
-            "c2s_user_login": 13,
-            "s2c_user_login": 14,
-            "c2s_verify_login": 15,
-            "s2c_verify_login": 16,
-            "s2c_user_login_ok": 17
+            "c2s_user_login": 20,
+            "s2c_user_login": 21,
+            "c2s_verify_login": 22,
+            "s2c_verify_login": 23,
+            "s2c_user_login_ok": 24
         },
         "Lottery": {
-            "c2s_req_user_lottery_info": 18,
-            "s2c_req_user_lottery_info": 19,
-            "c2s_user_lottery": 20,
-            "s2c_user_lottery": 21
+            "c2s_req_user_lottery_info": 25,
+            "s2c_req_user_lottery_info": 26,
+            "c2s_user_lottery": 27,
+            "s2c_user_lottery": 28
         },
         "Mail": {
-            "c2s_req_mail_list": 22,
-            "s2c_req_mail_list": 23,
-            "c2s_req_mail_detail": 24,
-            "s2c_req_mail_detail": 25,
-            "c2s_del_mail_list": 26,
-            "s2c_del_mail_list": 27,
-            "c2s_set_mail_lock": 28,
-            "s2c_set_mail_lock": 29,
-            "c2s_get_mail_reward": 30,
-            "s2c_get_mail_reward": 31
+            "c2s_req_mail_list": 29,
+            "s2c_req_mail_list": 30,
+            "c2s_req_mail_detail": 31,
+            "s2c_req_mail_detail": 32,
+            "c2s_del_mail_list": 33,
+            "s2c_del_mail_list": 34,
+            "c2s_set_mail_lock": 35,
+            "s2c_set_mail_lock": 36,
+            "c2s_get_mail_reward": 37,
+            "s2c_get_mail_reward": 38
         },
         "Reward": {
-            "s2c_show_reward": 32,
-            "s2c_sync_user_diamond": 33
+            "s2c_show_reward": 39,
+            "s2c_sync_user_diamond": 40
         },
         "SystemOpen": {
-            "c2s_req_system_open": 34,
-            "s2c_req_system_open": 35,
-            "s2c_sync_system_open": 36
+            "c2s_req_system_open": 41,
+            "s2c_req_system_open": 42,
+            "s2c_sync_system_open": 43
+        },
+        "Task": {
+            "c2s_req_task_list": 44,
+            "s2c_req_task_list": 45,
+            "s2c_sync_task": 46,
+            "c2s_get_task_reward": 47,
+            "s2c_get_task_reward": 48
         },
         "User": {
-            "c2s_user_base_info": 37,
-            "s2c_user_base_info": 38,
-            "c2s_user_create": 39,
-            "s2c_user_create": 40,
-            "c2s_req_user_res": 41,
-            "s2c_req_user_res": 42,
-            "s2c_sync_user_res_list": 43,
-            "s2c_sys_notify_by_lanid": 44,
-            "s2c_tell_me": 45,
-            "c2s_gm_command": 46,
-            "s2c_gm_command_help": 47,
-            "c2s_change_head_icon": 48,
-            "s2c_change_head_icon": 49,
-            "c2s_client_load_ok": 50,
-            "s2c_client_load_ok": 51
+            "c2s_user_base_info": 49,
+            "s2c_user_base_info": 50,
+            "s2c_sync_soldier": 51,
+            "s2c_sync_city_pos": 52,
+            "c2s_user_create": 53,
+            "s2c_user_create": 54,
+            "c2s_req_user_res": 55,
+            "s2c_req_user_res": 56,
+            "s2c_sync_user_res_list": 57,
+            "s2c_sys_notify_by_lanid": 58,
+            "s2c_tell_me": 59,
+            "c2s_gm_command": 60,
+            "s2c_gm_command_help": 61,
+            "c2s_change_head_icon": 62,
+            "s2c_change_head_icon": 63,
+            "c2s_client_load_ok": 64,
+            "s2c_client_load_ok": 65
         },
         "World": {
-            "c2s_req_troop": 52,
-            "s2c_req_troop": 53,
-            "c2s_edit_troop": 54,
-            "s2c_edit_troop": 55
+            "c2s_req_troop": 66,
+            "s2c_req_troop": 67,
+            "c2s_edit_troop": 68,
+            "s2c_edit_troop": 69,
+            "c2s_march": 70,
+            "s2c_march": 71,
+            "c2s_cancel_march": 72,
+            "s2c_cancel_march": 73,
+            "s2c_sync_march": 74,
+            "c2s_req_march_list": 75,
+            "s2c_req_march_list": 76,
+            "c2s_aoi_focus": 77,
+            "s2c_aoi_enter": 78,
+            "s2c_aoi_leave": 79,
+            "s2c_aoi_update": 80
         }
     }
 }

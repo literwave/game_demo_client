@@ -14,6 +14,18 @@ message s2c_user_base_info {
     int32 birthTime = 4;
     int32 level = 5;
     int32 exp = 6;
+	Common.p_soldier_info soldierInfo = 7;  // 城中兵力
+	Common.p_pos cityPos = 8;               // 主城坐标
+}
+
+// 同步城中兵力
+message s2c_sync_soldier {
+	Common.p_soldier_info soldierInfo = 1;
+}
+
+// 同步主城坐标（迁城等）
+message s2c_sync_city_pos {
+	Common.p_pos cityPos = 1;
 }
 
 message c2s_user_create {

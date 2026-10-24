@@ -1,0 +1,721 @@
+[
+  {
+    "Id": 1,
+    "Name": "流寇小队",
+    "Desc": "初出茅庐即可讨伐的流寇小队",
+    "Icon": "",
+    "Level": 1,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 1,
+        "pos": 1
+      },
+      {
+        "mid": 2,
+        "pos": 2
+      }
+    ],
+    "Power": 400,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 200
+      }
+    ],
+    "Refresh": 600,
+    "OpenCond": {
+      "level": 1
+    }
+  },
+  {
+    "Id": 2,
+    "Name": "流寇营地",
+    "Desc": "盘踞路边的流寇营地",
+    "Icon": "",
+    "Level": 2,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 1,
+        "pos": 1
+      },
+      {
+        "mid": 2,
+        "pos": 2
+      },
+      {
+        "mid": 3,
+        "pos": 3
+      }
+    ],
+    "Power": 900,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 400
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 400
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 100
+      }
+    ],
+    "Refresh": 600,
+    "OpenCond": {
+      "level": 1
+    }
+  },
+  {
+    "Id": 3,
+    "Name": "山贼斥候",
+    "Desc": "四处探查的山贼斥候队",
+    "Icon": "",
+    "Level": 3,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 4,
+        "pos": 1
+      },
+      {
+        "mid": 2,
+        "pos": 2
+      }
+    ],
+    "Power": 1000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 600
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 600
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 200
+      }
+    ],
+    "Refresh": 600,
+    "OpenCond": {
+      "level": 2
+    }
+  },
+  {
+    "Id": 4,
+    "Name": "山贼据点",
+    "Desc": "依山建寨的山贼据点",
+    "Icon": "",
+    "Level": 4,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 4,
+        "pos": 1
+      },
+      {
+        "mid": 5,
+        "pos": 2
+      }
+    ],
+    "Power": 1800,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 800
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 800
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 300
+      }
+    ],
+    "Refresh": 600,
+    "OpenCond": {
+      "level": 3
+    }
+  },
+  {
+    "Id": 5,
+    "Name": "山贼要塞",
+    "Desc": "防守严密的山贼要塞",
+    "Icon": "",
+    "Level": 5,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 5,
+        "pos": 1
+      },
+      {
+        "mid": 6,
+        "pos": 2
+      },
+      {
+        "mid": 4,
+        "pos": 3
+      }
+    ],
+    "Power": 3200,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 1200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 1200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 20
+      }
+    ],
+    "Refresh": 900,
+    "OpenCond": {
+      "level": 4
+    }
+  },
+  {
+    "Id": 6,
+    "Name": "黄巾余党",
+    "Desc": "黄巾之乱后的残余部众",
+    "Icon": "",
+    "Level": 6,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 7,
+        "pos": 1
+      },
+      {
+        "mid": 6,
+        "pos": 2
+      }
+    ],
+    "Power": 3600,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 1500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 1500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 600
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 30
+      }
+    ],
+    "Refresh": 900,
+    "OpenCond": {
+      "level": 5
+    }
+  },
+  {
+    "Id": 7,
+    "Name": "黄巾营地",
+    "Desc": "黄巾军临时营地",
+    "Icon": "",
+    "Level": 7,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 7,
+        "pos": 1
+      },
+      {
+        "mid": 8,
+        "pos": 2
+      }
+    ],
+    "Power": 5000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 2000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 2000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 800
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 40
+      }
+    ],
+    "Refresh": 900,
+    "OpenCond": {
+      "level": 6
+    }
+  },
+  {
+    "Id": 8,
+    "Name": "黄巾大营",
+    "Desc": "黄巾军主力大营",
+    "Icon": "",
+    "Level": 8,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 8,
+        "pos": 1
+      },
+      {
+        "mid": 9,
+        "pos": 2
+      },
+      {
+        "mid": 7,
+        "pos": 3
+      }
+    ],
+    "Power": 9000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 2500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 2500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 1000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 60
+      }
+    ],
+    "Refresh": 1200,
+    "OpenCond": {
+      "level": 7
+    }
+  },
+  {
+    "Id": 9,
+    "Name": "黑山匪巢",
+    "Desc": "黑山军盘踞的匪巢",
+    "Icon": "",
+    "Level": 9,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 10,
+        "pos": 1
+      },
+      {
+        "mid": 9,
+        "pos": 2
+      }
+    ],
+    "Power": 10000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 1200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 80
+      }
+    ],
+    "Refresh": 1200,
+    "OpenCond": {
+      "level": 8
+    }
+  },
+  {
+    "Id": 10,
+    "Name": "白波寇营",
+    "Desc": "白波贼精锐营地",
+    "Icon": "",
+    "Level": 10,
+    "Type": 1,
+    "Monsters": [
+      {
+        "mid": 11,
+        "pos": 1
+      },
+      {
+        "mid": 10,
+        "pos": 2
+      },
+      {
+        "mid": 9,
+        "pos": 3
+      }
+    ],
+    "Power": 18000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 4000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 4000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 1600
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 100
+      }
+    ],
+    "Refresh": 1800,
+    "OpenCond": {
+      "level": 9
+    }
+  },
+  {
+    "Id": 101,
+    "Name": "青州山寨",
+    "Desc": "盘踞青州山地的山寨",
+    "Icon": "",
+    "Level": 5,
+    "Type": 2,
+    "Monsters": [
+      {
+        "mid": 12,
+        "pos": 1
+      },
+      {
+        "mid": 5,
+        "pos": 2
+      },
+      {
+        "mid": 6,
+        "pos": 3
+      }
+    ],
+    "Power": 5500,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 1000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 80
+      },
+      {
+        "reward_type": 1,
+        "item_id": 5,
+        "item_count": 1
+      }
+    ],
+    "Refresh": 3600,
+    "OpenCond": {
+      "level": 5
+    }
+  },
+  {
+    "Id": 102,
+    "Name": "兖州山寨",
+    "Desc": "兖州境内的大型山寨",
+    "Icon": "",
+    "Level": 7,
+    "Type": 2,
+    "Monsters": [
+      {
+        "mid": 12,
+        "pos": 1
+      },
+      {
+        "mid": 7,
+        "pos": 2
+      },
+      {
+        "mid": 8,
+        "pos": 3
+      }
+    ],
+    "Power": 8000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 4500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 4500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 1500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 120
+      },
+      {
+        "reward_type": 1,
+        "item_id": 5,
+        "item_count": 2
+      }
+    ],
+    "Refresh": 3600,
+    "OpenCond": {
+      "level": 7
+    }
+  },
+  {
+    "Id": 103,
+    "Name": "冀州山寨",
+    "Desc": "冀州深处的强力山寨",
+    "Icon": "",
+    "Level": 9,
+    "Type": 2,
+    "Monsters": [
+      {
+        "mid": 13,
+        "pos": 1
+      },
+      {
+        "mid": 9,
+        "pos": 2
+      },
+      {
+        "mid": 10,
+        "pos": 3
+      }
+    ],
+    "Power": 16000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 6000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 6000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 2500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 6,
+        "item_count": 1
+      }
+    ],
+    "Refresh": 3600,
+    "OpenCond": {
+      "level": 9
+    }
+  },
+  {
+    "Id": 201,
+    "Name": "黄巾之乱",
+    "Desc": "黄巾大帅亲征，剿灭可获丰厚犒赏",
+    "Icon": "",
+    "Level": 8,
+    "Type": 3,
+    "Monsters": [
+      {
+        "mid": 13,
+        "pos": 1
+      },
+      {
+        "mid": 9,
+        "pos": 2
+      },
+      {
+        "mid": 8,
+        "pos": 3
+      },
+      {
+        "mid": 7,
+        "pos": 4
+      }
+    ],
+    "Power": 18000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 8000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 8000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 4000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 300
+      },
+      {
+        "reward_type": 1,
+        "item_id": 5,
+        "item_count": 3
+      }
+    ],
+    "Refresh": 86400,
+    "OpenCond": {
+      "level": 8
+    }
+  },
+  {
+    "Id": 202,
+    "Name": "魔王来袭",
+    "Desc": "乱世魔王率众来犯，需全力迎战",
+    "Icon": "",
+    "Level": 10,
+    "Type": 3,
+    "Monsters": [
+      {
+        "mid": 14,
+        "pos": 1
+      },
+      {
+        "mid": 11,
+        "pos": 2
+      },
+      {
+        "mid": 10,
+        "pos": 3
+      },
+      {
+        "mid": 9,
+        "pos": 4
+      }
+    ],
+    "Power": 30000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 12000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 12000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 6000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 1001,
+        "item_count": 1
+      }
+    ],
+    "Refresh": 86400,
+    "OpenCond": {
+      "level": 10
+    }
+  }
+]

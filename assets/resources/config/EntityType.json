@@ -1,0 +1,20 @@
+[
+  {
+    "Id": 1,
+    "Name": "主城",
+    "Enum": "CITY",
+    "Desc": "玩家主城"
+  },
+  {
+    "Id": 2,
+    "Name": "行军部队",
+    "Enum": "TROOP",
+    "Desc": "行军中的部队"
+  },
+  {
+    "Id": 3,
+    "Name": "怪物组",
+    "Enum": "MONSTER_GROUP",
+    "Desc": "地图怪物组（贼寇/山寨/首领）"
+  }
+]

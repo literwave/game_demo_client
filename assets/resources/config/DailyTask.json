@@ -1,0 +1,114 @@
+[
+  {
+    "Id": 2001,
+    "Name": "每日签到",
+    "Desc": "累计登录%s天",
+    "Icon": "",
+    "Order": 1,
+    "Cond": {
+      "type": 1
+    },
+    "Target": 1,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 300
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 300
+      }
+    ]
+  },
+  {
+    "Id": 2002,
+    "Name": "招贤纳士",
+    "Desc": "招募武将%s次",
+    "Icon": "",
+    "Order": 2,
+    "Cond": {
+      "type": 4
+    },
+    "Target": 1,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 20
+      }
+    ]
+  },
+  {
+    "Id": 2003,
+    "Name": "厉兵秣马",
+    "Desc": "出征%s次",
+    "Icon": "",
+    "Order": 3,
+    "Cond": {
+      "type": 7
+    },
+    "Target": 2,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 400
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 400
+      }
+    ]
+  },
+  {
+    "Id": 2004,
+    "Name": "积蓄粮草",
+    "Desc": "拥有粮草达到%s",
+    "Icon": "",
+    "Order": 4,
+    "Cond": {
+      "type": 6,
+      "item_id": 1
+    },
+    "Target": 200,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 100
+      }
+    ]
+  },
+  {
+    "Id": 2005,
+    "Name": "伐木备战",
+    "Desc": "拥有木材达到%s",
+    "Icon": "",
+    "Order": 5,
+    "Cond": {
+      "type": 6,
+      "item_id": 2
+    },
+    "Target": 200,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 100
+      }
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package Task;
+
+// 任务类型：1主线 2日常 3周常
+// 任务状态：0进行中 1可领取 2已领取
+message p_task_info {
+	int32 taskId = 1;
+	int32 progress = 2;
+	int32 state = 3;
+	int32 taskType = 4;
+}
+
+// 请求任务列表；taskType=0 全部，1主线，2日常，3周常
+message c2s_req_task_list {
+	int32 taskType = 1;
+}
+
+message s2c_req_task_list {
+	repeated p_task_info taskList = 1;
+}
+
+// 同步单个任务进度/状态
+message s2c_sync_task {
+	p_task_info taskInfo = 1;
+}
+
+// 领取任务奖励
+message c2s_get_task_reward {
+	int32 taskId = 1;
+}
+
+message s2c_get_task_reward {
+	int32 taskId = 1;
+}

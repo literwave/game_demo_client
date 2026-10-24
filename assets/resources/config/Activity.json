@@ -1,0 +1,474 @@
+[
+  {
+    "Id": 1,
+    "Name": "七日登录",
+    "Desc": "开服七日每日登录领取丰厚奖励",
+    "Icon": "",
+    "Type": 1,
+    "Order": 1,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 2,
+      "open_day": 1,
+      "duration": 7
+    },
+    "Params": {},
+    "Rewards": [
+      {
+        "day": 1,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 500
+          },
+          {
+            "reward_type": 1,
+            "item_id": 2,
+            "item_count": 500
+          }
+        ]
+      },
+      {
+        "day": 2,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 800
+          },
+          {
+            "reward_type": 1,
+            "item_id": 3,
+            "item_count": 300
+          }
+        ]
+      },
+      {
+        "day": 3,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 50
+          }
+        ]
+      },
+      {
+        "day": 4,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 1200
+          },
+          {
+            "reward_type": 1,
+            "item_id": 2,
+            "item_count": 1200
+          }
+        ]
+      },
+      {
+        "day": 5,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 5,
+            "item_count": 2
+          }
+        ]
+      },
+      {
+        "day": 6,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 100
+          }
+        ]
+      },
+      {
+        "day": 7,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 2000
+          },
+          {
+            "reward_type": 1,
+            "item_id": 2,
+            "item_count": 2000
+          },
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 200
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 2,
+    "Name": "开服战力冲榜",
+    "Desc": "开服期间势力战力排名领奖",
+    "Icon": "",
+    "Type": 2,
+    "Order": 2,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 2,
+      "open_day": 1,
+      "duration": 7
+    },
+    "Params": {
+      "rank_type": 1
+    },
+    "Rewards": [
+      {
+        "rank_min": 1,
+        "rank_max": 1,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 500
+          },
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 5000
+          }
+        ]
+      },
+      {
+        "rank_min": 2,
+        "rank_max": 3,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 300
+          },
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 3000
+          }
+        ]
+      },
+      {
+        "rank_min": 4,
+        "rank_max": 10,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 150
+          },
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 2000
+          }
+        ]
+      },
+      {
+        "rank_min": 11,
+        "rank_max": 50,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 50
+          },
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 1000
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 3,
+    "Name": "限时求贤",
+    "Desc": "开服限时招募，消耗令牌减半",
+    "Icon": "",
+    "Type": 3,
+    "Order": 3,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 2,
+      "open_day": 1,
+      "duration": 3
+    },
+    "Params": {
+      "lottery_id": 1,
+      "cost_rate": 50
+    },
+    "Rewards": []
+  },
+  {
+    "Id": 4,
+    "Name": "丰收时节",
+    "Desc": "农场/伐木场/铁矿产量翻倍",
+    "Icon": "",
+    "Type": 4,
+    "Order": 4,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 3,
+      "weekday": 6,
+      "duration": 2
+    },
+    "Params": {
+      "rate": 2,
+      "item_ids": [1, 2, 3]
+    },
+    "Rewards": []
+  },
+  {
+    "Id": 5,
+    "Name": "首充礼包",
+    "Desc": "首次充值即可领取超值礼包",
+    "Icon": "",
+    "Type": 5,
+    "Order": 5,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 1
+    },
+    "Params": {
+      "need_recharge": 1
+    },
+    "Rewards": [
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 200
+      },
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 3000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 5,
+        "item_count": 5
+      }
+    ]
+  },
+  {
+    "Id": 6,
+    "Name": "在线犒赏",
+    "Desc": "每日累计在线领取阶段奖励",
+    "Icon": "",
+    "Type": 6,
+    "Order": 6,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 4
+    },
+    "Params": {},
+    "Rewards": [
+      {
+        "minute": 5,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 200
+          },
+          {
+            "reward_type": 1,
+            "item_id": 2,
+            "item_count": 200
+          }
+        ]
+      },
+      {
+        "minute": 15,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 1,
+            "item_count": 400
+          },
+          {
+            "reward_type": 1,
+            "item_id": 3,
+            "item_count": 200
+          }
+        ]
+      },
+      {
+        "minute": 30,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 20
+          }
+        ]
+      },
+      {
+        "minute": 60,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 50
+          },
+          {
+            "reward_type": 1,
+            "item_id": 5,
+            "item_count": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Id": 7,
+    "Name": "军资兑换",
+    "Desc": "使用令牌兑换资源与加速",
+    "Icon": "",
+    "Type": 7,
+    "Order": 7,
+    "OpenCond": {
+      "level": 3
+    },
+    "Time": {
+      "type": 1
+    },
+    "Params": {
+      "exchanges": [
+        {
+          "cost_item": 4,
+          "cost_count": 10,
+          "reward_type": 1,
+          "item_id": 1,
+          "item_count": 1000,
+          "limit": 10
+        },
+        {
+          "cost_item": 4,
+          "cost_count": 10,
+          "reward_type": 1,
+          "item_id": 2,
+          "item_count": 1000,
+          "limit": 10
+        },
+        {
+          "cost_item": 4,
+          "cost_count": 20,
+          "reward_type": 1,
+          "item_id": 5,
+          "item_count": 1,
+          "limit": 5
+        },
+        {
+          "cost_item": 4,
+          "cost_count": 50,
+          "reward_type": 1,
+          "item_id": 1001,
+          "item_count": 1,
+          "limit": 1
+        }
+      ]
+    },
+    "Rewards": []
+  },
+  {
+    "Id": 8,
+    "Name": "主城冲榜",
+    "Desc": "开服主城等级排名领奖",
+    "Icon": "",
+    "Type": 2,
+    "Order": 8,
+    "OpenCond": {
+      "level": 1
+    },
+    "Time": {
+      "type": 2,
+      "open_day": 1,
+      "duration": 5
+    },
+    "Params": {
+      "rank_type": 2
+    },
+    "Rewards": [
+      {
+        "rank_min": 1,
+        "rank_max": 1,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 300
+          },
+          {
+            "reward_type": 1,
+            "item_id": 3,
+            "item_count": 2000
+          }
+        ]
+      },
+      {
+        "rank_min": 2,
+        "rank_max": 5,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 150
+          },
+          {
+            "reward_type": 1,
+            "item_id": 3,
+            "item_count": 1000
+          }
+        ]
+      },
+      {
+        "rank_min": 6,
+        "rank_max": 20,
+        "reward": [
+          {
+            "reward_type": 1,
+            "item_id": 4,
+            "item_count": 50
+          },
+          {
+            "reward_type": 1,
+            "item_id": 3,
+            "item_count": 500
+          }
+        ]
+      }
+    ]
+  }
+]

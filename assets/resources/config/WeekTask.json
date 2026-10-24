@@ -1,0 +1,119 @@
+[
+  {
+    "Id": 3001,
+    "Name": "本周签到",
+    "Desc": "累计登录%s天",
+    "Icon": "",
+    "Order": 1,
+    "Cond": {
+      "type": 1
+    },
+    "Target": 3,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 1500
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 1500
+      }
+    ]
+  },
+  {
+    "Id": 3002,
+    "Name": "本周求贤",
+    "Desc": "招募武将%s次",
+    "Icon": "",
+    "Order": 2,
+    "Cond": {
+      "type": 4
+    },
+    "Target": 5,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 4,
+        "item_count": 100
+      }
+    ]
+  },
+  {
+    "Id": 3003,
+    "Name": "本周征伐",
+    "Desc": "出征%s次",
+    "Icon": "",
+    "Order": 3,
+    "Cond": {
+      "type": 7
+    },
+    "Target": 10,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 2000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 2000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 800
+      }
+    ]
+  },
+  {
+    "Id": 3004,
+    "Name": "本周积粮",
+    "Desc": "拥有粮草达到%s",
+    "Icon": "",
+    "Order": 4,
+    "Cond": {
+      "type": 6,
+      "item_id": 1
+    },
+    "Target": 2000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 1,
+        "item_count": 1000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 500
+      }
+    ]
+  },
+  {
+    "Id": 3005,
+    "Name": "本周伐木",
+    "Desc": "拥有木材达到%s",
+    "Icon": "",
+    "Order": 5,
+    "Cond": {
+      "type": 6,
+      "item_id": 2
+    },
+    "Target": 2000,
+    "Reward": [
+      {
+        "reward_type": 1,
+        "item_id": 2,
+        "item_count": 1000
+      },
+      {
+        "reward_type": 1,
+        "item_id": 3,
+        "item_count": 500
+      }
+    ]
+  }
+]

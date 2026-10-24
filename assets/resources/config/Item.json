@@ -1,38 +1,38 @@
 [
   {
     "Id": 1,
+    "Name": "粮草",
+    "Desc": "主城建设与军队消耗的基础资源",
     "Icon": "ui/resource_icons/icon_grain",
     "BuyDiamond": 10,
     "useParams": [],
     "Kind": 1,
-    "Overlap": 10000
+    "Overlap": 100000
   },
   {
     "Id": 2,
+    "Name": "木材",
+    "Desc": "建造升级所需的基础资源",
     "Icon": "ui/resource_icons/icon_wood",
     "BuyDiamond": 10,
     "useParams": [],
     "Kind": 2,
-    "Overlap": 10000
-  },
-  {
-    "Id": 1001,
-    "Icon": "",
-    "BuyDiamond": 10,
-    "useParams": [],
-    "Kind": 3,
-    "Overlap": 10000
+    "Overlap": 100000
   },
   {
     "Id": 3,
+    "Name": "铁矿",
+    "Desc": "兵营与高级建筑消耗的战略资源",
     "Icon": "ui/resource_icons/icon_iron",
     "BuyDiamond": 10,
     "useParams": [],
-    "Kind": 1,
-    "Overlap": 10000
+    "Kind": 3,
+    "Overlap": 100000
   },
   {
     "Id": 4,
+    "Name": "令牌",
+    "Desc": "招募武将消耗的信物",
     "Icon": "ui/resource_icons/icon_token",
     "BuyDiamond": 10,
     "useParams": [],
@@ -41,26 +41,54 @@
   },
   {
     "Id": 5,
+    "Name": "建造加速",
+    "Desc": "立即缩短建造/升级时间（秒）",
     "Icon": "",
-    "BuyDiamond": 10,
-    "useParams": [],
+    "BuyDiamond": 50,
+    "useParams": [
+      {
+        "time": 300
+      }
+    ],
     "Kind": 5,
-    "Overlap": 1
+    "Overlap": 999
   },
   {
     "Id": 6,
+    "Name": "训练加速",
+    "Desc": "立即缩短练兵时间（秒）",
     "Icon": "",
-    "BuyDiamond": 10,
-    "useParams": [],
-    "Kind": 6,
-    "Overlap": 1
+    "BuyDiamond": 50,
+    "useParams": [
+      {
+        "time": 3600
+      }
+    ],
+    "Kind": 5,
+    "Overlap": 999
   },
   {
     "Id": 7,
+    "Name": "治疗加速",
+    "Desc": "立即缩短伤兵治疗时间（秒）",
     "Icon": "",
-    "BuyDiamond": 10,
+    "BuyDiamond": 50,
+    "useParams": [
+      {
+        "time": 3600
+      }
+    ],
+    "Kind": 5,
+    "Overlap": 999
+  },
+  {
+    "Id": 1001,
+    "Name": "迁城令",
+    "Desc": "将主城迁移至指定坐标",
+    "Icon": "",
+    "BuyDiamond": 100,
     "useParams": [],
-    "Kind": 7,
-    "Overlap": 1
+    "Kind": 6,
+    "Overlap": 99
   }
 ]
